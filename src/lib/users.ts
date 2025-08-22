@@ -58,30 +58,45 @@ const preapprovedUsers = [
 ];
 
 const initializeUsers = () => {
-  if (typeof window !== 'undefined' && !localStorage.getItem(USERS_KEY)) {
-    const defaultUsers: User[] = [
-      {
-        username: "DG143",
-        password: "DG143",
-        isAdmin: true,
-        status: "approved",
-        joined: new Date().toISOString()
-      }
-    ];
+  if (typeof window === 'undefined') return;
 
-    preapprovedUsers.forEach(user => {
-      defaultUsers.push({
-        username: user.username,
-        password: user.password,
+  const existingUsers: User[] = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+  let usersToSave = [...existingUsers];
+  let updated = false;
+
+  const defaultAdmin: User = {
+    username: "DG143",
+    password: "DG143",
+    isAdmin: true,
+    status: "approved",
+    joined: new Date().toISOString()
+  };
+
+  // Ensure admin user exists
+  if (!usersToSave.find(u => u.username === defaultAdmin.username)) {
+    usersToSave.unshift(defaultAdmin); // Add to the beginning
+    updated = true;
+  }
+
+  // Ensure all preapproved users exist
+  preapprovedUsers.forEach(preapprovedUser => {
+    if (!usersToSave.find(u => u.username === preapprovedUser.username)) {
+      usersToSave.push({
+        username: preapprovedUser.username,
+        password: preapprovedUser.password,
         isAdmin: false,
         status: 'approved',
         joined: new Date().toISOString()
       });
-    });
-    
-    localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
+      updated = true;
+    }
+  });
+
+  if (updated) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(usersToSave));
   }
 };
+
 
 export const getUsers = (): User[] => {
   if (typeof window === 'undefined') return [];
