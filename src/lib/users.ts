@@ -53,7 +53,8 @@ const preapprovedUsers = [
   { username: 'supernexus_data139', password: 'Gq3!mT7%nKvX' },
   { username: 'supernexus_ai604', password: 'Fk8@rN4$qWmP' },
   { username: 'supernexus_bot271', password: 'Xt5!nK9#vPqR' },
-  { username: 'supernexus_robot948', password: 'Jm2@qW7%nKvX' }
+  { username: 'supernexus_robot948', password: 'Jm2@qW7%nKvX' },
+  { username: 'RAX143', password: 'RAX143' }
 ];
 
 const initializeUsers = () => {
