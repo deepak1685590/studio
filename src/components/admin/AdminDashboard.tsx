@@ -19,9 +19,12 @@ const AdminDashboard = () => {
   const [newPassword, setNewPassword] = useState('');
   const [userToRevoke, setUserToRevoke] = useState<User | null>(null);
 
-  const pendingUsers = users.filter(u => u.status === 'pending');
-  const approvedUsers = users.filter(u => u.status === 'approved');
-  const revokedUsers = users.filter(u => u.status === 'revoked');
+  // Filter out the admin user from the lists that are managed.
+  const manageableUsers = users.filter(u => !u.isAdmin);
+
+  const pendingUsers = manageableUsers.filter(u => u.status === 'pending');
+  const approvedUsers = manageableUsers.filter(u => u.status === 'approved');
+  const revokedUsers = manageableUsers.filter(u => u.status === 'revoked');
 
   const handleCreateUser = () => {
     if (!newUsername || !newPassword) {
@@ -69,7 +72,7 @@ const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Total Agents" value={users.length} />
+        <StatCard label="Total Agents" value={manageableUsers.length} />
         <StatCard label="Pending Authorization" value={pendingUsers.length} />
         <StatCard label="Active Agents" value={approvedUsers.length} />
         <StatCard label="Decommissioned" value={revokedUsers.length} />
