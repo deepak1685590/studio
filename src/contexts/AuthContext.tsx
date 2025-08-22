@@ -25,12 +25,12 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Start in a loading state
   const [status, setStatus] = useState<'pending' | 'revoked' | null>(null);
   const [revocationReason, setRevocationReason] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
+    // This effect runs only on the client side
     const allUsers = UserStore.getUsers();
     setUsers(allUsers);
 
@@ -40,13 +40,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (currentUser) {
         if (currentUser.status === 'approved') {
           setUser(currentUser);
+          setStatus(null);
+          setRevocationReason(null);
         } else {
+          setUser(null);
           setStatus(currentUser.status as 'pending' | 'revoked');
           setRevocationReason(currentUser.revocationReason || null);
         }
+      } else {
+        // Session user not found in user list, treat as logged out
+        UserStore.clearSessionUser();
+        setUser(null);
       }
+    } else {
+      setUser(null);
+      setStatus(null);
+      setRevocationReason(null);
     }
-    setLoading(false);
+    
+    setLoading(false); // Finished loading
   }, []);
   
   const refreshUsers = () => {
@@ -61,6 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setStatus(null);
       UserStore.setSessionUser(result.user);
     } else {
+      setUser(null);
       setStatus(result.status);
       setRevocationReason(result.revocationReason || null);
     }
@@ -99,6 +112,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const revokeUser = (username: string, reason: string) => {
     const result = UserStore.updateUserStatus(username, 'revoked', reason);
+    if (user?.username === username) {
+        logout();
+    }
     refreshUsers();
     return result;
   }
