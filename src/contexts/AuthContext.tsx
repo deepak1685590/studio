@@ -25,7 +25,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true); // Start in a loading state
+  const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<'pending' | 'revoked' | null>(null);
   const [revocationReason, setRevocationReason] = useState<string | null>(null);
 
@@ -46,16 +46,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(null);
           setStatus(currentUser.status as 'pending' | 'revoked');
           setRevocationReason(currentUser.revocationReason || null);
+          UserStore.clearSessionUser(); // Clear invalid session
         }
       } else {
         // Session user not found in user list, treat as logged out
         UserStore.clearSessionUser();
         setUser(null);
       }
-    } else {
-      setUser(null);
-      setStatus(null);
-      setRevocationReason(null);
     }
     
     setLoading(false); // Finished loading
@@ -71,6 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (result.success && result.user) {
       setUser(result.user);
       setStatus(null);
+      setRevocationReason(null);
       UserStore.setSessionUser(result.user);
     } else {
       setUser(null);
@@ -92,6 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     UserStore.clearSessionUser();
     setUser(null);
     setStatus(null);
+    setRevocationReason(null);
   };
   
   const createUser = (username: string, password = "") => {
