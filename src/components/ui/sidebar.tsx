@@ -352,7 +352,7 @@ SidebarInput.displayName = "SidebarInput"
 
 const SidebarHeader = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div">
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
   return (
     <div
@@ -367,7 +367,7 @@ SidebarHeader.displayName = "SidebarHeader"
 
 const SidebarFooter = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div">
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
   return (
     <div
@@ -397,7 +397,7 @@ SidebarSeparator.displayName = "SidebarSeparator"
 
 const SidebarContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div">
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
   return (
     <div
@@ -415,7 +415,7 @@ SidebarContent.displayName = "SidebarContent"
 
 const SidebarGroup = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div">
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
   return (
     <div
@@ -474,7 +474,7 @@ SidebarGroupAction.displayName = "SidebarGroupAction"
 
 const SidebarGroupContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div">
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
@@ -625,7 +625,7 @@ SidebarMenuAction.displayName = "SidebarMenuAction"
 
 const SidebarMenuBadge = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div">
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
