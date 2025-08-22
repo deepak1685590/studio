@@ -3,9 +3,9 @@
 import React from 'react';
 import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
+import QuantumChart from './QuantumChart';
 import { Button } from '@/components/ui/button';
 import { Download, TrendingUp, TrendingDown } from 'lucide-react';
-import { Badge } from '../ui/badge';
 
 interface SignalCardProps {
   data: SignalData;
@@ -41,6 +41,9 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
         <LevelItem label="Risk/Reward" value={`1 : ${data.riskReward.toFixed(1)}`} />
         <LevelItem label="Confidence" value={data.confidence} />
       </div>
+
+      <SectionHeader>Quantum Data Stream</SectionHeader>
+      <QuantumChart data={data.chartData} />
 
       <SectionHeader>Signals Detected</SectionHeader>
       <ul className="list-disc list-inside space-y-1">

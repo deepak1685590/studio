@@ -1,4 +1,4 @@
-import type { SignalData } from '@/types';
+import type { SignalData, ChartDataPoint } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -109,7 +109,6 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         'Structure: Minor trend alignment',
     ];
 
-    // Add new "quantum" indicators based on mode
     if (parseInt(mode) >= 2) {
         const waveConvergence = (Math.random() * 40 + 60).toFixed(1);
         confluenceFactors.push(`Quantum Wave Convergence: ${waveConvergence}%`);
@@ -136,6 +135,16 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
     const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
     const riskReward = risk > 0 ? reward / risk : 0;
     
+    const chartData: ChartDataPoint[] = klines.slice(-30).map((k: any, index: number) => {
+        const closePrice = parseFloat(k[4]);
+        return {
+            name: `T-${30 - index}`,
+            price: closePrice,
+            momentum: Math.random() * 80 + 10, // Simulated momentum
+            volatility: Math.random() * 50 + 10, // Simulated volatility
+        };
+    });
+
     return {
         symbol: symbol.toUpperCase(),
         price,
@@ -163,5 +172,6 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         fvg,
         liquidityPool: isBullish ? `$${(swingLow * 0.99).toFixed(2)}` : `$${(swingHigh * 1.01).toFixed(2)}`,
         marketStructure: isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL',
+        chartData,
     };
 };

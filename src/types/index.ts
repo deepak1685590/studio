@@ -8,6 +8,13 @@ export interface User {
   revokedAt?: string;
 }
 
+export interface ChartDataPoint {
+  name: string;
+  price: number;
+  momentum: number;
+  volatility: number;
+}
+
 export interface SignalData {
   symbol: string;
   price: number;
@@ -35,4 +42,5 @@ export interface SignalData {
   fvg: [string, string];
   liquidityPool: string;
   marketStructure: string;
+  chartData: ChartDataPoint[];
 }
