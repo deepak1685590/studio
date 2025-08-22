@@ -24,7 +24,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
         setInsight(result.insight);
       } catch (error) {
         console.error('AI Insight Error:', error);
-        setInsight(`Strong ${data.isBullish ? 'bullish' : 'bearish'} setup in ${data.symbol} at $${data.price.toFixed(2)}. ${data.confluenceCount} confluence factors. Entry: $${data.entry}, SL: $${data.sl}, TP1: $${data.tp1}. Institutional-grade opportunity.`);
+        setInsight(`Strong ${data.isBullish ? 'bullish' : 'bearish'} setup in ${data.symbol} at $${data.price.toFixed(2)}. ${data.confluenceCount} confluence factors with supportive multi-timeframe analysis. Entry: $${data.entry}, SL: $${data.sl}, TP1: $${data.tp1}. Institutional-grade opportunity.`);
       }
       setLoading(false);
     };

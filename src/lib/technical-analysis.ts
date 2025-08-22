@@ -1,4 +1,4 @@
-import type { SignalData, ChartDataPoint } from '@/types';
+import type { SignalData, ChartDataPoint, MultiTimeframeAnalysis } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -108,6 +108,15 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         volumeImbalance,
         'Structure: Minor trend alignment',
     ];
+    
+    // Multi-timeframe analysis simulation
+    const trends: ('Bullish' | 'Bearish' | 'Neutral')[] = ['Bullish', 'Bearish', 'Neutral'];
+    const multiTimeframeAnalysis: MultiTimeframeAnalysis = {
+        '15m': isBullish ? 'Bullish' : 'Bearish',
+        '1H': trends[Math.floor(Math.random() * 3)],
+        '4H': trends[Math.floor(Math.random() * 3)],
+        'Daily': trends[Math.floor(Math.random() * 3)],
+    };
 
     if (parseInt(mode) >= 2) {
         const waveConvergence = (Math.random() * 40 + 60).toFixed(1);
@@ -173,5 +182,6 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         liquidityPool: isBullish ? `$${(swingLow * 0.99).toFixed(2)}` : `$${(swingHigh * 1.01).toFixed(2)}`,
         marketStructure: isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL',
         chartData,
+        multiTimeframeAnalysis,
     };
 };

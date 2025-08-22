@@ -15,6 +15,13 @@ export interface ChartDataPoint {
   volatility: number;
 }
 
+export interface MultiTimeframeAnalysis {
+  '15m': 'Bullish' | 'Bearish' | 'Neutral';
+  '1H': 'Bullish' | 'Bearish' | 'Neutral';
+  '4H': 'Bullish' | 'Bearish' | 'Neutral';
+  'Daily': 'Bullish' | 'Bearish' | 'Neutral';
+}
+
 export interface SignalData {
   symbol: string;
   price: number;
@@ -43,4 +50,5 @@ export interface SignalData {
   liquidityPool: string;
   marketStructure: string;
   chartData: ChartDataPoint[];
+  multiTimeframeAnalysis: MultiTimeframeAnalysis;
 }

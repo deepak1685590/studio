@@ -4,6 +4,7 @@ import React from 'react';
 import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import QuantumChart from './QuantumChart';
+import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
 import { Download, TrendingUp, TrendingDown } from 'lucide-react';
 
@@ -44,6 +45,9 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
 
       <SectionHeader>Quantum Data Stream</SectionHeader>
       <QuantumChart data={data.chartData} />
+
+      <SectionHeader>Multi-Timeframe Analysis</SectionHeader>
+      <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
 
       <SectionHeader>Signals Detected</SectionHeader>
       <ul className="list-disc list-inside space-y-1">
@@ -103,6 +107,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
           demandZone: `$${data.demandZone[0]} - $${data.demandZone[1]}`,
           fvg: `$${data.fvg[0]} - $${data.fvg[1]}`,
           volumeImbalance: data.volumeImbalance,
+          multiTimeframeAnalysis: data.multiTimeframeAnalysis,
         }} />
       )}
 
