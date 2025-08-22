@@ -107,10 +107,24 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         price > pivot ? `Price above Pivot ($${pivot.toFixed(2)})` : `Price below Pivot ($${pivot.toFixed(2)})`,
         volumeImbalance,
         'Structure: Minor trend alignment',
-    ].filter(Boolean);
+    ];
+
+    // Add new "quantum" indicators based on mode
+    if (parseInt(mode) >= 2) {
+        const waveConvergence = (Math.random() * 40 + 60).toFixed(1);
+        confluenceFactors.push(`Quantum Wave Convergence: ${waveConvergence}%`);
+    }
+    if (parseInt(mode) >= 3) {
+        const anomalyType = isBullish ? 'Expansion' : 'Contraction';
+        const anomalySeverity = (Math.random() * 0.5 + 1.2).toFixed(2);
+        confluenceFactors.push(`Chrono-Distortion Anomaly: ${anomalyType} (${anomalySeverity}σ)`);
+        
+        const liquidityPulse = (Math.random() * 150 + 50).toFixed(0);
+        confluenceFactors.push(`Subspace Liquidity Pulse: ${liquidityPulse}M units detected`);
+    }
 
     const confluenceCount = confluenceFactors.length;
-    const confidence = confluenceCount >= 4 ? "High" : "Medium";
+    const confidence = confluenceCount >= 6 ? "Very High" : confluenceCount >= 4 ? "High" : "Medium";
     
     const action = isBullish ? "Buy on Pullback" : "Sell on Rally";
     const entry = isBullish ? (price * 0.995).toFixed(2) : (price * 1.005).toFixed(2);
