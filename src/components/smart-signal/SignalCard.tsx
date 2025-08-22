@@ -7,6 +7,7 @@ import QuantumChart from './QuantumChart';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
 import { Download, TrendingUp, TrendingDown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface SignalCardProps {
   data: SignalData;
@@ -27,14 +28,18 @@ const LevelItem = ({ label, value }: { label: string; value: string | number }) 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
   return (
     <div id="signal-card-content" className="mt-5 p-5 bg-black/70 border-2 border-primary rounded-xl text-sm leading-relaxed shadow-lg">
-      <h3 className={`font-headline text-xl mb-3 flex items-center gap-2 ${data.isBullish ? 'text-green-400' : 'text-red-400'}`}>
-        {data.isBullish ? <TrendingUp /> : <TrendingDown />}
-        Elite Signal: {data.symbol} ({data.isBullish ? 'Bullish' : 'Bearish'})
-      </h3>
+      <div className="flex justify-between items-start">
+        <h3 className={`font-headline text-xl mb-3 flex items-center gap-2 ${data.isBullish ? 'text-green-400' : 'text-red-400'}`}>
+          {data.isBullish ? <TrendingUp /> : <TrendingDown />}
+          Elite Signal: {data.symbol} ({data.isBullish ? 'Bullish' : 'Bearish'})
+        </h3>
+        <Badge variant="outline" className={`font-bold ${data.isBullish ? 'border-green-500/50 text-green-400' : 'border-red-500/50 text-red-400'}`}>
+          {data.action}
+        </Badge>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 font-mono">
         <LevelItem label="Price" value={`$${data.price}`} />
-        <LevelItem label="Action" value={data.action} />
         <LevelItem label="Entry" value={`$${data.entry}`} />
         <LevelItem label="Stop-Loss" value={`$${data.sl}`} />
         <LevelItem label="Take-Profit 1" value={`$${data.tp1}`} />
