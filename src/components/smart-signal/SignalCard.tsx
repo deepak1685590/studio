@@ -6,7 +6,7 @@ import EliteAiInsight from './EliteAiInsight';
 import QuantumChart from './QuantumChart';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface SignalCardProps {
@@ -14,14 +14,24 @@ interface SignalCardProps {
   onDownload: () => void;
 }
 
-const SectionHeader = ({ children }: { children: React.ReactNode }) => (
-  <h4 className="font-headline text-lg text-primary mt-4 mb-2 border-b border-primary/20 pb-1">{children}</h4>
+const SectionHeader = ({ children, icon }: { children: React.ReactNode, icon?: React.ReactNode }) => (
+  <h4 className="font-headline text-lg text-primary mt-4 mb-2 border-b border-primary/20 pb-1 flex items-center gap-2">
+    {icon}
+    {children}
+  </h4>
 );
 
 const LevelItem = ({ label, value }: { label: string; value: string | number }) => (
   <div className="flex justify-between text-sm">
     <span className="text-foreground/70">{label}:</span>
     <span className="font-mono">{typeof value === 'number' ? `$${value.toFixed(2)}` : value}</span>
+  </div>
+);
+
+const ChecklistItem = ({ label, passed }: { label: string; passed: boolean }) => (
+  <div className="flex items-center gap-2">
+    {passed ? <CheckCircle2 className="text-green-400" /> : <XCircle className="text-red-400" />}
+    <span className={passed ? "text-green-400" : "text-red-400"}>{label}</span>
   </div>
 );
 
@@ -50,11 +60,29 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
         <LevelItem label="Confidence" value={data.confidence} />
       </div>
 
-      <SectionHeader>Quantum Data Stream</SectionHeader>
+      <SectionHeader icon={<Scaling />}>Quantum Data Stream</SectionHeader>
       <QuantumChart data={data.chartData} />
 
-      <SectionHeader>Multi-Timeframe Analysis</SectionHeader>
+      <SectionHeader icon={<BarChart />}>Multi-Timeframe Analysis</SectionHeader>
       <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+        <div>
+          <SectionHeader icon={<BookOpen />}>Pattern Recognition</SectionHeader>
+          <div className="p-4 bg-black/30 rounded-lg border border-primary/20">
+            <h5 className="font-bold text-primary">{data.chartPattern.name}</h5>
+            <p className="text-xs text-foreground/80 mt-1">{data.chartPattern.description}</p>
+          </div>
+        </div>
+        <div>
+          <SectionHeader icon={<CheckCircle2 />}>Trader's Checklist</SectionHeader>
+          <div className="p-4 bg-black/30 rounded-lg border border-primary/20 space-y-2">
+              <ChecklistItem label={`R/R > 1.5 (${data.riskReward.toFixed(1)})`} passed={data.tradersChecklist.riskRewardPass} />
+              <ChecklistItem label="HTF Alignment" passed={data.tradersChecklist.mtfAlignmentPass} />
+              <ChecklistItem label="Volume Confirmation" passed={data.tradersChecklist.volumeConfirmationPass} />
+          </div>
+        </div>
+      </div>
 
       <SectionHeader>Signals Detected</SectionHeader>
       <ul className="list-disc list-inside space-y-1">
@@ -116,6 +144,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
           fvg: `$${data.fvg[0]} - $${data.fvg[1]}`,
           volumeImbalance: data.volumeImbalance,
           multiTimeframeAnalysis: data.multiTimeframeAnalysis,
+          chartPatternName: data.chartPattern.name,
         }} />
       )}
 

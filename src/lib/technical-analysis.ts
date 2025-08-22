@@ -1,4 +1,4 @@
-import type { SignalData, ChartDataPoint, MultiTimeframeAnalysis } from '@/types';
+import type { SignalData, ChartDataPoint, MultiTimeframeAnalysis, ChartPattern, TradersChecklist } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -116,7 +116,6 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         confluenceFactors.push(`✅ Reversal Confirmed`);
     }
     
-    // Multi-timeframe analysis simulation
     const trends: ('Bullish' | 'Bearish' | 'Neutral')[] = ['Bullish', 'Bearish', 'Neutral'];
     const multiTimeframeAnalysis: MultiTimeframeAnalysis = {
         '15m': isBullish ? 'Bullish' : 'Bearish',
@@ -156,10 +155,30 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         return {
             name: `T-${30 - index}`,
             price: closePrice,
-            momentum: Math.random() * 80 + 10, // Simulated momentum
-            volatility: Math.random() * 50 + 10, // Simulated volatility
+            momentum: Math.random() * 80 + 10,
+            volatility: Math.random() * 50 + 10,
         };
     });
+
+    const bullishPatterns = [
+        { name: 'Bull Flag', description: 'A continuation pattern suggesting the uptrend will resume after a brief consolidation.' },
+        { name: 'Ascending Triangle', description: 'Indicates a potential breakout to the upside as buying pressure builds.' },
+        { name: 'Inverse Head & Shoulders', description: 'A strong reversal pattern indicating a shift from a downtrend to an uptrend.' },
+    ];
+    const bearishPatterns = [
+        { name: 'Bear Flag', description: 'A continuation pattern suggesting the downtrend will resume after a brief consolidation.' },
+        { name: 'Descending Triangle', description: 'Indicates a potential breakdown to the downside as selling pressure builds.' },
+        { name: 'Head & Shoulders', description: 'A classic reversal pattern indicating a shift from an uptrend to a downtrend.' },
+    ];
+    const chartPattern: ChartPattern = isBullish 
+        ? bullishPatterns[Math.floor(Math.random() * bullishPatterns.length)] 
+        : bearishPatterns[Math.floor(Math.random() * bearishPatterns.length)];
+    
+    const tradersChecklist: TradersChecklist = {
+        riskRewardPass: riskReward > 1.5,
+        mtfAlignmentPass: multiTimeframeAnalysis['4H'] === (isBullish ? 'Bullish' : 'Bearish') || multiTimeframeAnalysis['Daily'] === (isBullish ? 'Bullish' : 'Bearish'),
+        volumeConfirmationPass: lastVolume > avgVolume,
+    };
 
     return {
         symbol: symbol.toUpperCase(),
@@ -191,5 +210,7 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         chartData,
         multiTimeframeAnalysis,
         reversalConfirmed,
+        chartPattern,
+        tradersChecklist,
     };
 };

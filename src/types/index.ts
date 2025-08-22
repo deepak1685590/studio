@@ -22,6 +22,17 @@ export interface MultiTimeframeAnalysis {
   'Daily': 'Bullish' | 'Bearish' | 'Neutral';
 }
 
+export interface ChartPattern {
+    name: string;
+    description: string;
+}
+
+export interface TradersChecklist {
+    riskRewardPass: boolean;
+    mtfAlignmentPass: boolean;
+    volumeConfirmationPass: boolean;
+}
+
 export interface SignalData {
   symbol: string;
   price: number;
@@ -52,4 +63,6 @@ export interface SignalData {
   chartData: ChartDataPoint[];
   multiTimeframeAnalysis: MultiTimeframeAnalysis;
   reversalConfirmed: boolean;
+  chartPattern: ChartPattern;
+  tradersChecklist: TradersChecklist;
 }

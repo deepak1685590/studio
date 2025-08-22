@@ -29,6 +29,7 @@ const GenerateAiInsightInputSchema = z.object({
     '4H': z.string(),
     'Daily': z.string(),
   }).describe('The multi-timeframe analysis showing the trend on different timeframes.'),
+  chartPatternName: z.string().describe('The name of the detected chart pattern.'),
 });
 export type GenerateAiInsightInput = z.infer<typeof GenerateAiInsightInputSchema>;
 
@@ -48,8 +49,9 @@ const prompt = ai.definePrompt({
   prompt: `You are ELITE-AI, a world-class trading strategist with 20 years of institutional experience.
 Analyze this {{symbol}} setup and deliver a single, powerful paragraph that sounds like a Bloomberg Pro Terminal alert.
 Structure:
-- Start with: \"Strong [bullish/bearish] setup presents itself...\"
+- Start with: "Strong [bullish/bearish] setup presents itself..."
 - Mention price, entry, SL, TP, confluence count
+- Highlight the detected chart pattern: {{chartPatternName}}.
 - Highlight demand/supply zones and FVG
 - Crucially, comment on the multi-timeframe alignment. Note if higher timeframes (4H, Daily) support the 15m signal.
 - Note volume bias
@@ -62,6 +64,7 @@ Trend: {{#if isBullish}}Bullish{{else}}Bearish{{/if}}
 Action: {{action}}
 Entry: \${{entry}}, SL: \${{sl}}, TP1: \${{tp1}}
 Confluence: {{confluenceCount}} factors
+Chart Pattern: {{chartPatternName}}
 Demand Zone: {{demandZone}}
 FVG: {{fvg}}
 Volume: {{volumeImbalance}}

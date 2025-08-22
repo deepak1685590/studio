@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 
 interface EliteAiInsightProps {
-  data: GenerateAiInsightInput;
+  data: Omit<GenerateAiInsightInput, 'chartPatternName'> & { chartPatternName: string };
 }
 
 const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
