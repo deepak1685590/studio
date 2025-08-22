@@ -10,8 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        body: ['"Courier New"', 'monospace'],
+        headline: ['Orbitron', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -88,12 +88,26 @@ export default {
             height: '0',
           },
         },
+        flicker: {
+          '0%, 18%, 22%, 25%, 53%, 57%, 100%': {
+            textShadow: '0 0 4px hsl(var(--primary)), 0 0 11px hsl(var(--primary)), 0 0 19px hsl(var(--primary)), 0 0 40px hsl(var(--primary)), 0 0 80px #fff, 0 0 90px #fff, 0 0 100px hsl(var(--primary)), 0 0 150px hsl(var(--primary))',
+          },
+          '20%, 24%, 55%': {
+            textShadow: 'none',
+          },
+        },
+         'pulse-glow': {
+          '0%, 100%': { boxShadow: '0 0 20px hsl(var(--primary) / 0.5)' },
+          '50%': { boxShadow: '0 0 30px hsl(var(--primary) / 0.7)' },
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'flicker': 'flicker 3s infinite alternate',
+        'pulse-glow': 'pulse-glow 2.5s infinite alternate',
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
 } satisfies Config;
