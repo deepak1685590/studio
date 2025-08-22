@@ -102,12 +102,19 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
       ? (isBullish ? "🟢 High Buying Volume" : "🔴 High Selling Volume") 
       : "⚪️ Average Volume";
       
+    // Simulate reversal confirmation
+    const reversalConfirmed = Math.random() > 0.6; // 40% chance of being true
+
     const confluenceFactors = [
         `Trend: ${isBullish ? 'Bullish' : 'Bearish'} (Price vs SuperTrend)`,
         price > pivot ? `Price above Pivot ($${pivot.toFixed(2)})` : `Price below Pivot ($${pivot.toFixed(2)})`,
         volumeImbalance,
         'Structure: Minor trend alignment',
     ];
+
+    if (reversalConfirmed) {
+        confluenceFactors.push(`✅ Reversal Confirmed`);
+    }
     
     // Multi-timeframe analysis simulation
     const trends: ('Bullish' | 'Bearish' | 'Neutral')[] = ['Bullish', 'Bearish', 'Neutral'];
@@ -183,5 +190,6 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         marketStructure: isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL',
         chartData,
         multiTimeframeAnalysis,
+        reversalConfirmed,
     };
 };

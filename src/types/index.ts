@@ -51,4 +51,5 @@ export interface SignalData {
   marketStructure: string;
   chartData: ChartDataPoint[];
   multiTimeframeAnalysis: MultiTimeframeAnalysis;
+  reversalConfirmed: boolean;
 }

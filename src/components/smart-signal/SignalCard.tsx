@@ -26,6 +26,8 @@ const LevelItem = ({ label, value }: { label: string; value: string | number }) 
 );
 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
+  const entryZone = data.isBullish ? data.demandZone : data.supplyZone;
+
   return (
     <div id="signal-card-content" className="mt-5 p-5 bg-black/70 border-2 border-primary rounded-xl text-sm leading-relaxed shadow-lg">
       <div className="flex justify-between items-start">
@@ -40,7 +42,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 font-mono">
         <LevelItem label="Price" value={`$${data.price}`} />
-        <LevelItem label="Entry" value={`$${data.entry}`} />
+        <LevelItem label="Entry (Single)" value={`≈ $${data.entry}`} />
         <LevelItem label="Stop-Loss" value={`$${data.sl}`} />
         <LevelItem label="Take-Profit 1" value={`$${data.tp1}`} />
         <LevelItem label="Take-Profit 2" value={`$${data.tp2}`} />
@@ -63,6 +65,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
         <div>
           <SectionHeader>Key Levels</SectionHeader>
           <div className="space-y-1">
+            <LevelItem label="Optimal Entry Zone" value={`$${entryZone[0]} - $${entryZone[1]}`} />
             <LevelItem label="Swing High" value={data.swingHigh} />
             <LevelItem label="Swing Low" value={data.swingLow} />
             <LevelItem label="Daily Pivot" value={data.pivot} />
