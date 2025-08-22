@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, X, Send, Languages } from 'lucide-react';
+import { Bot, X, Send } from 'lucide-react';
 import { marketAnalysisChatbot } from '@/ai/flows/market-analysis-chatbot';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,7 +56,7 @@ const Chatbot = () => {
   
   const createMarkup = (text: string) => {
     const rawMarkup = marked(text, { sanitize: true });
-    return { __html: rawMarkup };
+    return { __html: rawMarkup as string };
   };
 
   return (
@@ -65,7 +65,6 @@ const Chatbot = () => {
         className={`fixed bottom-8 right-8 z-50 transition-transform duration-300 ${isOpen ? 'scale-0' : 'scale-100'}`}
       >
         <Button 
-          isIconOnly 
           onClick={() => setIsOpen(true)} 
           className="rounded-full w-16 h-16 bg-primary text-background shadow-[0_0_15px_var(--primary),_0_0_30px_var(--primary)] hover:scale-110 transition-transform"
         >
@@ -129,7 +128,7 @@ const Chatbot = () => {
               className="bg-input rounded-full focus:shadow-[0_0_10px_var(--primary)]"
               disabled={isLoading}
             />
-            <Button isIconOnly onClick={handleSend} disabled={isLoading} className="rounded-full w-10 h-10 flex-shrink-0 bg-primary hover:bg-primary/80">
+            <Button onClick={handleSend} disabled={isLoading} className="rounded-full w-10 h-10 flex-shrink-0 bg-primary hover:bg-primary/80">
               <Send size={20} className="text-background" />
             </Button>
           </div>
