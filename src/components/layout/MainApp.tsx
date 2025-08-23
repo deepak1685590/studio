@@ -10,7 +10,7 @@ const MainApp = () => {
   const { user } = useAuth();
 
   return (
-    <div className="p-4">
+    <div className="p-4 pb-16">
       <ProfileBar />
       {user?.isAdmin && <AdminDashboard />}
       <SmartSignalWidget />
