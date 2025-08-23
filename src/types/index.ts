@@ -50,6 +50,11 @@ export interface FibonacciLevels {
     level_618: string;
 }
 
+export interface GoldenPullbackZone {
+    min: string;
+    max: string;
+}
+
 export interface SignalData {
   symbol: string;
   price: number;
@@ -85,4 +90,5 @@ export interface SignalData {
   tradersChecklist: TradersChecklist;
   fibonacciLevels: FibonacciLevels;
   whaleVolumeAlert?: string;
+  goldenPullbackZone?: GoldenPullbackZone;
 }

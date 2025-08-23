@@ -6,8 +6,9 @@ import EliteAiInsight from './EliteAiInsight';
 import QuantumChart from './QuantumChart';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Waves, Droplets, Magnet, Building, GitCommitHorizontal, Timer } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface SignalCardProps {
   data: SignalData;
@@ -64,6 +65,18 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
         <LevelItem label="Confidence" value={data.confidence} />
       </div>
 
+      {data.goldenPullbackZone && (
+        <Alert className="mt-4 border-primary/50 bg-primary/10 text-primary">
+          <Target className="h-4 w-4 text-primary" />
+          <AlertTitle className="font-headline text-primary">
+            {data.isBullish ? 'High-Probability Buy Zone' : 'High-Probability Sell Zone'}
+          </AlertTitle>
+          <AlertDescription className="font-mono text-lg">
+            ${data.goldenPullbackZone.min} - ${data.goldenPullbackZone.max}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <SectionHeader icon={<Scaling />}>Quantum Data Stream</SectionHeader>
       <QuantumChart data={data.chartData} />
 
@@ -98,7 +111,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
           <div>
-            <SectionHeader icon={<Waves />}>Fibonacci Re-Entry Levels</SectionHeader>
+            <SectionHeader icon={<GitCommitHorizontal />}>Fibonacci Re-Entry Levels</SectionHeader>
             <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
                 <LevelItem label="Aggressive Entry (38.2%)" value={data.fibonacciLevels.level_382} />
                 <LevelItem label="Standard Entry (50.0%)" value={data.fibonacciLevels.level_500} />
@@ -137,7 +150,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
       
        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
         <div>
-          <SectionHeader icon={<Droplets />}>Liquidity & Structure</SectionHeader>
+          <SectionHeader icon={<GitCommitHorizontal />}>Liquidity & Structure</SectionHeader>
            <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
             <LevelItem label="Liquidity Pool" value={data.liquidityPool} />
             <LevelItem label="Market Structure" value={data.marketStructure} />

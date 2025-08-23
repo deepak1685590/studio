@@ -1,4 +1,4 @@
-import type { SignalData, ChartDataPoint, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe } from '@/types';
+import type { SignalData, ChartDataPoint, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -195,7 +195,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const analysisTimeframes = mtfMap[timeframe] || mtfMap['15m']!;
     
     // Add the current timeframe to the analysis object
-    const currentTfKey = timeframe === '1d' ? 'Daily' : timeframe;
+    const currentTfKey = timeframe === '1d' ? 'Daily' : timeframe === '1H' ? '1H' : timeframe === '4H' ? '4H' : timeframe;
     multiTimeframeAnalysis[currentTfKey] = isBullish ? 'Bullish' : 'Bearish';
 
 
@@ -279,6 +279,22 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         structureAligmentPass: Math.random() > 0.3,
         liquiditySweepPass: Math.random() > 0.4,
     };
+    
+    let goldenPullbackZone: GoldenPullbackZone | undefined = undefined;
+    const fib618 = parseFloat(fibonacciLevels.level_618);
+    // Only show the pullback zone if it's a valid opportunity
+    if (isBullish && price > fib618) {
+        goldenPullbackZone = {
+            min: Math.min(fib618, pivot).toFixed(2),
+            max: Math.max(fib618, pivot).toFixed(2),
+        };
+    } else if (!isBullish && price < fib618) {
+        goldenPullbackZone = {
+            min: Math.min(fib618, pivot).toFixed(2),
+            max: Math.max(fib618, pivot).toFixed(2),
+        };
+    }
+
 
     return {
         symbol: symbol.toUpperCase(),
@@ -315,5 +331,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         tradersChecklist,
         fibonacciLevels,
         whaleVolumeAlert,
+        goldenPullbackZone,
     };
 };
