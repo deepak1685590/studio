@@ -36,6 +36,14 @@ export interface TradersChecklist {
     liquiditySweepPass: boolean;
 }
 
+export interface FibonacciLevels {
+    level_236: string;
+    level_382: string;
+    level_500: string;
+    level_618: string;
+    level_786: string;
+}
+
 export interface SignalData {
   symbol: string;
   price: number;
@@ -68,4 +76,5 @@ export interface SignalData {
   reversalConfirmed: boolean;
   chartPattern: ChartPattern;
   tradersChecklist: TradersChecklist;
+  fibonacciLevels: FibonacciLevels;
 }

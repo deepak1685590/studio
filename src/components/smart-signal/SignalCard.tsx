@@ -6,7 +6,7 @@ import EliteAiInsight from './EliteAiInsight';
 import QuantumChart from './QuantumChart';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Waves } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface SignalCardProps {
@@ -91,19 +91,29 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
       <ul className="list-disc list-inside space-y-1">
         {data.confluenceFactors.map((factor, i) => <li key={i}>{factor}</li>)}
       </ul>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+          <div>
+            <SectionHeader icon={<Waves />}>Fibonacci Levels</SectionHeader>
+            <div className="space-y-1">
+                <LevelItem label="Retracement (38.2%)" value={data.fibonacciLevels.level_382} />
+                <LevelItem label="Equilibrium (50.0%)" value={data.fibonacciLevels.level_500} />
+                <LevelItem label="Golden Pocket (61.8%)" value={data.fibonacciLevels.level_618} />
+            </div>
+          </div>
+          <div>
+            <SectionHeader>Key Levels</SectionHeader>
+            <div className="space-y-1">
+                <LevelItem label="Optimal Entry Zone" value={`$${entryZone[0]} - $${entryZone[1]}`} />
+                <LevelItem label="Daily Pivot" value={data.pivot} />
+                <LevelItem label="Support 1" value={data.s1} />
+                <LevelItem label="Resistance 1" value={data.r1} />
+            </div>
+        </div>
+      </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-        <div>
-          <SectionHeader>Key Levels</SectionHeader>
-          <div className="space-y-1">
-            <LevelItem label="Optimal Entry Zone" value={`$${entryZone[0]} - $${entryZone[1]}`} />
-            <LevelItem label="Swing High" value={data.swingHigh} />
-            <LevelItem label="Swing Low" value={data.swingLow} />
-            <LevelItem label="Daily Pivot" value={data.pivot} />
-            <LevelItem label="Support 1" value={data.s1} />
-            <LevelItem label="Resistance 1" value={data.r1} />
-          </div>
-        </div>
         <div>
           <SectionHeader>Volume Analysis</SectionHeader>
            <div className="space-y-1">
@@ -112,22 +122,24 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
             <LevelItem label="Net Flow" value={data.volumeImbalance} />
           </div>
         </div>
+        <div>
+            <SectionHeader>Supply & Demand</SectionHeader>
+            <div className="space-y-1">
+                <LevelItem label="Demand Zone" value={`$${data.demandZone[0]} - $${data.demandZone[1]}`} />
+                <LevelItem label="Supply Zone" value={`$${data.supplyZone[0]} - $${data.supplyZone[1]}`} />
+                <LevelItem label="Fair Value Gap" value={`$${data.fvg[0]} - $${data.fvg[1]}`} />
+            </div>
+        </div>
       </div>
       
        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-         <div>
-          <SectionHeader>Supply & Demand</SectionHeader>
-          <div className="space-y-1">
-            <LevelItem label="Demand Zone" value={`$${data.demandZone[0]} - $${data.demandZone[1]}`} />
-            <LevelItem label="Supply Zone" value={`$${data.supplyZone[0]} - $${data.supplyZone[1]}`} />
-            <LevelItem label="Fair Value Gap" value={`$${data.fvg[0]} - $${data.fvg[1]}`} />
-          </div>
-        </div>
         <div>
           <SectionHeader>Liquidity & Structure</SectionHeader>
            <div className="space-y-1">
             <LevelItem label="Liquidity Pool" value={data.liquidityPool} />
             <LevelItem label="Market Structure" value={data.marketStructure} />
+            <LevelItem label="Swing High" value={data.swingHigh} />
+            <LevelItem label="Swing Low" value={data.swingLow} />
           </div>
         </div>
       </div>

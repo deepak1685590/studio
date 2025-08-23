@@ -1,4 +1,4 @@
-import type { SignalData, ChartDataPoint, MultiTimeframeAnalysis, ChartPattern, TradersChecklist } from '@/types';
+import type { SignalData, ChartDataPoint, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -62,8 +62,8 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
     const highPrices = klines.map(k => parseFloat(k[2]));
     const lowPrices = klines.map(k => parseFloat(k[3]));
 
-    const recentHighs = highPrices.slice(-20);
-    const recentLows = lowPrices.slice(-20);
+    const recentHighs = highPrices.slice(-50);
+    const recentLows = lowPrices.slice(-50);
     const swingHigh = Math.max(...recentHighs);
     const swingLow = Math.min(...recentLows);
 
@@ -84,6 +84,16 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
     }
     const atr = trSum / atrPeriod;
 
+    // Fibonacci Retracement Levels
+    const fibRange = swingHigh - swingLow;
+    const fibonacciLevels: FibonacciLevels = {
+        level_236: (swingHigh - fibRange * 0.236).toFixed(2),
+        level_382: (swingHigh - fibRange * 0.382).toFixed(2),
+        level_500: (swingHigh - fibRange * 0.5).toFixed(2),
+        level_618: (swingHigh - fibRange * 0.618).toFixed(2),
+        level_786: (swingHigh - fibRange * 0.786).toFixed(2),
+    };
+
     // A simple SuperTrend logic
     const superTrendMultiplier = 2.5;
     const upperBand = (swingHigh + swingLow) / 2 + (superTrendMultiplier * atr);
@@ -101,8 +111,7 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
       ? (isBullish ? "🟢 High Buying Volume" : "🔴 High Selling Volume") 
       : "⚪️ Average Volume";
       
-    // Simulate reversal confirmation
-    const reversalConfirmed = Math.random() > 0.6; // 40% chance of being true
+    const reversalConfirmed = Math.random() > 0.6;
 
     const confluenceFactors = [
         `Trend: ${isBullish ? 'Bullish' : 'Bearish'} (Price vs SuperTrend)`,
@@ -113,6 +122,17 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
 
     if (reversalConfirmed) {
         confluenceFactors.push(`✅ Reversal Confirmed`);
+    }
+
+    const entryPrice = isBullish ? (price * 0.995) : (price * 1.005);
+    const fibValues = Object.values(fibonacciLevels).map(parseFloat);
+    const closestFib = fibValues.reduce((prev, curr) => Math.abs(curr - entryPrice) < Math.abs(prev - entryPrice) ? curr : prev);
+    if (Math.abs(closestFib - entryPrice) / entryPrice < 0.005) { // within 0.5% of a fib level
+        const fibKey = Object.keys(fibonacciLevels).find(key => parseFloat(fibonacciLevels[key as keyof FibonacciLevels]) === closestFib);
+        if (fibKey) {
+            const fibPercent = fibKey.split('_')[1];
+            confluenceFactors.push(`✅ Entry near ${parseInt(fibPercent) / 10}% Fib retracement`);
+        }
     }
     
     const trends: ('Bullish' | 'Bearish' | 'Neutral')[] = ['Bullish', 'Bearish', 'Neutral'];
@@ -140,7 +160,7 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
     const confidence = confluenceCount >= 6 ? "Very High" : confluenceCount >= 4 ? "High" : "Medium";
     
     const action = isBullish ? "Buy on Pullback" : "Sell on Rally";
-    const entry = isBullish ? (price * 0.995).toFixed(2) : (price * 1.005).toFixed(2);
+    const entry = entryPrice.toFixed(2);
     const sl = isBullish ? (parseFloat(entry) - atr*2).toFixed(2) : (parseFloat(entry) + atr*2).toFixed(2);
     const tp1 = isBullish ? (parseFloat(entry) + atr*2).toFixed(2) : (parseFloat(entry) - atr*2).toFixed(2);
     const tp2 = isBullish ? (parseFloat(entry) + atr*4).toFixed(2) : (parseFloat(entry) - atr*2).toFixed(2);
@@ -182,8 +202,8 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         entryInZonePass: isBullish 
             ? parseFloat(entry) >= parseFloat(demandZone[0]) && parseFloat(entry) <= parseFloat(demandZone[1])
             : parseFloat(entry) >= parseFloat(supplyZone[0]) && parseFloat(entry) <= parseFloat(supplyZone[1]),
-        structureAligmentPass: Math.random() > 0.3, // 70% chance of passing
-        liquiditySweepPass: Math.random() > 0.4, // 60% chance of passing
+        structureAligmentPass: Math.random() > 0.3,
+        liquiditySweepPass: Math.random() > 0.4,
     };
 
     return {
@@ -218,5 +238,6 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         reversalConfirmed,
         chartPattern,
         tradersChecklist,
+        fibonacciLevels,
     };
 };
