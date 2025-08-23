@@ -36,7 +36,6 @@ const ChecklistItem = ({ label, passed }: { label: string; passed: boolean }) =>
 );
 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
-  const entryZone = data.isBullish ? data.demandZone : data.supplyZone;
 
   return (
     <div id="signal-card-content" className="mt-5 p-5 bg-black/70 border-2 border-primary rounded-xl text-sm leading-relaxed shadow-lg">
@@ -99,17 +98,16 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
           <div>
-            <SectionHeader icon={<Waves />}>Fibonacci Levels</SectionHeader>
+            <SectionHeader icon={<Waves />}>Fibonacci Re-Entry Levels</SectionHeader>
             <div className="space-y-1">
-                <LevelItem label="Retracement (38.2%)" value={data.fibonacciLevels.level_382} />
-                <LevelItem label="Equilibrium (50.0%)" value={data.fibonacciLevels.level_500} />
-                <LevelItem label="Golden Pocket (61.8%)" value={data.fibonacciLevels.level_618} />
+                <LevelItem label="Aggressive Entry (38.2%)" value={data.fibonacciLevels.level_382} />
+                <LevelItem label="Standard Entry (50.0%)" value={data.fibonacciLevels.level_500} />
+                <LevelItem label="Conservative Entry (61.8%)" value={data.fibonacciLevels.level_618} />
             </div>
           </div>
           <div>
             <SectionHeader icon={<GitCommitHorizontal />}>Key Levels</SectionHeader>
             <div className="space-y-1">
-                <LevelItem label="Optimal Entry Zone" value={`$${entryZone[0]} - $${entryZone[1]}`} />
                 <LevelItem label="Daily Pivot" value={data.pivot} />
                 <LevelItem label="Support 1" value={data.s1} />
                 <LevelItem label="Resistance 1" value={data.r1} />
