@@ -57,7 +57,7 @@ const QuoteRotator = () => {
   }, []);
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+    <div className="absolute top-16 inset-x-0 flex items-start justify-center pointer-events-none">
       <p 
         className={cn(
           "text-2xl md:text-3xl font-headline text-center text-primary/70 transition-opacity duration-1000 ease-in-out max-w-3xl px-4",
