@@ -1,4 +1,4 @@
-import type { SignalData, ChartDataPoint, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels } from '@/types';
+import type { SignalData, ChartDataPoint, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -16,10 +16,22 @@ async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { 
 }
 
 
-const getMockKlines = (price: number, interval: '5m' | '15m') => {
+const getMockKlines = (price: number, interval: Timeframe) => {
   const klines = [];
   let currentPrice = price;
-  const intervalMinutes = interval === '5m' ? 5 : 15;
+  
+  const intervalMap: {[key in Timeframe]: number} = {
+    '1m': 1,
+    '5m': 5,
+    '15m': 15,
+    '1h': 60,
+    '4h': 240,
+    '1d': 1440,
+    'Daily': 1440, // For compatibility
+    'Weekly': 10080
+  };
+  const intervalMinutes = intervalMap[interval] || 15;
+
   for (let i = 0; i < 100; i++) {
     const open = currentPrice;
     const high = open * (1 + (Math.random() - 0.45) * 0.02);
@@ -38,7 +50,7 @@ const getMockKlines = (price: number, interval: '5m' | '15m') => {
   return klines;
 };
 
-export const getSignalData = async (symbol: string, mode: string, timeframe: '5m' | '15m', forceMock = false): Promise<SignalData> => {
+export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, forceMock = false): Promise<SignalData> => {
     let price, klines: any[], symbolWithUSDT = symbol.toUpperCase() + "USDT";
     
     if (forceMock) {
@@ -94,10 +106,15 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: '5m
     };
 
     // Scalping parameters
-    const atrMultiplier = timeframe === '5m' ? 1.5 : 2;
-    const tpMultiplier1 = timeframe === '5m' ? 1.5 : 2;
-    const tpMultiplier2 = timeframe === '5m' ? 3 : 4;
-
+    const timeframeMultipliers = {
+        '5m': { atr: 1.5, tp1: 1.5, tp2: 3 },
+        '15m': { atr: 2, tp1: 2, tp2: 4 },
+        '1h': { atr: 2.5, tp1: 2.5, tp2: 5 },
+        '4h': { atr: 3, tp1: 3, tp2: 6 },
+        '1d': { atr: 3.5, tp1: 3.5, tp2: 7 },
+    };
+    const multipliers = timeframeMultipliers[timeframe as keyof typeof timeframeMultipliers] || timeframeMultipliers['15m'];
+    const { atr: atrMultiplier, tp1: tpMultiplier1, tp2: tpMultiplier2 } = multipliers;
 
     // A simple SuperTrend logic
     const superTrendMultiplier = 2.5;
@@ -143,24 +160,24 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: '5m
     }
     
     const trends: ('Bullish' | 'Bearish' | 'Neutral')[] = ['Bullish', 'Bearish', 'Neutral'];
-    let multiTimeframeAnalysis: MultiTimeframeAnalysis;
+    let multiTimeframeAnalysis: MultiTimeframeAnalysis = {};
 
-    if (timeframe === '5m') {
-        multiTimeframeAnalysis = {
-            '1m': trends[Math.floor(Math.random() * 3)],
-            '5m': isBullish ? 'Bullish' : 'Bearish',
-            '15m': trends[Math.floor(Math.random() * 3)],
-            '1H': trends[Math.floor(Math.random() * 3)],
-        };
-    } else {
-        multiTimeframeAnalysis = {
-            '15m': isBullish ? 'Bullish' : 'Bearish',
-            '1H': trends[Math.floor(Math.random() * 3)],
-            '4H': trends[Math.floor(Math.random() * 3)],
-            'Daily': trends[Math.floor(Math.random() * 3)],
-        };
-    }
-
+    const mtfMap: {[key in Timeframe]: Timeframe[]} = {
+        '5m': ['1m', '5m', '15m', '1H'],
+        '15m': ['5m', '15m', '1H', '4H'],
+        '1h': ['15m', '1H', '4H', 'Daily'],
+        '4h': ['1H', '4H', 'Daily', 'Weekly'],
+        '1d': ['4H', 'Daily', 'Weekly', 'Weekly'], // Weekly is placeholder
+    };
+    
+    const analysisTimeframes = mtfMap[timeframe as keyof typeof mtfMap] || mtfMap['15m'];
+    analysisTimeframes.forEach(tf => {
+        if (tf === timeframe) {
+             multiTimeframeAnalysis[tf] = isBullish ? 'Bullish' : 'Bearish';
+        } else {
+             multiTimeframeAnalysis[tf] = trends[Math.floor(Math.random() * 3)];
+        }
+    });
 
     if (parseInt(mode) >= 2) {
         const waveConvergence = (Math.random() * 40 + 60).toFixed(1);
@@ -214,8 +231,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: '5m
     
     const marketStructure = isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL';
 
-    const mtfAlignmentKey = timeframe === '5m' ? '15m' : '4H';
-    const htfAlignmentKey = timeframe === '5m' ? '1H' : 'Daily';
+    const mtfAlignmentKey: Timeframe = timeframe === '5m' ? '15m' : '4h';
+    const htfAlignmentKey: Timeframe = timeframe === '5m' ? '1H' : 'Daily';
     
     const tradersChecklist: TradersChecklist = {
         riskRewardPass: riskReward > 1.5,

@@ -10,11 +10,12 @@ import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
 import { Rocket, BrainCircuit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Timeframe } from '@/types';
 
 const SmartSignalWidget = () => {
   const [symbol, setSymbol] = useState('BTC');
   const [mode, setMode] = useState('3');
-  const [timeframe, setTimeframe] = useState('15m');
+  const [timeframe, setTimeframe] = useState<Timeframe>('15m');
   const [loading, setLoading] = useState(false);
   const [signalData, setSignalData] = useState<SignalData | null>(null);
   const { toast } = useToast();
@@ -27,13 +28,13 @@ const SmartSignalWidget = () => {
     setLoading(true);
     setSignalData(null);
     try {
-      const data = await getSignalData(symbol, mode, timeframe as '5m' | '15m');
+      const data = await getSignalData(symbol, mode, timeframe);
       setSignalData(data);
     } catch (error) {
       console.error("Error generating signal:", error);
       toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
       // Fallback to mock data on error
-      const mockData = await getSignalData(symbol, mode, timeframe as '5m' | '15m', true);
+      const mockData = await getSignalData(symbol, mode, timeframe, true);
       setSignalData(mockData);
     } finally {
       setLoading(false);
@@ -93,13 +94,16 @@ const SmartSignalWidget = () => {
             </div>
             <div>
                 <label htmlFor="timeframeSelect" className="text-sm font-bold text-primary/80">Select Timeframe</label>
-                <Select value={timeframe} onValueChange={setTimeframe}>
+                <Select value={timeframe} onValueChange={(value) => setTimeframe(value as Timeframe)}>
                   <SelectTrigger id="timeframeSelect" className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]">
                     <SelectValue placeholder="Select timeframe" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="15m">15m - Standard</SelectItem>
                     <SelectItem value="5m">5m - Scalping</SelectItem>
+                    <SelectItem value="15m">15m - Intraday</SelectItem>
+                    <SelectItem value="1h">1h - Day Trading</SelectItem>
+                    <SelectItem value="4h">4h - Swing</SelectItem>
+                    <SelectItem value="1d">1d - Positional</SelectItem>
                   </SelectContent>
                 </Select>
             </div>
