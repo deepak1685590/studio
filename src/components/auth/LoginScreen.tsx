@@ -104,6 +104,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ initialStatus, revocationReas
           </Message>
         )}
       </div>
+      <div className="fixed bottom-4 right-4 text-xs text-primary font-mono p-2 rounded animate-flicker" style={{ textShadow: '0 0 2px var(--primary)' }}>
+        <p>Creator: @DG143</p>
+        <p>Trader: @DG143</p>
+      </div>
     </div>
   );
 };
