@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { MultiTimeframeAnalysis as MultiTimeframeAnalysisType } from '@/types';
+import { MultiTimeframeAnalysis as MultiTimeframeAnalysisType, Trend, Timeframe } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -9,7 +9,7 @@ interface MultiTimeframeAnalysisProps {
   data: MultiTimeframeAnalysisType;
 }
 
-const TimeframeBadge: React.FC<{ timeframe: string; trend: 'Bullish' | 'Bearish' | 'Neutral' }> = ({ timeframe, trend }) => {
+const TimeframeBadge: React.FC<{ timeframe: string; trend: Trend }> = ({ timeframe, trend }) => {
   const trendClasses = {
     Bullish: 'bg-green-500/20 text-green-400 border-green-500/50',
     Bearish: 'bg-red-500/20 text-red-400 border-red-500/50',
@@ -27,12 +27,13 @@ const TimeframeBadge: React.FC<{ timeframe: string; trend: 'Bullish' | 'Bearish'
 };
 
 const MultiTimeframeAnalysis: React.FC<MultiTimeframeAnalysisProps> = ({ data }) => {
+  const timeframes = Object.keys(data) as Timeframe[];
+
   return (
     <div className="grid grid-cols-4 gap-4 p-4 bg-black/30 rounded-lg border border-primary/20">
-      <TimeframeBadge timeframe="15m" trend={data['15m']} />
-      <TimeframeBadge timeframe="1H" trend={data['1H']} />
-      <TimeframeBadge timeframe="4H" trend={data['4H']} />
-      <TimeframeBadge timeframe="Daily" trend={data['Daily']} />
+      {timeframes.map(tf => (
+        <TimeframeBadge key={tf} timeframe={tf} trend={data[tf]} />
+      ))}
     </div>
   );
 };

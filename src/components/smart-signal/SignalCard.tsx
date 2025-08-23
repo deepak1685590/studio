@@ -6,7 +6,7 @@ import EliteAiInsight from './EliteAiInsight';
 import QuantumChart from './QuantumChart';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Waves, Droplets, Magnet, Building, GitCommitHorizontal } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Waves, Droplets, Magnet, Building, GitCommitHorizontal, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface SignalCardProps {
@@ -45,9 +45,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
           {data.isBullish ? <TrendingUp /> : <TrendingDown />}
           Elite Signal: {data.symbol} ({data.isBullish ? 'Bullish' : 'Bearish'})
         </h3>
-        <Badge variant="outline" className={`font-bold ${data.isBullish ? 'border-green-500/50 text-green-400' : 'border-red-500/50 text-red-400'}`}>
-          {data.action}
-        </Badge>
+        <div className="flex flex-col items-end gap-2">
+            <Badge variant="outline" className={`font-bold ${data.isBullish ? 'border-green-500/50 text-green-400' : 'border-red-500/50 text-red-400'}`}>
+              {data.action}
+            </Badge>
+            <Badge variant="secondary" className="flex items-center gap-1">
+                <Timer size={14} /> {data.timeframe.toUpperCase()}
+            </Badge>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 font-mono">
@@ -158,7 +163,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
           demandZone: `$${data.demandZone[0]} - $${data.demandZone[1]}`,
           fvg: `$${data.fvg[0]} - $${data.fvg[1]}`,
           volumeImbalance: data.volumeImbalance,
-          multiTimeframeAnalysis: data.multiTimeframeAnalysis,
+          multiTimeframeAnalysis: data.multiTimeframeAnalysis as any, // Cast for AI flow
           chartPatternName: data.chartPattern.name,
         }} />
       )}

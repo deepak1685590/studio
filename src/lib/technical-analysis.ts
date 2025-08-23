@@ -16,9 +16,10 @@ async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { 
 }
 
 
-const getMockKlines = (price: number) => {
+const getMockKlines = (price: number, interval: '5m' | '15m') => {
   const klines = [];
   let currentPrice = price;
+  const intervalMinutes = interval === '5m' ? 5 : 15;
   for (let i = 0; i < 100; i++) {
     const open = currentPrice;
     const high = open * (1 + (Math.random() - 0.45) * 0.02);
@@ -26,7 +27,7 @@ const getMockKlines = (price: number) => {
     const close = (high + low) / 2 * (1 + (Math.random() - 0.5) * 0.01);
     currentPrice = close;
     klines.push([
-      Date.now() - (100 - i) * 15 * 60 * 1000,
+      Date.now() - (100 - i) * intervalMinutes * 60 * 1000,
       open.toFixed(4),
       high.toFixed(4),
       low.toFixed(4),
@@ -37,12 +38,12 @@ const getMockKlines = (price: number) => {
   return klines;
 };
 
-export const getSignalData = async (symbol: string, mode: string, forceMock = false): Promise<SignalData> => {
+export const getSignalData = async (symbol: string, mode: string, timeframe: '5m' | '15m', forceMock = false): Promise<SignalData> => {
     let price, klines: any[], symbolWithUSDT = symbol.toUpperCase() + "USDT";
     
     if (forceMock) {
         price = parseFloat((Math.random() * 70000 + 1000).toFixed(2));
-        klines = getMockKlines(price);
+        klines = getMockKlines(price, timeframe);
     } else {
         try {
             const priceResponse = await fetchWithTimeout(`https://api.binance.com/api/v3/ticker/price?symbol=${symbolWithUSDT}`, { timeout: 3000 });
@@ -50,12 +51,12 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
             const priceData = await priceResponse.json();
             price = parseFloat(priceData.price);
             
-            const klinesResponse = await fetchWithTimeout(`https://api.binance.com/api/v3/klines?symbol=${symbolWithUSDT}&interval=15m&limit=100`, { timeout: 5000 });
+            const klinesResponse = await fetchWithTimeout(`https://api.binance.com/api/v3/klines?symbol=${symbolWithUSDT}&interval=${timeframe}&limit=100`, { timeout: 5000 });
             if (!klinesResponse.ok) throw new Error('Klines fetch failed');
             klines = await klinesResponse.json();
         } catch (err) {
             console.warn("Binance API failed, using mock data.", err);
-            return getSignalData(symbol, mode, true);
+            return getSignalData(symbol, mode, timeframe, true);
         }
     }
 
@@ -92,6 +93,12 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         level_618: (swingHigh - fibRange * 0.618).toFixed(2),
     };
 
+    // Scalping parameters
+    const atrMultiplier = timeframe === '5m' ? 1.5 : 2;
+    const tpMultiplier1 = timeframe === '5m' ? 1.5 : 2;
+    const tpMultiplier2 = timeframe === '5m' ? 3 : 4;
+
+
     // A simple SuperTrend logic
     const superTrendMultiplier = 2.5;
     const upperBand = (swingHigh + swingLow) / 2 + (superTrendMultiplier * atr);
@@ -124,7 +131,7 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         confluenceFactors.push(`✅ Reversal Confirmed`);
     }
 
-    const entryPrice = isBullish ? (price * 0.995) : (price * 1.005);
+    const entryPrice = isBullish ? (price * 0.998) : (price * 1.002);
     const fibValues = Object.values(fibonacciLevels).map(parseFloat);
     const closestFib = fibValues.reduce((prev, curr) => Math.abs(curr - entryPrice) < Math.abs(prev - entryPrice) ? curr : prev);
     if (Math.abs(closestFib - entryPrice) / entryPrice < 0.005) { // within 0.5% of a fib level
@@ -136,12 +143,24 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
     }
     
     const trends: ('Bullish' | 'Bearish' | 'Neutral')[] = ['Bullish', 'Bearish', 'Neutral'];
-    const multiTimeframeAnalysis: MultiTimeframeAnalysis = {
-        '15m': isBullish ? 'Bullish' : 'Bearish',
-        '1H': trends[Math.floor(Math.random() * 3)],
-        '4H': trends[Math.floor(Math.random() * 3)],
-        'Daily': trends[Math.floor(Math.random() * 3)],
-    };
+    let multiTimeframeAnalysis: MultiTimeframeAnalysis;
+
+    if (timeframe === '5m') {
+        multiTimeframeAnalysis = {
+            '1m': trends[Math.floor(Math.random() * 3)],
+            '5m': isBullish ? 'Bullish' : 'Bearish',
+            '15m': trends[Math.floor(Math.random() * 3)],
+            '1H': trends[Math.floor(Math.random() * 3)],
+        };
+    } else {
+        multiTimeframeAnalysis = {
+            '15m': isBullish ? 'Bullish' : 'Bearish',
+            '1H': trends[Math.floor(Math.random() * 3)],
+            '4H': trends[Math.floor(Math.random() * 3)],
+            'Daily': trends[Math.floor(Math.random() * 3)],
+        };
+    }
+
 
     if (parseInt(mode) >= 2) {
         const waveConvergence = (Math.random() * 40 + 60).toFixed(1);
@@ -161,9 +180,9 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
     
     const action = isBullish ? "Buy on Pullback" : "Sell on Rally";
     const entry = entryPrice.toFixed(2);
-    const sl = isBullish ? (parseFloat(entry) - atr*2).toFixed(2) : (parseFloat(entry) + atr*2).toFixed(2);
-    const tp1 = isBullish ? (parseFloat(entry) + atr*2).toFixed(2) : (parseFloat(entry) - atr*2).toFixed(2);
-    const tp2 = isBullish ? (parseFloat(entry) + atr*4).toFixed(2) : (parseFloat(entry) - atr*2).toFixed(2);
+    const sl = isBullish ? (parseFloat(entry) - atr*atrMultiplier).toFixed(2) : (parseFloat(entry) + atr*atrMultiplier).toFixed(2);
+    const tp1 = isBullish ? (parseFloat(entry) + atr*tpMultiplier1).toFixed(2) : (parseFloat(entry) - atr*tpMultiplier1).toFixed(2);
+    const tp2 = isBullish ? (parseFloat(entry) + atr*tpMultiplier2).toFixed(2) : (parseFloat(entry) - atr*tpMultiplier2).toFixed(2);
 
     const risk = Math.abs(parseFloat(entry) - parseFloat(sl));
     const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
@@ -195,9 +214,12 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
     
     const marketStructure = isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL';
 
+    const mtfAlignmentKey = timeframe === '5m' ? '15m' : '4H';
+    const htfAlignmentKey = timeframe === '5m' ? '1H' : 'Daily';
+    
     const tradersChecklist: TradersChecklist = {
         riskRewardPass: riskReward > 1.5,
-        mtfAlignmentPass: multiTimeframeAnalysis['4H'] === (isBullish ? 'Bullish' : 'Bearish') || multiTimeframeAnalysis['Daily'] === (isBullish ? 'Bullish' : 'Bearish'),
+        mtfAlignmentPass: multiTimeframeAnalysis[mtfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish') || multiTimeframeAnalysis[htfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish'),
         volumeConfirmationPass: netFlow > 0 === isBullish,
         entryInZonePass: isBullish 
             ? parseFloat(entry) >= parseFloat(demandZone[0]) && parseFloat(entry) <= parseFloat(demandZone[1])
@@ -210,6 +232,7 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         symbol: symbol.toUpperCase(),
         price,
         mode,
+        timeframe,
         isBullish,
         action,
         entry,

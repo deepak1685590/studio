@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 const SmartSignalWidget = () => {
   const [symbol, setSymbol] = useState('BTC');
   const [mode, setMode] = useState('3');
+  const [timeframe, setTimeframe] = useState('15m');
   const [loading, setLoading] = useState(false);
   const [signalData, setSignalData] = useState<SignalData | null>(null);
   const { toast } = useToast();
@@ -26,13 +27,13 @@ const SmartSignalWidget = () => {
     setLoading(true);
     setSignalData(null);
     try {
-      const data = await getSignalData(symbol, mode);
+      const data = await getSignalData(symbol, mode, timeframe as '5m' | '15m');
       setSignalData(data);
     } catch (error) {
       console.error("Error generating signal:", error);
       toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
       // Fallback to mock data on error
-      const mockData = await getSignalData(symbol, mode, true);
+      const mockData = await getSignalData(symbol, mode, timeframe as '5m' | '15m', true);
       setSignalData(mockData);
     } finally {
       setLoading(false);
@@ -76,18 +77,32 @@ const SmartSignalWidget = () => {
           />
         </div>
         
-        <div>
-            <label htmlFor="modeSelect" className="text-sm font-bold text-primary/80">Select Mode</label>
-            <Select value={mode} onValueChange={setMode}>
-              <SelectTrigger id="modeSelect" className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]">
-                <SelectValue placeholder="Select analysis mode" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">1 - Quick Pulse</SelectItem>
-                <SelectItem value="2">2 - Pro Signal</SelectItem>
-                <SelectItem value="3">3 - Elite Mode (AI-Powered)</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label htmlFor="modeSelect" className="text-sm font-bold text-primary/80">Select Mode</label>
+                <Select value={mode} onValueChange={setMode}>
+                  <SelectTrigger id="modeSelect" className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]">
+                    <SelectValue placeholder="Select analysis mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 - Quick Pulse</SelectItem>
+                    <SelectItem value="2">2 - Pro Signal</SelectItem>
+                    <SelectItem value="3">3 - Elite Mode (AI-Powered)</SelectItem>
+                  </SelectContent>
+                </Select>
+            </div>
+            <div>
+                <label htmlFor="timeframeSelect" className="text-sm font-bold text-primary/80">Select Timeframe</label>
+                <Select value={timeframe} onValueChange={setTimeframe}>
+                  <SelectTrigger id="timeframeSelect" className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]">
+                    <SelectValue placeholder="Select timeframe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="15m">15m - Standard</SelectItem>
+                    <SelectItem value="5m">5m - Scalping</SelectItem>
+                  </SelectContent>
+                </Select>
+            </div>
         </div>
 
         <Button onClick={handleGenerateSignal} disabled={loading} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">

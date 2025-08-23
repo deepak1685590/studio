@@ -15,12 +15,13 @@ export interface ChartDataPoint {
   volatility: number;
 }
 
+export type Trend = 'Bullish' | 'Bearish' | 'Neutral';
+export type Timeframe = '1m' | '5m' | '15m' | '1H' | '4H' | 'Daily';
+
 export interface MultiTimeframeAnalysis {
-  '15m': 'Bullish' | 'Bearish' | 'Neutral';
-  '1H': 'Bullish' | 'Bearish' | 'Neutral';
-  '4H': 'Bullish' | 'Bearish' | 'Neutral';
-  'Daily': 'Bullish' | 'Bearish' | 'Neutral';
+  [key: string]: Trend;
 }
+
 
 export interface ChartPattern {
     name: string;
@@ -46,6 +47,7 @@ export interface SignalData {
   symbol: string;
   price: number;
   mode: string;
+  timeframe: '5m' | '15m';
   isBullish: boolean;
   action: string;
   entry: string;
