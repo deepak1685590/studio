@@ -80,6 +80,9 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
               <ChecklistItem label={`R/R > 1.5 (${data.riskReward.toFixed(1)})`} passed={data.tradersChecklist.riskRewardPass} />
               <ChecklistItem label="HTF Alignment" passed={data.tradersChecklist.mtfAlignmentPass} />
               <ChecklistItem label="Volume Confirmation" passed={data.tradersChecklist.volumeConfirmationPass} />
+              <ChecklistItem label="Entry in Zone" passed={data.tradersChecklist.entryInZonePass} />
+              <ChecklistItem label="Market Structure OK" passed={data.tradersChecklist.structureAligmentPass} />
+              <ChecklistItem label="Liquidity Sweep" passed={data.tradersChecklist.liquiditySweepPass} />
           </div>
         </div>
       </div>

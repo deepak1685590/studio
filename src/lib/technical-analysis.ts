@@ -174,10 +174,17 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         ? bullishPatterns[Math.floor(Math.random() * bullishPatterns.length)] 
         : bearishPatterns[Math.floor(Math.random() * bearishPatterns.length)];
     
+    const marketStructure = isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL';
+
     const tradersChecklist: TradersChecklist = {
         riskRewardPass: riskReward > 1.5,
         mtfAlignmentPass: multiTimeframeAnalysis['4H'] === (isBullish ? 'Bullish' : 'Bearish') || multiTimeframeAnalysis['Daily'] === (isBullish ? 'Bullish' : 'Bearish'),
         volumeConfirmationPass: lastVolume > avgVolume,
+        entryInZonePass: isBullish 
+            ? parseFloat(entry) >= parseFloat(demandZone[0]) && parseFloat(entry) <= parseFloat(demandZone[1])
+            : parseFloat(entry) >= parseFloat(supplyZone[0]) && parseFloat(entry) <= parseFloat(supplyZone[1]),
+        structureAligmentPass: Math.random() > 0.3, // 70% chance of passing
+        liquiditySweepPass: Math.random() > 0.4, // 60% chance of passing
     };
 
     return {
@@ -206,7 +213,7 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         supplyZone,
         fvg,
         liquidityPool: isBullish ? `$${(swingLow * 0.99).toFixed(2)}` : `$${(swingHigh * 1.01).toFixed(2)}`,
-        marketStructure: isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL',
+        marketStructure,
         chartData,
         multiTimeframeAnalysis,
         reversalConfirmed,
