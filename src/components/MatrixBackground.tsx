@@ -51,7 +51,7 @@ const MatrixBackground = () => {
 
       ctx.strokeStyle = '#00FFFF';
       ctx.lineWidth = 1.5;
-       ctx.shadowBlur = 4;
+      ctx.shadowBlur = 4;
       ctx.shadowColor = '#00FFFF';
 
 
