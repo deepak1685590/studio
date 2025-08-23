@@ -22,10 +22,9 @@ const MatrixBackground = () => {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
-    const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const nums = '0123456789';
-    const alphabet = katakana + latin + nums;
+    const cryptoSymbols = '₿ΞŁÐ₳$€¥£₵₣₠₴₸₹₽₾';
+    const otherChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const alphabet = cryptoSymbols + otherChars;
 
     const fontSize = 16;
     const columns = Math.floor(canvas.width / fontSize);
