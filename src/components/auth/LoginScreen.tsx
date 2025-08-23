@@ -62,7 +62,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ initialStatus, revocationReas
     <div className="flex items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-md p-8 space-y-4 border-2 border-primary rounded-xl bg-black/70 backdrop-blur-sm text-center shadow-[0_0_25px_rgba(0,230,230,0.5)]">
         <h1 className="font-headline text-5xl text-primary animate-flicker" style={{ textShadow: '0 0 5px var(--primary), 0 0 15px var(--primary)' }}>
-          <span className="text-foreground">[</span>NEXUS·AI<span className="text-foreground">]</span>
+          NEXUS·AI
         </h1>
         <h2 className="font-headline text-2xl flex items-center justify-center gap-2 text-primary/80">
           <KeyRound /> System Access
