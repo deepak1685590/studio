@@ -120,7 +120,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
         <div>
-          <SectionHeader icon={<BarChart />}>Volume Analysis</SectionHeader>
+          <SectionHeader icon={<Magnet />}>Volume Analysis</SectionHeader>
            <div className="space-y-1">
             <LevelItem label="Buyer Volume" value={`${data.buyVolume} units`} />
             <LevelItem label="Seller Volume" value={`${data.sellVolume} units`} />

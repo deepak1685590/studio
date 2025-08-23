@@ -148,6 +148,18 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         confluenceFactors.push(`✅ Reversal Confirmed`);
     }
 
+    let whaleVolumeAlert: string | undefined = undefined;
+    const lastVolume = parseFloat(lastCandle[5]);
+    const whaleThreshold = 4; // 4x average volume
+    if (lastVolume > avgVolume * whaleThreshold) {
+        const lastOpen = parseFloat(lastCandle[1]);
+        const lastClose = parseFloat(lastCandle[4]);
+        const isBullishWhale = lastClose > lastOpen;
+        whaleVolumeAlert = `🚨 WHALE SIGHTING: Massive ${isBullishWhale ? 'Bullish (Buy)' : 'Bearish (Sell)'} volume detected!`;
+        confluenceFactors.unshift(whaleVolumeAlert); // Add to the top of the list
+    }
+
+
     const entryPrice = isBullish ? (price * 0.998) : (price * 1.002);
     const fibValues = Object.values(fibonacciLevels).map(parseFloat);
     const closestFib = fibValues.reduce((prev, curr) => Math.abs(curr - entryPrice) < Math.abs(prev - entryPrice) ? curr : prev);
@@ -162,15 +174,15 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const trends: ('Bullish' | 'Bearish' | 'Neutral')[] = ['Bullish', 'Bearish', 'Neutral'];
     let multiTimeframeAnalysis: MultiTimeframeAnalysis = {};
 
-    const mtfMap: {[key in Timeframe]: Timeframe[]} = {
-        '5m': ['1m', '5m', '15m', '1H'],
-        '15m': ['5m', '15m', '1H', '4H'],
-        '1h': ['15m', '1H', '4H', 'Daily'],
-        '4h': ['1H', '4H', 'Daily', 'Weekly'],
-        '1d': ['4H', 'Daily', 'Weekly', 'Weekly'], // Weekly is placeholder
+    const mtfMap: {[key in Timeframe]?: Timeframe[]} = {
+        '5m': ['5m', '15m', '1h', '4h'],
+        '15m': ['15m', '1h', '4h', 'Daily'],
+        '1h': ['1h', '4h', 'Daily', 'Weekly'],
+        '4h': ['4h', 'Daily', 'Weekly', 'Weekly'],
+        '1d': ['Daily', 'Weekly', 'Weekly', 'Weekly'],
     };
     
-    const analysisTimeframes = mtfMap[timeframe as keyof typeof mtfMap] || mtfMap['15m'];
+    const analysisTimeframes = mtfMap[timeframe] || mtfMap['15m']!;
     analysisTimeframes.forEach(tf => {
         if (tf === timeframe) {
              multiTimeframeAnalysis[tf] = isBullish ? 'Bullish' : 'Bearish';
@@ -279,5 +291,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         chartPattern,
         tradersChecklist,
         fibonacciLevels,
+        whaleVolumeAlert,
     };
 };

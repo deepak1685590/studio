@@ -16,7 +16,7 @@ export interface ChartDataPoint {
 }
 
 export type Trend = 'Bullish' | 'Bearish' | 'Neutral';
-export type Timeframe = '1m' | '5m' | '15m' | '1h' | '4h' | '1d' | 'Daily' | 'Weekly';
+export type Timeframe = '5m' | '15m' | '1h' | '4h' | '1d' | 'Daily' | 'Weekly';
 
 export interface MultiTimeframeAnalysis {
   [key: string]: Trend;
@@ -77,4 +77,5 @@ export interface SignalData {
   chartPattern: ChartPattern;
   tradersChecklist: TradersChecklist;
   fibonacciLevels: FibonacciLevels;
+  whaleVolumeAlert?: string;
 }
