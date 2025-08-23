@@ -27,8 +27,6 @@ const getMockKlines = (price: number, interval: Timeframe) => {
     '1H': 60,
     '4H': 240,
     '1d': 1440,
-    'Daily': 1440, // For compatibility
-    'Weekly': 10080
   };
   const intervalMinutes = intervalMap[interval] || 15;
 
@@ -185,22 +183,22 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     let multiTimeframeAnalysis: MultiTimeframeAnalysis = {};
 
     const mtfMap: {[key in Timeframe]?: (keyof MultiTimeframeAnalysis)[]} = {
-        '5m': ['15m', '1H', '4H'],
-        '15m': ['15m', '1H', '4H', 'Daily'],
-        '1H': ['1H', '4H', 'Daily', 'Weekly'],
-        '4H': ['4H', 'Daily', 'Weekly'],
-        '1d': ['Daily', 'Weekly'],
+        '5m': ['15m', '1H'],
+        '15m': ['1H', '4H', 'Daily'],
+        '1H': ['4H', 'Daily'],
+        '4H': ['Daily', 'Weekly'],
+        '1d': ['Weekly'],
     };
     
     const analysisTimeframes = mtfMap[timeframe] || mtfMap['15m']!;
     
-    // Add the current timeframe to the analysis object
-    const currentTfKey = timeframe === '1d' ? 'Daily' : timeframe === '1H' ? '1H' : timeframe === '4H' ? '4H' : timeframe;
+    // Set the trend for the current timeframe
+    const currentTfKey = timeframe === '1d' ? 'Daily' : timeframe.toUpperCase() as keyof MultiTimeframeAnalysis;
     multiTimeframeAnalysis[currentTfKey] = isBullish ? 'Bullish' : 'Bearish';
-
-
+    
+    // Set trends for other relevant timeframes
     analysisTimeframes.forEach(tf => {
-        if (!multiTimeframeAnalysis[tf]) { // Avoid overwriting the current timeframe's trend
+        if (!multiTimeframeAnalysis[tf]) {
             multiTimeframeAnalysis[tf] = trends[Math.floor(Math.random() * 3)];
         }
     });
@@ -212,7 +210,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             multiTimeframeAnalysis[tf] = 'Neutral';
         }
     });
-
 
     if (parseInt(mode) >= 2) {
         const waveConvergence = (Math.random() * 40 + 60).toFixed(1);
