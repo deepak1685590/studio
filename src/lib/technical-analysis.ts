@@ -59,7 +59,6 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         }
     }
 
-    const closes = klines.map(k => parseFloat(k[4]));
     const highPrices = klines.map(k => parseFloat(k[2]));
     const lowPrices = klines.map(k => parseFloat(k[3]));
 
@@ -144,7 +143,7 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
     const entry = isBullish ? (price * 0.995).toFixed(2) : (price * 1.005).toFixed(2);
     const sl = isBullish ? (parseFloat(entry) - atr*2).toFixed(2) : (parseFloat(entry) + atr*2).toFixed(2);
     const tp1 = isBullish ? (parseFloat(entry) + atr*2).toFixed(2) : (parseFloat(entry) - atr*2).toFixed(2);
-    const tp2 = isBullish ? (parseFloat(entry) + atr*4).toFixed(2) : (parseFloat(entry) - atr*4).toFixed(2);
+    const tp2 = isBullish ? (parseFloat(entry) + atr*4).toFixed(2) : (parseFloat(entry) - atr*2).toFixed(2);
 
     const risk = Math.abs(parseFloat(entry) - parseFloat(sl));
     const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
