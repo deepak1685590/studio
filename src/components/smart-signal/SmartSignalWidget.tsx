@@ -20,6 +20,7 @@ const SmartSignalWidget = () => {
   const [signalData, setSignalData] = useState<SignalData | null>(null);
   const [realtimePrice, setRealtimePrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
+  const { toast } = useToast();
 
   const ws = useRef<WebSocket | null>(null);
 
