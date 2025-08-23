@@ -6,7 +6,7 @@ import EliteAiInsight from './EliteAiInsight';
 import QuantumChart from './QuantumChart';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Waves } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Waves, Droplets, Magnet, Building, GitCommitHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface SignalCardProps {
@@ -102,7 +102,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
             </div>
           </div>
           <div>
-            <SectionHeader>Key Levels</SectionHeader>
+            <SectionHeader icon={<GitCommitHorizontal />}>Key Levels</SectionHeader>
             <div className="space-y-1">
                 <LevelItem label="Optimal Entry Zone" value={`$${entryZone[0]} - $${entryZone[1]}`} />
                 <LevelItem label="Daily Pivot" value={data.pivot} />
@@ -115,7 +115,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
         <div>
-          <SectionHeader>Volume Analysis</SectionHeader>
+          <SectionHeader icon={<BarChart />}>Volume Analysis</SectionHeader>
            <div className="space-y-1">
             <LevelItem label="Buyer Volume" value={`${data.buyVolume} units`} />
             <LevelItem label="Seller Volume" value={`${data.sellVolume} units`} />
@@ -123,7 +123,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
           </div>
         </div>
         <div>
-            <SectionHeader>Supply & Demand</SectionHeader>
+            <SectionHeader icon={<Building />}>Supply & Demand</SectionHeader>
             <div className="space-y-1">
                 <LevelItem label="Demand Zone" value={`$${data.demandZone[0]} - $${data.demandZone[1]}`} />
                 <LevelItem label="Supply Zone" value={`$${data.supplyZone[0]} - $${data.supplyZone[1]}`} />
@@ -134,7 +134,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
       
        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
         <div>
-          <SectionHeader>Liquidity & Structure</SectionHeader>
+          <SectionHeader icon={<Droplets />}>Liquidity & Structure</SectionHeader>
            <div className="space-y-1">
             <LevelItem label="Liquidity Pool" value={data.liquidityPool} />
             <LevelItem label="Market Structure" value={data.marketStructure} />

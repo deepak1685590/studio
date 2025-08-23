@@ -72,10 +72,10 @@ Structure your analysis paragraph as follows:
 - Start with: "Strong [bullish/bearish] setup presents itself..."
 - Mention price, entry, SL, TP, and confluence count.
 - Highlight the detected chart pattern: {{chartPatternName}}.
-- Comment on key levels like demand zones and FVGs.
+- Comment on key smart money levels like demand zones ({{demandZone}}) and Fair Value Gaps ({{fvg}}).
 - Crucially, comment on the multi-timeframe alignment. Note if higher timeframes (4H, Daily) support the 15m signal.
 - **Integrate the news sentiment.** State whether the headlines are providing "tailwinds" (supporting the trade) or "headwinds" (contradicting the trade).
-- Note volume bias.
+- Note volume bias based on {{volumeImbalance}}.
 - End with a sharp, confident conclusion about the opportunity.
 
 Tone: Professional, urgent, elite. Use Markdown formatting.

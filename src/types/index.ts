@@ -37,11 +37,9 @@ export interface TradersChecklist {
 }
 
 export interface FibonacciLevels {
-    level_236: string;
     level_382: string;
     level_500: string;
     level_618: string;
-    level_786: string;
 }
 
 export interface SignalData {

@@ -87,11 +87,9 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
     // Fibonacci Retracement Levels
     const fibRange = swingHigh - swingLow;
     const fibonacciLevels: FibonacciLevels = {
-        level_236: (swingHigh - fibRange * 0.236).toFixed(2),
         level_382: (swingHigh - fibRange * 0.382).toFixed(2),
         level_500: (swingHigh - fibRange * 0.5).toFixed(2),
         level_618: (swingHigh - fibRange * 0.618).toFixed(2),
-        level_786: (swingHigh - fibRange * 0.786).toFixed(2),
     };
 
     // A simple SuperTrend logic
@@ -106,10 +104,12 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
 
     const recentVolumes = klines.slice(-20).map(k => parseFloat(k[5]));
     const avgVolume = recentVolumes.reduce((a, b) => a + b, 0) / recentVolumes.length;
-    const lastVolume = recentVolumes[recentVolumes.length - 1];
-    const volumeImbalance = lastVolume > avgVolume * 1.2 
-      ? (isBullish ? "🟢 High Buying Volume" : "🔴 High Selling Volume") 
-      : "⚪️ Average Volume";
+    
+    const buyVolume = avgVolume * (isBullish ? 1.2 : 0.8) * (1 + (Math.random() - 0.5) * 0.2);
+    const sellVolume = avgVolume * (isBullish ? 0.8 : 1.2) * (1 + (Math.random() - 0.5) * 0.2);
+    const netFlow = buyVolume - sellVolume;
+
+    const volumeImbalance = netFlow > 0 ? `🟢 Buyers in Control (+${Math.round(netFlow)} units)` : `🔴 Sellers in Control (${Math.round(netFlow)} units)`;
       
     const reversalConfirmed = Math.random() > 0.6;
 
@@ -198,7 +198,7 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
     const tradersChecklist: TradersChecklist = {
         riskRewardPass: riskReward > 1.5,
         mtfAlignmentPass: multiTimeframeAnalysis['4H'] === (isBullish ? 'Bullish' : 'Bearish') || multiTimeframeAnalysis['Daily'] === (isBullish ? 'Bullish' : 'Bearish'),
-        volumeConfirmationPass: lastVolume > avgVolume,
+        volumeConfirmationPass: netFlow > 0 === isBullish,
         entryInZonePass: isBullish 
             ? parseFloat(entry) >= parseFloat(demandZone[0]) && parseFloat(entry) <= parseFloat(demandZone[1])
             : parseFloat(entry) >= parseFloat(supplyZone[0]) && parseFloat(entry) <= parseFloat(supplyZone[1]),
@@ -225,8 +225,8 @@ export const getSignalData = async (symbol: string, mode: string, forceMock = fa
         pivot: pivot.toFixed(2),
         s1: s1.toFixed(2),
         r1: r1.toFixed(2),
-        buyVolume: (avgVolume * 1.1).toFixed(0),
-        sellVolume: (avgVolume * 0.9).toFixed(0),
+        buyVolume: buyVolume.toFixed(0),
+        sellVolume: sellVolume.toFixed(0),
         volumeImbalance,
         demandZone,
         supplyZone,
