@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { MultiTimeframeAnalysis as MultiTimeframeAnalysisType, Trend, Timeframe } from '@/types';
+import { MultiTimeframeAnalysis as MultiTimeframeAnalysisType, Trend } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -27,12 +27,13 @@ const TimeframeBadge: React.FC<{ timeframe: string; trend: Trend }> = ({ timefra
 };
 
 const MultiTimeframeAnalysis: React.FC<MultiTimeframeAnalysisProps> = ({ data }) => {
-  const timeframes = Object.keys(data) as Timeframe[];
+  const timeframes: (keyof MultiTimeframeAnalysisType)[] = ['15m', '1H', '4H', 'Daily'];
+  const availableTimeframes = timeframes.filter(tf => data[tf]);
 
   return (
     <div className="grid grid-cols-4 gap-4 p-4 bg-black/30 rounded-lg border border-primary/20">
-      {timeframes.map(tf => (
-        <TimeframeBadge key={tf} timeframe={tf} trend={data[tf]} />
+      {availableTimeframes.map(tf => (
+        <TimeframeBadge key={tf} timeframe={tf} trend={data[tf]!} />
       ))}
     </div>
   );

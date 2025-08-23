@@ -99,7 +99,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
           <div>
             <SectionHeader icon={<Waves />}>Fibonacci Re-Entry Levels</SectionHeader>
-            <div className="space-y-1">
+            <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
                 <LevelItem label="Aggressive Entry (38.2%)" value={data.fibonacciLevels.level_382} />
                 <LevelItem label="Standard Entry (50.0%)" value={data.fibonacciLevels.level_500} />
                 <LevelItem label="Conservative Entry (61.8%)" value={data.fibonacciLevels.level_618} />
@@ -107,7 +107,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
           </div>
           <div>
             <SectionHeader icon={<GitCommitHorizontal />}>Key Levels</SectionHeader>
-            <div className="space-y-1">
+            <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
                 <LevelItem label="Daily Pivot" value={data.pivot} />
                 <LevelItem label="Support 1" value={data.s1} />
                 <LevelItem label="Resistance 1" value={data.r1} />
@@ -119,7 +119,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
         <div>
           <SectionHeader icon={<Magnet />}>Volume Analysis</SectionHeader>
-           <div className="space-y-1">
+           <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
             <LevelItem label="Buyer Volume" value={`${data.buyVolume} units`} />
             <LevelItem label="Seller Volume" value={`${data.sellVolume} units`} />
             <LevelItem label="Net Flow" value={data.volumeImbalance} />
@@ -127,7 +127,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
         </div>
         <div>
             <SectionHeader icon={<Building />}>Supply & Demand</SectionHeader>
-            <div className="space-y-1">
+            <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
                 <LevelItem label="Demand Zone" value={`$${data.demandZone[0]} - $${data.demandZone[1]}`} />
                 <LevelItem label="Supply Zone" value={`$${data.supplyZone[0]} - $${data.supplyZone[1]}`} />
                 <LevelItem label="Fair Value Gap" value={`$${data.fvg[0]} - $${data.fvg[1]}`} />
@@ -138,7 +138,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
         <div>
           <SectionHeader icon={<Droplets />}>Liquidity & Structure</SectionHeader>
-           <div className="space-y-1">
+           <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
             <LevelItem label="Liquidity Pool" value={data.liquidityPool} />
             <LevelItem label="Market Structure" value={data.marketStructure} />
             <LevelItem label="Swing High" value={data.swingHigh} />
@@ -161,7 +161,12 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
           demandZone: `$${data.demandZone[0]} - $${data.demandZone[1]}`,
           fvg: `$${data.fvg[0]} - $${data.fvg[1]}`,
           volumeImbalance: data.volumeImbalance,
-          multiTimeframeAnalysis: data.multiTimeframeAnalysis as any, // Cast for AI flow
+          multiTimeframeAnalysis: {
+            '15m': data.multiTimeframeAnalysis['15m'] || 'Neutral',
+            '1H': data.multiTimeframeAnalysis['1H'] || 'Neutral',
+            '4H': data.multiTimeframeAnalysis['4H'] || 'Neutral',
+            'Daily': data.multiTimeframeAnalysis['Daily'] || 'Neutral',
+          },
           chartPatternName: data.chartPattern.name,
         }} />
       )}

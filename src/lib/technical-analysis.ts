@@ -24,8 +24,8 @@ const getMockKlines = (price: number, interval: Timeframe) => {
     '1m': 1,
     '5m': 5,
     '15m': 15,
-    '1h': 60,
-    '4h': 240,
+    '1H': 60,
+    '4H': 240,
     '1d': 1440,
     'Daily': 1440, // For compatibility
     'Weekly': 10080
@@ -53,6 +53,16 @@ const getMockKlines = (price: number, interval: Timeframe) => {
 export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, forceMock = false): Promise<SignalData> => {
     let price, klines: any[], symbolWithUSDT = symbol.toUpperCase() + "USDT";
     
+    // Map our Timeframe type to Binance's interval strings
+    const timeframeToInterval = {
+      '5m': '5m',
+      '15m': '15m',
+      '1H': '1h',
+      '4H': '4h',
+      '1d': '1d',
+    };
+    const apiInterval = timeframeToInterval[timeframe] || '15m';
+
     if (forceMock) {
         price = parseFloat((Math.random() * 70000 + 1000).toFixed(2));
         klines = getMockKlines(price, timeframe);
@@ -63,7 +73,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             const priceData = await priceResponse.json();
             price = parseFloat(priceData.price);
             
-            const klinesResponse = await fetchWithTimeout(`https://api.binance.com/api/v3/klines?symbol=${symbolWithUSDT}&interval=${timeframe}&limit=100`, { timeout: 5000 });
+            const klinesResponse = await fetchWithTimeout(`https://api.binance.com/api/v3/klines?symbol=${symbolWithUSDT}&interval=${apiInterval}&limit=100`, { timeout: 5000 });
             if (!klinesResponse.ok) throw new Error('Klines fetch failed');
             klines = await klinesResponse.json();
         } catch (err) {
@@ -109,8 +119,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const timeframeMultipliers = {
         '5m': { atr: 1.5, tp1: 1.5, tp2: 3 },
         '15m': { atr: 2, tp1: 2, tp2: 4 },
-        '1h': { atr: 2.5, tp1: 2.5, tp2: 5 },
-        '4h': { atr: 3, tp1: 3, tp2: 6 },
+        '1H': { atr: 2.5, tp1: 2.5, tp2: 5 },
+        '4H': { atr: 3, tp1: 3, tp2: 6 },
         '1d': { atr: 3.5, tp1: 3.5, tp2: 7 },
     };
     const multipliers = timeframeMultipliers[timeframe as keyof typeof timeframeMultipliers] || timeframeMultipliers['15m'];
@@ -174,22 +184,35 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const trends: ('Bullish' | 'Bearish' | 'Neutral')[] = ['Bullish', 'Bearish', 'Neutral'];
     let multiTimeframeAnalysis: MultiTimeframeAnalysis = {};
 
-    const mtfMap: {[key in Timeframe]?: Timeframe[]} = {
-        '5m': ['5m', '15m', '1h', '4h'],
-        '15m': ['15m', '1h', '4h', 'Daily'],
-        '1h': ['1h', '4h', 'Daily', 'Weekly'],
-        '4h': ['4h', 'Daily', 'Weekly', 'Weekly'],
-        '1d': ['Daily', 'Weekly', 'Weekly', 'Weekly'],
+    const mtfMap: {[key in Timeframe]?: (keyof MultiTimeframeAnalysis)[]} = {
+        '5m': ['15m', '1H', '4H'],
+        '15m': ['15m', '1H', '4H', 'Daily'],
+        '1H': ['1H', '4H', 'Daily', 'Weekly'],
+        '4H': ['4H', 'Daily', 'Weekly'],
+        '1d': ['Daily', 'Weekly'],
     };
     
     const analysisTimeframes = mtfMap[timeframe] || mtfMap['15m']!;
+    
+    // Add the current timeframe to the analysis object
+    const currentTfKey = timeframe === '1d' ? 'Daily' : timeframe;
+    multiTimeframeAnalysis[currentTfKey] = isBullish ? 'Bullish' : 'Bearish';
+
+
     analysisTimeframes.forEach(tf => {
-        if (tf === timeframe) {
-             multiTimeframeAnalysis[tf] = isBullish ? 'Bullish' : 'Bearish';
-        } else {
-             multiTimeframeAnalysis[tf] = trends[Math.floor(Math.random() * 3)];
+        if (!multiTimeframeAnalysis[tf]) { // Avoid overwriting the current timeframe's trend
+            multiTimeframeAnalysis[tf] = trends[Math.floor(Math.random() * 3)];
         }
     });
+    
+    // Ensure all required fields for the AI are present, even if just neutral
+    const requiredTfs: (keyof MultiTimeframeAnalysis)[] = ['15m', '1H', '4H', 'Daily'];
+    requiredTfs.forEach(tf => {
+        if (!multiTimeframeAnalysis[tf]) {
+            multiTimeframeAnalysis[tf] = 'Neutral';
+        }
+    });
+
 
     if (parseInt(mode) >= 2) {
         const waveConvergence = (Math.random() * 40 + 60).toFixed(1);
@@ -243,8 +266,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     const marketStructure = isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL';
 
-    const mtfAlignmentKey: Timeframe = timeframe === '5m' ? '15m' : '4h';
-    const htfAlignmentKey: Timeframe = timeframe === '5m' ? '1H' : 'Daily';
+    const mtfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '5m' ? '15m' : '4H';
+    const htfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '1H' ? '4H' : 'Daily';
     
     const tradersChecklist: TradersChecklist = {
         riskRewardPass: riskReward > 1.5,
