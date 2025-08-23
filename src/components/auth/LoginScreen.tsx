@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { KeyRound, LogIn, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import QuoteRotator from './QuoteRotator';
 
 interface LoginScreenProps {
   initialStatus?: 'pending' | 'revoked' | null;
@@ -60,7 +61,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ initialStatus, revocationReas
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
-      <div className="w-full max-w-md p-8 space-y-4 border-2 border-primary rounded-xl bg-black/70 backdrop-blur-sm text-center shadow-[0_0_25px_rgba(0,230,230,0.5)]">
+      <QuoteRotator />
+      <div className="w-full max-w-md p-8 space-y-4 border-2 border-primary rounded-xl bg-black/70 backdrop-blur-sm text-center shadow-[0_0_25px_rgba(0,230,230,0.5)] z-10">
         <h1 className="font-headline text-5xl text-primary animate-flicker" style={{ textShadow: '0 0 5px var(--primary), 0 0 15px var(--primary)' }}>
           NEXUS·AI
         </h1>
