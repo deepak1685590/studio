@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 
 interface EliteAiInsightProps {
-  data: Omit<GenerateAiInsightInput, 'chartPatternName'> & { chartPatternName: string };
+  data: GenerateAiInsightInput;
 }
 
 const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
@@ -17,28 +17,22 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // A simple debounce/delay to prevent spamming the AI on rapid price changes
-    const handler = setTimeout(() => {
-      const fetchInsight = async () => {
-        setLoading(true);
-        try {
-          // Pass the most current price from the data prop
-          const result = await generateAiInsight(data);
-          setInsight(result.insight);
-        } catch (error) {
-          console.error('AI Insight Error:', error);
-          setInsight(`Strong ${data.isBullish ? 'bullish' : 'bearish'} setup in ${data.symbol} at $${data.price.toFixed(2)}. ${data.confluenceCount} confluence factors with supportive multi-timeframe analysis. Entry: $${data.entry}, SL: $${data.sl}, TP1: $${data.tp1}. Institutional-grade opportunity.`);
-        }
-        setLoading(false);
-      };
-
-      fetchInsight();
-    }, 500); // Wait 500ms after the last data change
-
-    return () => {
-      clearTimeout(handler);
+    const fetchInsight = async () => {
+      setLoading(true);
+      try {
+        const result = await generateAiInsight(data);
+        setInsight(result.insight);
+      } catch (error) {
+        console.error('AI Insight Error:', error);
+        // Fallback message in case of API error (like rate limiting)
+        setInsight(`Strong ${data.isBullish ? 'bullish' : 'bearish'} setup in ${data.symbol} at $${data.price.toFixed(2)}. ${data.confluenceCount} confluence factors with supportive multi-timeframe analysis. Entry: $${data.entry}, SL: $${data.sl}, TP1: $${data.tp1}. Institutional-grade opportunity.`);
+      }
+      setLoading(false);
     };
-  }, [data]);
+
+    fetchInsight();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.symbol, data.entry]); // Only re-run when the symbol or initial entry changes, not on every price tick.
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(insight);
