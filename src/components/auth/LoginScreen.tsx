@@ -60,9 +60,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ initialStatus, revocationReas
   );
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4">
+    <div className="flex flex-col items-center justify-start min-h-screen p-4 pt-24">
       <QuoteRotator />
-      <div className="w-full max-w-md p-8 space-y-4 border-2 border-primary rounded-xl bg-black/70 backdrop-blur-sm text-center shadow-[0_0_25px_rgba(0,230,230,0.5)] z-10">
+      <div className="w-full max-w-md p-8 space-y-4 border-2 border-primary rounded-xl bg-black/70 backdrop-blur-sm text-center shadow-[0_0_25px_rgba(0,230,230,0.5)] z-10 mt-12">
         <h1 className="font-headline text-5xl text-primary animate-flicker" style={{ textShadow: '0 0 5px var(--primary), 0 0 15px var(--primary)' }}>
           NEXUS·AI
         </h1>
