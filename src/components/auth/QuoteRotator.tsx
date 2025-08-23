@@ -40,8 +40,11 @@ const quotes = [
   "The way to make money is to buy when blood is running in the streets."
 ];
 
+const NEON_COLORS = ['#00E6E6', '#8A2BE2', '#007BFF', '#FF00FF'];
+
 const QuoteRotator = () => {
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
+  const [currentColorIndex, setCurrentColorIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
 
   useEffect(() => {
@@ -49,6 +52,7 @@ const QuoteRotator = () => {
       setIsFading(true);
       setTimeout(() => {
         setCurrentQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length);
+        setCurrentColorIndex((prevIndex) => (prevIndex + 1) % NEON_COLORS.length);
         setIsFading(false);
       }, 1000); // Fade-out duration
     }, 5000); // Time each quote is displayed
@@ -57,13 +61,16 @@ const QuoteRotator = () => {
   }, []);
 
   return (
-    <div className="absolute top-16 inset-x-0 flex items-start justify-center pointer-events-none">
+    <div className="absolute top-8 md:top-16 inset-x-0 flex items-start justify-center pointer-events-none">
       <p 
         className={cn(
-          "text-2xl md:text-3xl font-headline text-center text-primary/70 transition-opacity duration-1000 ease-in-out max-w-3xl px-4",
+          "text-2xl md:text-3xl font-headline text-center transition-opacity duration-1000 ease-in-out max-w-3xl px-4",
           isFading ? "opacity-0" : "opacity-100"
         )}
-        style={{ textShadow: '0 0 8px hsl(var(--primary) / 0.5)' }}
+        style={{
+          color: NEON_COLORS[currentColorIndex],
+          textShadow: `0 0 8px ${NEON_COLORS[currentColorIndex]}90`,
+        }}
       >
         "{quotes[currentQuoteIndex]}"
       </p>
