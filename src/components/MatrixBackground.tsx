@@ -11,6 +11,8 @@ const LOGO_PATHS = {
 
 type LogoPaths = keyof typeof LOGO_PATHS;
 
+const NEON_COLORS = ['#00E6E6', '#8A2BE2', '#007BFF', '#FF00FF'];
+
 const MatrixBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -37,11 +39,12 @@ const MatrixBackground = () => {
     const fontSize = 20; // Increased size for logos
     const columns = Math.floor(canvas.width / fontSize);
 
-    const rainDrops: { y: number; logoIndex: number }[] = [];
+    const rainDrops: { y: number; logoIndex: number; color: string }[] = [];
     for (let x = 0; x < columns; x++) {
       rainDrops[x] = {
         y: 1,
-        logoIndex: Math.floor(Math.random() * compiledPaths.length)
+        logoIndex: Math.floor(Math.random() * compiledPaths.length),
+        color: NEON_COLORS[Math.floor(Math.random() * NEON_COLORS.length)]
       };
     }
 
@@ -49,18 +52,19 @@ const MatrixBackground = () => {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.strokeStyle = '#00FFFF';
-      ctx.lineWidth = 1.5;
-      ctx.shadowBlur = 4;
-      ctx.shadowColor = '#00FFFF';
-
-
       for (let i = 0; i < rainDrops.length; i++) {
-        const path = compiledPaths[rainDrops[i].logoIndex];
+        const drop = rainDrops[i];
+        const path = compiledPaths[drop.logoIndex];
         
         ctx.save();
+        
+        ctx.strokeStyle = drop.color;
+        ctx.lineWidth = 1.5;
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = drop.color;
+        
         // Translate to the drop's position
-        ctx.translate(i * fontSize, rainDrops[i].y * fontSize);
+        ctx.translate(i * fontSize, drop.y * fontSize);
         // Scale the logo to fit within the font size
         const scale = fontSize / 100; 
         ctx.scale(scale, scale);
@@ -69,11 +73,12 @@ const MatrixBackground = () => {
         
         ctx.restore();
 
-        if (rainDrops[i].y * fontSize > canvas.height && Math.random() > 0.975) {
-          rainDrops[i].y = 0;
-          rainDrops[i].logoIndex = Math.floor(Math.random() * compiledPaths.length);
+        if (drop.y * fontSize > canvas.height && Math.random() > 0.975) {
+          drop.y = 0;
+          drop.logoIndex = Math.floor(Math.random() * compiledPaths.length);
+          drop.color = NEON_COLORS[Math.floor(Math.random() * NEON_COLORS.length)];
         }
-        rainDrops[i].y++;
+        drop.y++;
       }
       animationFrameId = window.requestAnimationFrame(draw);
     };
