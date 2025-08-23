@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,7 +18,64 @@ const SmartSignalWidget = () => {
   const [timeframe, setTimeframe] = useState<Timeframe>('15m');
   const [loading, setLoading] = useState(false);
   const [signalData, setSignalData] = useState<SignalData | null>(null);
-  const { toast } = useToast();
+  const [realtimePrice, setRealtimePrice] = useState<number | null>(null);
+  const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
+
+  const ws = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    if (!signalData) return;
+
+    // Close previous connection if it exists
+    if (ws.current) {
+      ws.current.close();
+    }
+    
+    // Reset price for new symbol
+    setRealtimePrice(null);
+    setPriceDirection('neutral');
+
+    const wsSymbol = signalData.symbol.toLowerCase() + 'usdt';
+    const socket = new WebSocket(`wss://stream.binance.com:9443/ws/${wsSymbol}@trade`);
+
+    socket.onopen = () => {
+      console.log(`WebSocket connected for ${wsSymbol}`);
+    };
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      const newPrice = parseFloat(data.p);
+      
+      setRealtimePrice(prevPrice => {
+        if(prevPrice !== null) {
+            if (newPrice > prevPrice) {
+                setPriceDirection('up');
+            } else if (newPrice < prevPrice) {
+                setPriceDirection('down');
+            }
+        }
+        return newPrice;
+      });
+    };
+
+    socket.onerror = (error) => {
+      console.error('WebSocket Error:', error);
+      toast({ title: "WebSocket Error", description: "Could not connect to live price feed.", variant: "destructive" });
+    };
+
+    socket.onclose = () => {
+      console.log(`WebSocket disconnected for ${wsSymbol}`);
+    };
+
+    ws.current = socket;
+
+    // Cleanup on component unmount or when signalData changes
+    return () => {
+      if (ws.current) {
+        ws.current.close();
+      }
+    };
+  }, [signalData, toast]);
 
   const handleGenerateSignal = async () => {
     if (!symbol) {
@@ -30,12 +87,14 @@ const SmartSignalWidget = () => {
     try {
       const data = await getSignalData(symbol, mode, timeframe);
       setSignalData(data);
+      setRealtimePrice(data.price); // Initialize with fetched price
     } catch (error) {
       console.error("Error generating signal:", error);
       toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
       // Fallback to mock data on error
       const mockData = await getSignalData(symbol, mode, timeframe, true);
       setSignalData(mockData);
+      setRealtimePrice(mockData.price); // Initialize with fetched price
     } finally {
       setLoading(false);
     }
@@ -129,7 +188,7 @@ const SmartSignalWidget = () => {
              </div>
         )}
 
-        {signalData && <SignalCard data={signalData} onDownload={handleDownload} />}
+        {signalData && <SignalCard data={signalData} onDownload={handleDownload} realtimePrice={realtimePrice} priceDirection={priceDirection}/>}
 
       </div>
     </div>

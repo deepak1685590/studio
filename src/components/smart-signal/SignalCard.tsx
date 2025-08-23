@@ -9,10 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Waves } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 interface SignalCardProps {
   data: SignalData;
   onDownload: () => void;
+  realtimePrice: number | null;
+  priceDirection: 'up' | 'down' | 'neutral';
 }
 
 const SectionHeader = ({ children, icon }: { children: React.ReactNode, icon?: React.ReactNode }) => (
@@ -22,10 +25,10 @@ const SectionHeader = ({ children, icon }: { children: React.ReactNode, icon?: R
   </h4>
 );
 
-const LevelItem = ({ label, value }: { label: string; value: string | number }) => (
+const LevelItem = ({ label, value, valueClass }: { label: string; value: string | number; valueClass?: string }) => (
   <div className="flex justify-between text-sm">
     <span className="text-foreground/70">{label}:</span>
-    <span className="font-mono">{typeof value === 'number' ? `$${value.toFixed(2)}` : value}</span>
+    <span className={cn("font-mono", valueClass)}>{typeof value === 'number' && !label.includes('%') ? `$${value.toFixed(2)}` : value}</span>
   </div>
 );
 
@@ -36,7 +39,8 @@ const ChecklistItem = ({ label, passed }: { label: string; passed: boolean }) =>
   </div>
 );
 
-const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
+const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice, priceDirection }) => {
+  const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
 
   return (
     <div id="signal-card-content" className="mt-5 p-5 bg-black/70 border-2 border-primary rounded-xl text-sm leading-relaxed shadow-lg">
@@ -56,11 +60,22 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 font-mono">
-        <LevelItem label="Price" value={`$${data.price}`} />
-        <LevelItem label="Entry (Single)" value={`≈ $${data.entry}`} />
-        <LevelItem label="Stop-Loss" value={`$${data.sl}`} />
-        <LevelItem label="Take-Profit 1" value={`$${data.tp1}`} />
-        <LevelItem label="Take-Profit 2" value={`$${data.tp2}`} />
+        <div className="flex justify-between text-sm">
+            <span className="text-foreground/70">Price:</span>
+            <span className="font-mono flex items-center gap-2">
+                 <span className={cn(
+                    "w-2 h-2 rounded-full",
+                    priceDirection === 'up' && 'bg-green-500 animate-pulse',
+                    priceDirection === 'down' && 'bg-red-500 animate-pulse',
+                    priceDirection === 'neutral' && 'bg-gray-500'
+                 )}></span>
+                ${displayPrice.toFixed(4)}
+            </span>
+        </div>
+        <LevelItem label="Entry (Single)" value={`≈ ${data.entry}`} />
+        <LevelItem label="Stop-Loss" value={`${data.sl}`} />
+        <LevelItem label="Take-Profit 1" value={`${data.tp1}`} />
+        <LevelItem label="Take-Profit 2" value={`${data.tp2}`} />
         <LevelItem label="Risk/Reward" value={`1 : ${data.riskReward.toFixed(1)}`} />
         <LevelItem label="Confidence" value={data.confidence} />
       </div>
@@ -164,7 +179,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload }) => {
       {data.mode === '3' && (
         <EliteAiInsight data={{
           symbol: data.symbol,
-          price: data.price,
+          price: displayPrice,
           isBullish: data.isBullish,
           action: data.action,
           entry: parseFloat(data.entry),

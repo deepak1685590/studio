@@ -17,19 +17,27 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchInsight = async () => {
-      setLoading(true);
-      try {
-        const result = await generateAiInsight(data);
-        setInsight(result.insight);
-      } catch (error) {
-        console.error('AI Insight Error:', error);
-        setInsight(`Strong ${data.isBullish ? 'bullish' : 'bearish'} setup in ${data.symbol} at $${data.price.toFixed(2)}. ${data.confluenceCount} confluence factors with supportive multi-timeframe analysis. Entry: $${data.entry}, SL: $${data.sl}, TP1: $${data.tp1}. Institutional-grade opportunity.`);
-      }
-      setLoading(false);
-    };
+    // A simple debounce/delay to prevent spamming the AI on rapid price changes
+    const handler = setTimeout(() => {
+      const fetchInsight = async () => {
+        setLoading(true);
+        try {
+          // Pass the most current price from the data prop
+          const result = await generateAiInsight(data);
+          setInsight(result.insight);
+        } catch (error) {
+          console.error('AI Insight Error:', error);
+          setInsight(`Strong ${data.isBullish ? 'bullish' : 'bearish'} setup in ${data.symbol} at $${data.price.toFixed(2)}. ${data.confluenceCount} confluence factors with supportive multi-timeframe analysis. Entry: $${data.entry}, SL: $${data.sl}, TP1: $${data.tp1}. Institutional-grade opportunity.`);
+        }
+        setLoading(false);
+      };
 
-    fetchInsight();
+      fetchInsight();
+    }, 500); // Wait 500ms after the last data change
+
+    return () => {
+      clearTimeout(handler);
+    };
   }, [data]);
 
   const copyToClipboard = () => {
