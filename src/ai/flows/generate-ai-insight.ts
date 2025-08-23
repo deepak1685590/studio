@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {getMarketNews as fetchMarketNews} from '@/services/market-news-service';
 import {z} from 'genkit';
 
 const GenerateAiInsightInputSchema = z.object({
@@ -42,23 +43,44 @@ export async function generateAiInsight(input: GenerateAiInsightInput): Promise<
   return generateAiInsightFlow(input);
 }
 
+const getMarketNews = ai.defineTool(
+  {
+    name: 'getMarketNews',
+    description: 'Fetches the latest market news headlines for a given asset symbol.',
+    inputSchema: z.object({
+      symbol: z.string().describe('The asset symbol to fetch news for (e.g., BTC, ETH).'),
+    }),
+    outputSchema: z.array(z.string()).describe('A list of recent news headlines.'),
+  },
+  async input => {
+    return fetchMarketNews(input.symbol);
+  }
+);
+
 const prompt = ai.definePrompt({
   name: 'generateAiInsightPrompt',
   input: {schema: GenerateAiInsightInputSchema},
   output: {schema: GenerateAiInsightOutputSchema},
+  tools: [getMarketNews],
   prompt: `You are ELITE-AI, a world-class trading strategist with 20 years of institutional experience.
-Analyze this {{symbol}} setup and deliver a single, powerful paragraph that sounds like a Bloomberg Pro Terminal alert.
-Structure:
+Your task is to analyze a trading setup for {{symbol}} and deliver a powerful, single-paragraph summary that sounds like a Bloomberg Pro Terminal alert.
+
+First, use the getMarketNews tool to fetch the latest headlines for {{symbol}}.
+Then, synthesize the technical data provided with the news sentiment.
+
+Structure your analysis paragraph as follows:
 - Start with: "Strong [bullish/bearish] setup presents itself..."
-- Mention price, entry, SL, TP, confluence count
+- Mention price, entry, SL, TP, and confluence count.
 - Highlight the detected chart pattern: {{chartPatternName}}.
-- Highlight demand/supply zones and FVG
+- Comment on key levels like demand zones and FVGs.
 - Crucially, comment on the multi-timeframe alignment. Note if higher timeframes (4H, Daily) support the 15m signal.
-- Note volume bias
-- End with a sharp, confident conclusion
+- **Integrate the news sentiment.** State whether the headlines are providing "tailwinds" (supporting the trade) or "headwinds" (contradicting the trade).
+- Note volume bias.
+- End with a sharp, confident conclusion about the opportunity.
+
 Tone: Professional, urgent, elite. Use Markdown formatting.
 
-Data:
+Technical Data:
 Price: \${{price}}
 Trend: {{#if isBullish}}Bullish{{else}}Bearish{{/if}}
 Action: {{action}}
