@@ -1,5 +1,5 @@
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, VolumeAnalysis, VolumeTimeframeData, SidewaysMarket, CandlestickPattern } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, VolumeAnalysis, VolumeTimeframeData, SidewaysMarket, CandlestickPattern, MovingAverages, MarketInternals } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -30,14 +30,14 @@ const getMockKlines = (price: number, interval: Timeframe) => {
   };
   const intervalMinutes = intervalMap[interval] || 15;
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 200; i++) {
     const open = currentPrice;
     const high = open * (1 + (pseudoRandom(i.toString()) - 0.45) * 0.02);
     const low = open * (1 + (pseudoRandom(i.toString() + 'low') - 0.55) * 0.02);
     const close = (high + low) / 2 * (1 + (pseudoRandom(i.toString()+'close') - 0.5) * 0.01);
     currentPrice = close;
     klines.push([
-      Date.now() - (100 - i) * intervalMinutes * 60 * 1000,
+      Date.now() - (200 - i) * intervalMinutes * 60 * 1000,
       open.toFixed(4),
       high.toFixed(4),
       low.toFixed(4),
@@ -118,7 +118,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             const priceData = await priceResponse.json();
             price = parseFloat(priceData.price);
             
-            const klinesResponse = await fetchWithTimeout(`https://api.binance.com/api/v3/klines?symbol=${symbolWithUSDT}&interval=${apiInterval}&limit=100`, { timeout: 5000 });
+            const klinesResponse = await fetchWithTimeout(`https://api.binance.com/api/v3/klines?symbol=${symbolWithUSDT}&interval=${apiInterval}&limit=200`, { timeout: 5000 });
             if (!klinesResponse.ok) throw new Error('Klines fetch failed');
             klines = await klinesResponse.json();
         } catch (err) {
@@ -126,7 +126,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             return getSignalData(symbol, mode, timeframe, true);
         }
     }
-
+    
+    const closes = klines.map(k => parseFloat(k[4]));
     const highPrices = klines.map(k => parseFloat(k[2]));
     const lowPrices = klines.map(k => parseFloat(k[3]));
 
@@ -152,15 +153,34 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     }
     const atr = trSum / atrPeriod;
 
-    // Simulate ADX deterministically
-    const adx = Math.floor(pseudoRandom(seed + 'adx') * 50 + 10);
+    // Simulate ADX for Trend Strength
+    const trendStrengthValue = Math.floor(pseudoRandom(seed + 'adx') * 60 + 10); // ADX value 10-70
+    let trendStrengthRating: MarketInternals['trendStrength']['rating'] = 'Ranging';
+    if (trendStrengthValue > 40) trendStrengthRating = 'Strong';
+    else if (trendStrengthValue > 25) trendStrengthRating = 'Moderate';
+    else if (trendStrengthValue > 15) trendStrengthRating = 'Weak';
+    
     let sidewaysMarket: SidewaysMarket | undefined = undefined;
-    if (adx < 25) {
+    if (trendStrengthRating === 'Weak' || trendStrengthRating === 'Ranging') {
         sidewaysMarket = {
-            adx,
+            adx: trendStrengthValue,
             range: [swingLow.toFixed(2), swingHigh.toFixed(2)],
         };
     }
+
+    // Simulate RSI for Momentum
+    const momentumValue = Math.floor(pseudoRandom(seed + 'momentum_rsi') * 100);
+    let momentumRating: MarketInternals['momentum']['rating'] = 'Neutral';
+    if (momentumValue > 70) momentumRating = 'Overbought';
+    else if (momentumValue > 60) momentumRating = 'Bullish';
+    else if (momentumValue < 30) momentumRating = 'Oversold';
+    else if (momentumValue < 40) momentumRating = 'Bearish';
+
+
+    const marketInternals: MarketInternals = {
+        trendStrength: { value: trendStrengthValue, rating: trendStrengthRating },
+        momentum: { value: momentumValue, rating: momentumRating },
+    };
 
     const volatility = Math.min(100, Math.round((atr / lastClose) * 20000));
 
@@ -181,10 +201,30 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const multipliers = timeframeMultipliers[timeframe] || timeframeMultipliers['15m'];
     const { atr: atrMultiplier, tp1: tpMultiplier1, tp2: tpMultiplier2 } = multipliers;
 
-    const superTrendMultiplier = 2.5;
-    const upperBand = (swingHigh + swingLow) / 2 + (superTrendMultiplier * atr);
-    const lowerBand = (swingHigh + swingLow) / 2 - (superTrendMultiplier * atr);
-    const isBullish = lastClose > lowerBand;
+    // --- Advanced EMA Calculation ---
+    const calculateEMA = (data: number[], period: number) => {
+        const k = 2 / (period + 1);
+        let ema = data[0];
+        for (let i = 1; i < data.length; i++) {
+            ema = (data[i] * k) + (ema * (1-k));
+        }
+        return ema;
+    };
+    
+    const ema20 = calculateEMA(closes.slice(-50), 20);
+    const ema50 = calculateEMA(closes.slice(-100), 50);
+    const ema100 = calculateEMA(closes.slice(-150), 100);
+    const ema200 = calculateEMA(closes, 200);
+
+    const movingAverages: MovingAverages = {
+        ema20: { value: ema20.toFixed(2), status: price > ema20 ? 'Above' : 'Below' },
+        ema50: { value: ema50.toFixed(2), status: price > ema50 ? 'Above' : 'Below' },
+        ema100: { value: ema100.toFixed(2), status: price > ema100 ? 'Above' : 'Below' },
+        ema200: { value: ema200.toFixed(2), status: price > ema200 ? 'Above' : 'Below' },
+    };
+
+    // Determine trend based on EMAs
+    const isBullish = price > ema50 && ema50 > ema200;
 
     const demandZone: [string, string] = isBullish ? [(lastClose * 0.98).toFixed(2), (lastClose * 0.99).toFixed(2)] : [(swingLow * 0.995).toFixed(2), (swingLow).toFixed(2)];
     const supplyZone: [string, string] = isBullish ? [(swingHigh).toFixed(2), (swingHigh * 1.005).toFixed(2)] : [(lastClose * 1.01).toFixed(2), (lastClose * 1.02).toFixed(2)];
@@ -202,10 +242,11 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const reversalConfirmed = pseudoRandom(seed + 'reversal') > 0.6;
 
     const confluenceFactors = [
-        `Trend: ${isBullish ? 'Bullish' : 'Bearish'} (Price vs SuperTrend)`,
+        `MA Trend: ${isBullish ? 'Bullish' : 'Bearish'} (Price vs 50/200 EMA)`,
         price > pivot ? `Price above Pivot ($${pivot.toFixed(2)})` : `Price below Pivot ($${pivot.toFixed(2)})`,
         volumeImbalance,
-        'Structure: Minor trend alignment',
+        `Momentum: ${marketInternals.momentum.rating}`,
+        `Trend Strength: ${marketInternals.trendStrength.rating} (ADX: ${marketInternals.trendStrength.value})`,
     ];
 
     if (reversalConfirmed) {
@@ -410,5 +451,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         sidewaysMarket,
         volatility,
         candlestickPattern,
+        movingAverages,
+        marketInternals,
     };
 };

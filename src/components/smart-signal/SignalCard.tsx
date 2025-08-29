@@ -6,7 +6,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, CandlestickChart, CircleDot } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, CandlestickChart, CircleDot, Move, Gauge, Activity } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -138,7 +138,7 @@ const LevelItem: React.FC<{
   return (
     <div className={cn(
         "flex justify-between items-center text-sm transition-all duration-300 p-1 -m-1 rounded-md",
-        status === 'near' && !isTakeProfit && 'bg-primary/20 animate-pulse'
+        status === 'near' && isEntry && 'bg-primary/20 animate-pulse'
       )}>
       <div className="flex items-center gap-2">
         <span className={getLabelColor()}>{label}:</span>
@@ -256,7 +256,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
         </div>
       </SectionWrapper>
 
-
       {data.goldenPullbackZone && (
         <Alert className="border-primary/50 bg-primary/10 text-primary">
           <Target className="h-4 w-4 text-primary" />
@@ -323,8 +322,47 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
       </div>
 
       <div>
-        <SectionHeader icon={<Zap />}>Signals Detected ({data.confluenceCount})</SectionHeader>
+        <SectionHeader icon={<Activity />}>Market Internals</SectionHeader>
         <SectionWrapper borderColor="primary">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+            {/* Trend Strength */}
+            <div className='flex flex-col items-center gap-1'>
+                <Gauge size={20} className='text-primary/80'/>
+                <span className='text-sm font-headline'>Trend Strength</span>
+                <Badge variant={data.marketInternals.trendStrength.rating === 'Strong' ? 'default' : 'secondary'}>{data.marketInternals.trendStrength.rating}</Badge>
+                <span className='text-xs text-foreground/60'>(ADX: {data.marketInternals.trendStrength.value})</span>
+            </div>
+            {/* Momentum */}
+             <div className='flex flex-col items-center gap-1'>
+                <Zap size={20} className='text-primary/80'/>
+                <span className='text-sm font-headline'>Momentum</span>
+                <Badge variant={data.marketInternals.momentum.rating === 'Bullish' || data.marketInternals.momentum.rating === 'Bearish' ? 'default' : 'secondary'}>{data.marketInternals.momentum.rating}</Badge>
+                <span className='text-xs text-foreground/60'>(RSI: {data.marketInternals.momentum.value})</span>
+            </div>
+            {/* Moving Averages */}
+             <div className='flex flex-col items-center gap-1'>
+                <Move size={20} className='text-primary/80'/>
+                <span className='text-sm font-headline'>MA Alignment</span>
+                <Badge variant={data.movingAverages.ema50.status === (data.isBullish ? 'Above' : 'Below') ? 'default' : 'secondary'}>{data.isBullish ? 'Bullish' : 'Bearish'}</Badge>
+                <span className='text-xs text-foreground/60'>(Price vs EMAs)</span>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-primary/20 space-y-1 text-xs">
+            {Object.entries(data.movingAverages).map(([key, ma]) => (
+                <div key={key} className="flex justify-between items-center">
+                    <span className="text-foreground/70">{key.toUpperCase()}:</span>
+                    <span className={cn("font-mono", ma.status === 'Above' ? 'text-green-400' : 'text-red-400')}>
+                        ${ma.value} ({ma.status})
+                    </span>
+                </div>
+            ))}
+          </div>
+        </SectionWrapper>
+      </div>
+
+      <div>
+        <SectionHeader icon={<Zap />}>Signals Detected ({data.confluenceCount})</SectionHeader>
+        <SectionWrapper borderColor="accent">
             <ul className="list-disc list-inside space-y-1 text-xs pl-2 columns-2">
                 {data.confluenceFactors.map((factor, i) => <li key={i}>{factor}</li>)}
             </ul>
@@ -430,5 +468,3 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
 };
 
 export default SignalCard;
-
-    

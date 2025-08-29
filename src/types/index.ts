@@ -1,4 +1,5 @@
 
+
 export interface User {
   username: string;
   password?: string;
@@ -89,6 +90,18 @@ export interface SidewaysMarket {
   range: [string, string];
 }
 
+export interface MovingAverages {
+  ema20: { value: string; status: 'Above' | 'Below' };
+  ema50: { value: string; status: 'Above' | 'Below' };
+  ema100: { value: string; status: 'Above' | 'Below' };
+  ema200: { value: string; status: 'Above' | 'Below' };
+}
+
+export interface MarketInternals {
+    trendStrength: { value: number; rating: 'Strong' | 'Moderate' | 'Weak' | 'Ranging' };
+    momentum: { value: number; rating: 'Overbought' | 'Bullish' | 'Bearish' | 'Oversold' | 'Neutral' };
+}
+
 export interface SignalData {
   symbol: string;
   price: number;
@@ -129,4 +142,6 @@ export interface SignalData {
   sidewaysMarket?: SidewaysMarket;
   volatility: number;
   candlestickPattern?: CandlestickPattern;
+  movingAverages: MovingAverages;
+  marketInternals: MarketInternals;
 }
