@@ -14,7 +14,7 @@ interface Message {
   sender: 'user' | 'bot';
 }
 
-const initialBotMessage = "Hello! I'm Cathy, your friendly Market Analysis Chatbot. I can help you understand market trends, analyze assets, and provide insights. **I can also use Markdown for formatting!** How can I assist you today?";
+const initialBotMessage = "Hello! I'm Cathy, your market analysis assistant. 📈 Feel free to ask me about crypto trends, specific assets like BTC, or even complex topics like 'Fair Value Gaps.' I'm here to help you make sense of the markets. What's on your mind?";
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -47,7 +47,7 @@ const Chatbot = () => {
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Chatbot error:', error);
-      const errorMessage: Message = { text: "Cathy: I'm sorry, I'm having trouble connecting right now. Please try again later.", sender: 'bot' };
+      const errorMessage: Message = { text: "I'm sorry, I'm having trouble connecting right now. Please try again later.", sender: 'bot' };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -103,7 +103,7 @@ const Chatbot = () => {
                 key={index} 
                 className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.sender === 'user' ? 'self-end bg-accent text-accent-foreground rounded-br-none' : 'self-start bg-secondary text-secondary-foreground border border-primary/20 rounded-bl-none'}`}
               >
-                <div className="prose prose-sm prose-invert" dangerouslySetInnerHTML={createMarkup(msg.text)} />
+                <div className="prose prose-sm prose-invert" dangerouslySetInnerHTML={createMarkup(msg.sender === 'bot' ? `**Cathy:** ${msg.text}` : msg.text)} />
               </div>
             ))}
             {isLoading && (
