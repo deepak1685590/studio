@@ -2,6 +2,8 @@
  * @fileOverview A service to fetch general, high-impact financial market news from a live API.
  */
 
+import { NEWS_API_KEY } from '@/config';
+
 interface NewsAPIArticle {
   title: string;
   description: string;
@@ -37,12 +39,12 @@ const assessImpact = (headline: string): 'High' | 'Medium' | 'Low' => {
  * @returns {Promise<NewsItem[]>} A promise that resolves to an array of live news items.
  */
 export const getGeneralMarketNews = async (): Promise<NewsItem[]> => {
-  const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY;
+  const apiKey = NEWS_API_KEY;
   
   if (!apiKey || apiKey === 'YOUR_NEWS_API_KEY_HERE') {
-    console.warn("NewsAPI key is not configured. Returning placeholder news. Please add NEXT_PUBLIC_NEWS_API_KEY to your .env file.");
+    console.warn("NewsAPI key is not configured. Returning placeholder news. Please add your key to src/config.ts.");
     return [
-      { headline: "Your NewsAPI key is missing. Add it to the .env file to see live news.", impact: 'High' },
+      { headline: "Your NewsAPI key is missing. Add it to the src/config.ts file to see live news.", impact: 'High' },
       { headline: "You can get a free key from newsapi.org.", impact: 'Low' },
     ];
   }
