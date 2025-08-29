@@ -4,6 +4,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import MatrixBackground from '@/components/MatrixBackground';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 export const metadata: Metadata = {
   title: 'NexusAI',
@@ -16,18 +17,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn("font-body antialiased min-h-screen")}>
-        <AuthProvider>
-          <MatrixBackground />
-          <div className="relative z-10">{children}</div>
-          <Toaster />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <MatrixBackground />
+            <div className="relative z-10">{children}</div>
+            <Toaster />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

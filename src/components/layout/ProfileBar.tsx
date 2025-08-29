@@ -3,6 +3,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { User, LogOut } from 'lucide-react';
+import { ThemeSwitcher } from './ThemeSwitcher';
 
 const ProfileBar = () => {
   const { user, logout } = useAuth();
@@ -13,9 +14,12 @@ const ProfileBar = () => {
         <User />
         <span>{user?.username}</span>
       </div>
-      <Button variant="ghost" onClick={logout} className="text-red-500 hover:bg-red-500/10 hover:text-red-400">
-        <LogOut className="mr-2 h-4 w-4" /> Logout
-      </Button>
+      <div className="flex items-center gap-4">
+        <ThemeSwitcher />
+        <Button variant="ghost" onClick={logout} className="text-red-500 hover:bg-red-500/10 hover:text-red-400">
+          <LogOut className="mr-2 h-4 w-4" /> Logout
+        </Button>
+      </div>
     </div>
   );
 };
