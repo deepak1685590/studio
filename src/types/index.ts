@@ -1,3 +1,4 @@
+
 export interface User {
   username: string;
   password?: string;
@@ -9,15 +10,15 @@ export interface User {
 }
 
 export type Trend = 'Bullish' | 'Bearish' | 'Neutral';
-export type Timeframe = '5m' | '15m' | '1H' | '4H' | '1d';
+export type Timeframe = '5m' | '15m' | '1h' | '4h' | '1d';
 
 export interface MultiTimeframeAnalysis {
   '1m'?: Trend;
   '5m'?: Trend;
   '15m'?: Trend;
-  '1H'?: Trend;
-  '4H'?: Trend;
-  'Daily'?: Trend;
+  '1h'?: Trend;
+  '4h'?: Trend;
+  '1d'?: Trend;
   'Weekly'?: Trend;
   [key: string]: Trend | undefined;
 }
@@ -79,9 +80,9 @@ export interface VolumeTimeframeData {
 export interface VolumeAnalysis {
   '5m': VolumeTimeframeData;
   '15m': VolumeTimeframeData;
-  '1H': VolumeTimeframeData;
-  '4H': VolumeTimeframeData;
-  '1D': VolumeTimeframeData;
+  '1h': VolumeTimeframeData;
+  '4h': VolumeTimeframeData;
+  '1d': VolumeTimeframeData;
 }
 
 export interface SignalData {
@@ -123,3 +124,5 @@ export interface SignalData {
   sidewaysMarket?: SidewaysMarket;
   volumeAnalysis: VolumeAnalysis;
 }
+
+    

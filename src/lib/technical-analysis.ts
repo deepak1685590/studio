@@ -1,3 +1,4 @@
+
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, SidewaysMarket, VolumeAnalysis } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
@@ -23,8 +24,8 @@ const getMockKlines = (price: number, interval: Timeframe) => {
   const intervalMap: {[key in Timeframe]: number} = {
     '5m': 5,
     '15m': 15,
-    '1H': 60,
-    '4H': 240,
+    '1h': 60,
+    '4h': 240,
     '1d': 1440,
   };
   const intervalMinutes = intervalMap[interval] || 15;
@@ -101,7 +102,7 @@ const calculateADX = (klines: any[], period: number) => {
 };
 
 const generateVolumeAnalysis = (): VolumeAnalysis => {
-    const timeframes: ('5m' | '15m' | '1H' | '4H' | '1D')[] = ['5m', '15m', '1H', '4H', '1D'];
+    const timeframes: ('5m' | '15m' | '1h' | '4h' | '1d')[] = ['5m', '15m', '1h', '4h', '1d'];
     const analysis: Partial<VolumeAnalysis> = {};
 
     timeframes.forEach(tf => {
@@ -134,8 +135,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const timeframeToInterval = {
       '5m': '5m',
       '15m': '15m',
-      '1H': '1h',
-      '4H': '4h',
+      '1h': '1h',
+      '4h': '4h',
       '1d': '1d',
     };
     const apiInterval = timeframeToInterval[timeframe] || '15m';
@@ -210,8 +211,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const timeframeMultipliers = {
         '5m': { atr: 1.5, tp1: 1.5, tp2: 3 },
         '15m': { atr: 2, tp1: 2, tp2: 4 },
-        '1H': { atr: 2.5, tp1: 2.5, tp2: 5 },
-        '4H': { atr: 3, tp1: 3, tp2: 6 },
+        '1h': { atr: 2.5, tp1: 2.5, tp2: 5 },
+        '4h': { atr: 3, tp1: 3, tp2: 6 },
         '1d': { atr: 3.5, tp1: 3.5, tp2: 7 },
     };
     const multipliers = timeframeMultipliers[timeframe as keyof typeof timeframeMultipliers] || timeframeMultipliers['15m'];
@@ -274,16 +275,16 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     let multiTimeframeAnalysis: MultiTimeframeAnalysis = {};
 
     const mtfMap: {[key in Timeframe]?: (keyof MultiTimeframeAnalysis)[]} = {
-        '5m': ['15m', '1H'],
-        '15m': ['1H', '4H', 'Daily'],
-        '1H': ['4H', 'Daily'],
-        '4H': ['Daily', 'Weekly'],
+        '5m': ['15m', '1h'],
+        '15m': ['1h', '4h', '1d'],
+        '1h': ['4h', '1d'],
+        '4h': ['1d', 'Weekly'],
         '1d': ['Weekly'],
     };
     
     const analysisTimeframes = mtfMap[timeframe] || mtfMap['15m']!;
     
-    const currentTfKey = timeframe === '1d' ? 'Daily' : timeframe.toUpperCase() as keyof MultiTimeframeAnalysis;
+    const currentTfKey = timeframe as keyof MultiTimeframeAnalysis;
     multiTimeframeAnalysis[currentTfKey] = isBullish ? 'Bullish' : 'Bearish';
     
     analysisTimeframes.forEach(tf => {
@@ -292,7 +293,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         }
     });
     
-    const requiredTfs: (keyof MultiTimeframeAnalysis)[] = ['15m', '1H', '4H', 'Daily'];
+    const requiredTfs: (keyof MultiTimeframeAnalysis)[] = ['15m', '1h', '4h', '1d'];
     requiredTfs.forEach(tf => {
         if (!multiTimeframeAnalysis[tf]) {
             multiTimeframeAnalysis[tf] = 'Neutral';
@@ -341,8 +342,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     const marketStructure = isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL';
 
-    const mtfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '5m' ? '15m' : '4H';
-    const htfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '1H' ? '4H' : 'Daily';
+    const mtfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '5m' ? '15m' : '4h';
+    const htfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '1h' ? '4h' : '1d';
     
     const tradersChecklist: TradersChecklist = {
         riskRewardPass: riskReward > 1.5,
@@ -420,3 +421,5 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         volumeAnalysis,
     };
 };
+
+    

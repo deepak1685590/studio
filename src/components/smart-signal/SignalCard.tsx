@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -233,3 +234,5 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
 };
 
 export default SignalCard;
+
+    
