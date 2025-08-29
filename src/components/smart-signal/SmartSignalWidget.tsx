@@ -44,17 +44,64 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     setRealtimePrice(null);
     setIsMockData(false);
     currentSymbolRef.current = targetSymbol;
-    
-    // Explicitly close any existing WebSocket connection before generating a new signal
+
+    // **Step 1: Always close any existing WebSocket connection at the start.**
     if (ws.current) {
-        ws.current.close();
-        ws.current = null;
+      ws.current.close();
+      ws.current = null;
     }
-    
+
     try {
       const data = await getSignalData(targetSymbol, mode, timeframe);
       setSignalData(data);
       setRealtimePrice(data.price);
+
+      // **Step 2: After getting data, decide if a new connection is needed.**
+      const isCrypto = cryptoAssetsForWebsocket.includes(data.symbol.toUpperCase());
+      const isForex = data.symbol.includes('/');
+      
+      if (isCrypto && !isForex) {
+        setPriceDirection('neutral');
+        const wsSymbol = data.symbol.toLowerCase() + 'usdt';
+        const socket = new WebSocket(`wss://stream.binance.com:9443/ws/${wsSymbol}@trade`);
+        ws.current = socket;
+
+        socket.onopen = () => {
+          console.log(`WebSocket connected for ${wsSymbol}`);
+        };
+
+        socket.onmessage = (event) => {
+          const messageData = JSON.parse(event.data);
+          const newPrice = parseFloat(messageData.p);
+          
+          setRealtimePrice(prevPrice => {
+            if(prevPrice !== null) {
+                if (newPrice > prevPrice) {
+                    setPriceDirection('up');
+                } else if (newPrice < prevPrice) {
+                    setPriceDirection('down');
+                }
+            }
+            return newPrice;
+          });
+        };
+
+        socket.onerror = (error) => {
+          console.error('WebSocket Error:', error);
+          // Only show toast if the error is for the currently active symbol
+          if (data.symbol.toUpperCase() === currentSymbolRef.current.toUpperCase()) {
+            toast({ title: "WebSocket Error", description: "Could not connect to live price feed.", variant: "destructive" });
+          }
+        };
+
+        socket.onclose = () => {
+          console.log(`WebSocket disconnected for ${wsSymbol}`);
+          if (ws.current === socket) {
+            ws.current = null;
+          }
+        };
+      }
+
     } catch (error) {
       console.error("Error generating signal:", error);
       toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
@@ -82,71 +129,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (ws.current) {
-      ws.current.close();
-      ws.current = null;
-    }
-
-    if (isMockData || !signalData) {
-      return;
-    }
-
-    // === ROBUST CHECKS TO PREVENT INVALID CONNECTIONS ===
-    // 1. Check if the signal data is for the symbol we are currently analyzing.
-    // 2. Check if the symbol is a valid, whitelisted crypto asset.
-    if (signalData.symbol.toUpperCase() !== currentSymbolRef.current.toUpperCase() || !cryptoAssetsForWebsocket.includes(signalData.symbol.toUpperCase())) {
-      return;
-    }
-    
-    setRealtimePrice(signalData.price);
-    setPriceDirection('neutral');
-
-    const wsSymbol = signalData.symbol.toLowerCase() + 'usdt';
-    const socket = new WebSocket(`wss://stream.binance.com:9443/ws/${wsSymbol}@trade`);
-    ws.current = socket;
-
-    socket.onopen = () => {
-      console.log(`WebSocket connected for ${wsSymbol}`);
-    };
-
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      const newPrice = parseFloat(data.p);
-      
-      setRealtimePrice(prevPrice => {
-        if(prevPrice !== null) {
-            if (newPrice > prevPrice) {
-                setPriceDirection('up');
-            } else if (newPrice < prevPrice) {
-                setPriceDirection('down');
-            }
-        }
-        return newPrice;
-      });
-    };
-
-    socket.onerror = (error) => {
-      console.error('WebSocket Error:', error);
-      toast({ title: "WebSocket Error", description: "Could not connect to live price feed.", variant: "destructive" });
-    };
-
-    socket.onclose = () => {
-      console.log(`WebSocket disconnected for ${wsSymbol}`);
-      if (ws.current === socket) {
-        ws.current = null;
-      }
-    };
-
-    // This cleanup function is crucial. It runs when the dependencies [signalData, isMockData, toast] change.
-    return () => {
-      if (socket) {
-        socket.close();
-      }
-    };
-  }, [signalData, isMockData, toast]);
-
 
   const handleDownload = () => {
     const cardElement = document.getElementById('signal-card-content');
