@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import ConfidenceBreakdown from './ConfidenceBreakdown';
 import WhaleAlert from './WhaleAlert';
 import OracleInsight from './OracleInsight';
+import TradingViewMiniChart from './TradingViewMiniChart';
 
 interface SignalCardProps {
   data: SignalData;
@@ -102,8 +103,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
       <ConfidenceBreakdown breakdown={data.confidenceBreakdown} />
 
       <SectionHeader icon={<Scaling />}>Quantum Data Stream</SectionHeader>
-      <div className="h-96 w-full bg-black/30 rounded-lg border border-primary/20 flex items-center justify-center">
-        <p className="text-primary/50 font-headline">Live Chart Placeholder</p>
+      <div className="h-96 w-full bg-black/30 rounded-lg border border-primary/20">
+        <TradingViewMiniChart symbol={data.symbol} />
       </div>
 
       <SectionHeader icon={<BarChart />}>Multi-Timeframe Analysis</SectionHeader>
