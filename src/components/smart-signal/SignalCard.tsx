@@ -12,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import ConfidenceBreakdown from './ConfidenceBreakdown';
 import WhaleAlert from './WhaleAlert';
+import OracleInsight from './OracleInsight';
 
 interface SignalCardProps {
   data: SignalData;
@@ -43,6 +44,9 @@ const ChecklistItem = ({ label, passed }: { label: string; passed: boolean }) =>
 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice, priceDirection }) => {
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
+  
+  // The Oracle appears only on Elite Mode with very high confidence.
+  const showOracle = data.mode === '3' && data.confidenceBreakdown.overall > 92;
 
   return (
     <div id="signal-card-content" className="mt-5 p-5 bg-black/70 border-2 border-primary rounded-xl text-sm leading-relaxed shadow-lg">
@@ -180,7 +184,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
         </div>
       </div>
 
-      {data.mode === '3' && (
+      {showOracle ? (
+        <OracleInsight data={{
+            symbol: data.symbol,
+            price: displayPrice,
+            isBullish: data.isBullish,
+            volatility: data.chartData[data.chartData.length - 1]?.volatility || 50,
+        }} />
+      ) : data.mode === '3' ? (
         <EliteAiInsight data={{
           symbol: data.symbol,
           price: displayPrice,
@@ -201,7 +212,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
           },
           chartPatternName: data.chartPattern.name,
         }} />
-      )}
+      ) : null}
 
       <div className="flex justify-between items-center mt-6">
         <small className="text-foreground/50">Generated: {new Date().toLocaleString()}</small>
