@@ -5,6 +5,7 @@ import AdminDashboard from '@/components/admin/AdminDashboard';
 import SmartSignalWidget from '@/components/smart-signal/SmartSignalWidget';
 import Chatbot from '@/components/chatbot/Chatbot';
 import ProfileBar from './ProfileBar';
+import LiveNewsWidget from '../news/LiveNewsWidget';
 
 const MainApp = () => {
   const { user } = useAuth();
@@ -15,6 +16,7 @@ const MainApp = () => {
       {user?.isAdmin && <AdminDashboard />}
       <SmartSignalWidget />
       <Chatbot />
+      <LiveNewsWidget />
     </div>
   );
 };
