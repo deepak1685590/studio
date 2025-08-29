@@ -31,7 +31,7 @@ const OracleInsight: React.FC<OracleInsightProps> = ({ data }) => {
   }, [data.symbol, data.isBullish, data.volatility]); // Only re-run when fundamental signal data changes, not on price ticks.
 
   return (
-    <div className="mt-5 p-5 bg-gradient-to-tr from-purple-900/40 via-black to-yellow-900/40 border-2 border-amber-400 rounded-xl shadow-[0_0_25px_hsl(45,100%,50%,0.6)] animate-pulse-glow">
+    <div className="mt-5 p-5 bg-gradient-to-tr from-yellow-900/40 via-black to-purple-900/40 border-2 border-amber-400 rounded-xl shadow-[0_0_25px_hsl(38_92%_50%_/_0.6)] animate-pulse-glow">
       <div className="flex items-center justify-between mb-2">
         <h4 className="font-headline text-lg text-amber-400 flex items-center gap-2">
           <Sparkles className="text-amber-300" />
