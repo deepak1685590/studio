@@ -79,6 +79,12 @@ const SignalStrengthIndicator = ({ level }: { level: number }) => {
     );
 };
 
+interface SignalCardProps {
+    data: SignalData;
+    onDownload: () => void;
+    realtimePrice: number | null;
+    priceDirection: 'up' | 'down' | 'neutral';
+}
 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice, priceDirection }) => {
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
