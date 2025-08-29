@@ -102,6 +102,16 @@ export interface MarketInternals {
     momentum: { value: number; rating: 'Overbought' | 'Bullish' | 'Bearish' | 'Oversold' | 'Neutral' };
 }
 
+export interface SmartMoneyConcepts {
+  breakOfStructure: { level: string; direction: 'up' | 'down' };
+  changeOfCharacter: { level: string; direction: 'up' | 'down' };
+  liquidity: { 
+    type: 'Equal Highs' | 'Equal Lows' | 'Liquidity Void';
+    level: string;
+    description: string;
+  };
+}
+
 export interface SignalData {
   symbol: string;
   price: number;
@@ -144,4 +154,5 @@ export interface SignalData {
   candlestickPattern?: CandlestickPattern;
   movingAverages: MovingAverages;
   marketInternals: MarketInternals;
+  smartMoney: SmartMoneyConcepts;
 }

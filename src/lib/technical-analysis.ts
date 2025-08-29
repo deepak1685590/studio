@@ -1,5 +1,5 @@
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, VolumeAnalysis, VolumeTimeframeData, SidewaysMarket, CandlestickPattern, MovingAverages, MarketInternals } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, VolumeAnalysis, VolumeTimeframeData, SidewaysMarket, CandlestickPattern, MovingAverages, MarketInternals, SmartMoneyConcepts } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -225,6 +225,23 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
     // Determine trend based on EMAs
     const isBullish = price > ema50 && ema50 > ema200;
+
+    // --- Smart Money Concepts ---
+    const smartMoney: SmartMoneyConcepts = {
+      breakOfStructure: {
+        level: isBullish ? `$${(swingHigh * 1.002).toFixed(2)}` : `$${(swingLow * 0.998).toFixed(2)}`,
+        direction: isBullish ? 'up' : 'down',
+      },
+      changeOfCharacter: {
+        level: isBullish ? `$${(swingLow * 0.995).toFixed(2)}` : `$${(swingHigh * 1.005).toFixed(2)}`,
+        direction: isBullish ? 'down' : 'up',
+      },
+      liquidity: {
+        type: isBullish ? 'Equal Highs' : 'Equal Lows',
+        level: isBullish ? `$${(swingHigh * 1.01).toFixed(2)}` : `$${(swingLow * 0.99).toFixed(2)}`,
+        description: isBullish ? 'Liquidity pool resting above recent highs.' : 'Sell-side liquidity below recent lows.',
+      }
+    };
 
     const demandZone: [string, string] = isBullish ? [(lastClose * 0.98).toFixed(2), (lastClose * 0.99).toFixed(2)] : [(swingLow * 0.995).toFixed(2), (swingLow).toFixed(2)];
     const supplyZone: [string, string] = isBullish ? [(swingHigh).toFixed(2), (swingHigh * 1.005).toFixed(2)] : [(lastClose * 1.01).toFixed(2), (lastClose * 1.02).toFixed(2)];
@@ -453,5 +470,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         candlestickPattern,
         movingAverages,
         marketInternals,
+        smartMoney,
     };
 };

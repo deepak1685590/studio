@@ -6,7 +6,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, CandlestickChart, CircleDot, Move, Gauge, Activity, FileDown } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, CandlestickChart, CircleDot, Move, Gauge, Activity, FileDown, GitCompareArrows, Waves } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -301,6 +301,38 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <SectionHeader icon={<BarChart />}>Multi-Timeframe Analysis</SectionHeader>
         <SectionWrapper borderColor="accent">
             <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
+        </SectionWrapper>
+      </div>
+
+      <div>
+        <SectionHeader icon={<Magnet />}>Smart Money Concepts</SectionHeader>
+        <SectionWrapper borderColor="primary">
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                        <TrendingUp className={cn("h-5 w-5", data.smartMoney.breakOfStructure.direction === 'up' ? 'text-green-400' : 'text-red-400')} />
+                        <span className="text-foreground/80">Break of Structure (BOS):</span>
+                    </div>
+                    <span className="font-mono text-base">{data.smartMoney.breakOfStructure.level}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                        <GitCompareArrows className={cn("h-5 w-5", data.smartMoney.changeOfCharacter.direction === 'up' ? 'text-green-400' : 'text-red-400')} />
+                        <span className="text-foreground/80">Change of Character (CHOCH):</span>
+                    </div>
+                    <span className="font-mono text-base">{data.smartMoney.changeOfCharacter.level}</span>
+                </div>
+                <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                        <Waves className="h-5 w-5 text-accent" />
+                        <span className="text-foreground/80">Liquidity Analysis:</span>
+                    </div>
+                    <div className="text-right">
+                        <span className="font-mono text-base text-accent">{data.smartMoney.liquidity.level}</span>
+                        <p className="text-xs text-foreground/70">{data.smartMoney.liquidity.description}</p>
+                    </div>
+                </div>
+            </div>
         </SectionWrapper>
       </div>
       
