@@ -76,6 +76,7 @@ Generate your riddle now for ${input.symbol}.`;
     const {output} = await ai.generate({
       prompt: promptText,
       output: {
+        format: 'json',
         schema: OracleInsightOutputSchema,
       }
     });
