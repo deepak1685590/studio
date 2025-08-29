@@ -20,13 +20,13 @@ const SmartSignalWidget = () => {
   const [signalData, setSignalData] = useState<SignalData | null>(null);
   const [realtimePrice, setRealtimePrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
+  const [isMockData, setIsMockData] = useState(false);
   const { toast } = useToast();
 
   const ws = useRef<WebSocket | null>(null);
-  const isUsingMockData = useRef(false);
 
   useEffect(() => {
-    if (!signalData || isUsingMockData.current) return;
+    if (!signalData || isMockData) return;
 
     // Close previous connection if it exists
     if (ws.current) {
@@ -77,7 +77,7 @@ const SmartSignalWidget = () => {
         ws.current.close();
       }
     };
-  }, [signalData, toast]);
+  }, [signalData, isMockData, toast]);
 
   const handleGenerateSignal = async () => {
     if (!symbol) {
@@ -86,7 +86,8 @@ const SmartSignalWidget = () => {
     }
     setLoading(true);
     setSignalData(null);
-    isUsingMockData.current = false;
+    setIsMockData(false);
+    
     try {
       const data = await getSignalData(symbol, mode, timeframe);
       setSignalData(data);
@@ -95,7 +96,7 @@ const SmartSignalWidget = () => {
       console.error("Error generating signal:", error);
       toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
       // Fallback to mock data on error
-      isUsingMockData.current = true;
+      setIsMockData(true);
       const mockData = await getSignalData(symbol, mode, timeframe, true);
       setSignalData(mockData);
       setRealtimePrice(mockData.price); // Initialize with fetched price
