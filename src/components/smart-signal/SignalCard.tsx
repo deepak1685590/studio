@@ -134,14 +134,13 @@ const LevelItem: React.FC<{
   label: string;
   value: number;
   status: 'near' | 'hit' | 'none';
-  isBullish: boolean;
-}> = ({ label, value, status, isBullish }) => {
+}> = ({ label, value, status }) => {
   const isEntry = label.toLowerCase().includes('entry');
   const isStop = label.toLowerCase().includes('stop');
   const isTakeProfit = label.toLowerCase().includes('take-profit');
 
   const getStatusBadge = () => {
-    if (status === 'hit') {
+    if (status === 'hit' && isTakeProfit) {
       return <Badge className="bg-green-500/80 text-white text-xs py-0.5 px-1.5 h-auto">✅ Target Hit</Badge>;
     }
     if (status === 'near' && isEntry) {
@@ -261,10 +260,10 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
                         ${displayPrice.toFixed(4)}
                     </span>
                 </div>
-                <LevelItem label="Entry" value={parseFloat(data.entry)} status={levelStatus.entry} isBullish={data.isBullish} />
-                <LevelItem label="Stop-Loss" value={parseFloat(data.sl)} status="none" isBullish={data.isBullish} />
-                <LevelItem label="Take-Profit 1" value={parseFloat(data.tp1)} status={levelStatus.tp1} isBullish={data.isBullish} />
-                <LevelItem label="Take-Profit 2" value={parseFloat(data.tp2)} status={levelStatus.tp2} isBullish={data.isBullish} />
+                <LevelItem label="Entry" value={parseFloat(data.entry)} status={levelStatus.entry} />
+                <LevelItem label="Stop-Loss" value={parseFloat(data.sl)} status="none" />
+                <LevelItem label="Take-Profit 1" value={parseFloat(data.tp1)} status={levelStatus.tp1} />
+                <LevelItem label="Take-Profit 2" value={parseFloat(data.tp2)} status={levelStatus.tp2} />
                 <div className="flex justify-between text-sm pt-1">
                   <span className="text-foreground/70">Risk/Reward:</span>
                   <span className="font-mono">1 : {data.riskReward.toFixed(1)}</span>
