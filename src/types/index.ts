@@ -1,5 +1,4 @@
 
-
 export interface User {
   username: string;
   password?: string;
@@ -52,6 +51,7 @@ export interface ConfidenceBreakdown {
   patternStrength: number;
   volumeConfirmation: number;
   htfAlignment: number;
+  smartMoneyFlow: number;
 }
 
 export interface WhaleAlert {
@@ -62,6 +62,38 @@ export interface WhaleAlert {
   historicalPattern: string;
 }
 
+export interface MovingAverageAnalysis {
+    ema20: { value: string; status: 'Above' | 'Below' };
+    ema50: { value: string; status: 'Above' | 'Below' };
+    ema100: { value: string; status: 'Above' | 'Below' };
+    ema200: { value: string; status: 'Above' | 'Below' };
+}
+
+export interface TrendStrength {
+    score: number;
+    rating: 'Strong' | 'Moderate' | 'Weak' | 'Ranging';
+}
+
+export interface Momentum {
+    score: number;
+    rating: 'Overbought' | 'Bullish' | 'Neutral' | 'Bearish' | 'Oversold';
+}
+
+export interface LiquidityInfo {
+    type: string;
+    level: string;
+    description: string;
+}
+
+export interface SmartMoneyConcepts {
+    bos: string;
+    choch: string;
+}
+
+export interface SidewaysMarket {
+    adx: number;
+    range: [string, string];
+}
 
 export interface SignalData {
   symbol: string;
@@ -89,7 +121,8 @@ export interface SignalData {
   demandZone: [string, string];
   supplyZone: [string, string];
   fvg: [string, string];
-  liquidityPool: string;
+  liquidity: LiquidityInfo;
+  smartMoneyConcepts: SmartMoneyConcepts;
   marketStructure: string;
   multiTimeframeAnalysis: MultiTimeframeAnalysis;
   reversalConfirmed: boolean;
@@ -99,4 +132,8 @@ export interface SignalData {
   whaleAlert?: WhaleAlert;
   goldenPullbackZone?: GoldenPullbackZone;
   confidenceBreakdown: ConfidenceBreakdown;
+  movingAverageAnalysis: MovingAverageAnalysis;
+  trendStrength: TrendStrength;
+  momentum: Momentum;
+  sidewaysMarket?: SidewaysMarket;
 }

@@ -15,6 +15,8 @@ import WhaleAlert from './WhaleAlert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import type { GenerateAiInsightInput } from '@/ai/flows/generate-ai-insight';
 import SidewaysMarketAlert from './SidewaysMarketAlert';
+import OracleInsight from './OracleInsight';
+import type { OracleInsightInput } from '@/ai/flows/oracle-insight';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -121,14 +123,16 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       'Daily': data.multiTimeframeAnalysis['Daily'] || 'Neutral',
     },
     chartPatternName: data.chartPattern.name,
-  }), [data]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [data.symbol, data.entry, data.sl, data.tp1]); // Only re-run when the core signal parameters change.
 
-  const oracleInsightData = useMemo(() => ({
+  const oracleInsightData: OracleInsightInput = useMemo(() => ({
     symbol: data.symbol,
     price: data.price,
     isBullish: data.isBullish,
     volatility: data.trendStrength.score,
-  }), [data.symbol, data.price, data.isBullish, data.trendStrength.score]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [data.symbol, data.isBullish, data.trendStrength.score]);
 
 
   if (data.sidewaysMarket) {
@@ -306,7 +310,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </SectionWrapper>
       </div>
 
-      {data.mode === '3' && <EliteAiInsight data={eliteAiInsightData} />}
+      {mode === '3' && <OracleInsight data={oracleInsightData} />}
+      {mode === '3' && <EliteAiInsight data={eliteAiInsightData} />}
 
       <div className="flex justify-between items-center mt-6">
         <small className="text-foreground/50">Generated: {new Date().toLocaleString()}</small>
@@ -327,5 +332,3 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
-
-    

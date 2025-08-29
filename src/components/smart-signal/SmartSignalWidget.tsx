@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Timeframe } from '@/types';
 import jsPDF from 'jspdf';
 import { cn } from '@/lib/utils';
+import OracleInsight from './OracleInsight';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -235,6 +236,15 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
                 Initializing Quantum Matrix... This may take a moment.
              </div>
         )}
+        
+        {signalData && mode === '3' && !signalData.sidewaysMarket &&
+          <OracleInsight data={{
+            symbol: signalData.symbol,
+            price: signalData.price,
+            isBullish: signalData.isBullish,
+            volatility: signalData.trendStrength.score,
+          }} />
+        }
 
         {signalData && <SignalCard data={signalData} onDownloadPng={handleDownloadPng} onDownloadPdf={handleDownloadPdf} realtimePrice={realtimePrice} priceDirection={priceDirection}/>}
 
