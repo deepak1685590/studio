@@ -16,9 +16,9 @@ export interface MultiTimeframeAnalysis {
   '1m'?: Trend;
   '5m'?: Trend;
   '15m'?: Trend;
-  '1h'?: Trend;
-  '4h'?: Trend;
-  '1d'?: Trend;
+  '1H'?: Trend;
+  '4H'?: Trend;
+  'Daily'?: Trend;
   'Weekly'?: Trend;
   [key: string]: Trend | undefined;
 }
@@ -124,5 +124,3 @@ export interface SignalData {
   sidewaysMarket?: SidewaysMarket;
   volumeAnalysis: VolumeAnalysis;
 }
-
-    

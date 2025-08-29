@@ -284,7 +284,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     const analysisTimeframes = mtfMap[timeframe] || mtfMap['15m']!;
     
-    const currentTfKey = timeframe as keyof MultiTimeframeAnalysis;
+    const currentTfKey = timeframe.toUpperCase() as keyof MultiTimeframeAnalysis;
     multiTimeframeAnalysis[currentTfKey] = isBullish ? 'Bullish' : 'Bearish';
     
     analysisTimeframes.forEach(tf => {
@@ -293,7 +293,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         }
     });
     
-    const requiredTfs: (keyof MultiTimeframeAnalysis)[] = ['15m', '1h', '4h', '1d'];
+    const requiredTfs: (keyof MultiTimeframeAnalysis)[] = ['15m', '1H', '4H', 'Daily'];
     requiredTfs.forEach(tf => {
         if (!multiTimeframeAnalysis[tf]) {
             multiTimeframeAnalysis[tf] = 'Neutral';
@@ -342,8 +342,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     const marketStructure = isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL';
 
-    const mtfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '5m' ? '15m' : '4h';
-    const htfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '1h' ? '4h' : '1d';
+    const mtfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '5m' ? '15m' : '4H';
+    const htfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '1h' ? '4H' : 'Daily';
     
     const tradersChecklist: TradersChecklist = {
         riskRewardPass: riskReward > 1.5,
