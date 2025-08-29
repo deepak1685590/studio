@@ -14,7 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Timeframe } from '@/types';
 import jsPDF from 'jspdf';
 import { cn } from '@/lib/utils';
-import OracleInsight from './OracleInsight';
+import TradingViewWidget from './TradingViewWidget';
+import VolumeAnalysisTable from './VolumeAnalysisTable';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -174,7 +175,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
         <span className="text-primary mx-2">-</span>
         <span className="animate-neon-purple">Quantum Analysis Engine</span>
       </header>
-      <div className="widget-body p-6 space-y-4">
+      <div className="widget-controls p-6 space-y-4">
         <div>
           <label htmlFor="symbolInput" className="text-sm font-bold text-primary/80">Enter asset (e.g., BTC, ETH, SOL)</label>
           <Input 
@@ -230,24 +231,25 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             </>
           )}
         </Button>
+      </div>
+
+      <div className="widget-body p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="space-y-6">
+          <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
+            <TradingViewWidget symbol={signalData?.symbol || initialSymbol} />
+          </div>
+          {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} />}
+        </div>
         
-        {loading && (
+        <div className="lg:mt-0">
+          {loading && (
              <div className="text-center text-primary/80 italic p-4">
                 Initializing Quantum Matrix... This may take a moment.
              </div>
-        )}
-        
-        {signalData && mode === '3' && !signalData.sidewaysMarket &&
-          <OracleInsight data={{
-            symbol: signalData.symbol,
-            price: signalData.price,
-            isBullish: signalData.isBullish,
-            volatility: signalData.trendStrength.score,
-          }} />
-        }
-
-        {signalData && <SignalCard data={signalData} onDownloadPng={handleDownloadPng} onDownloadPdf={handleDownloadPdf} realtimePrice={realtimePrice} priceDirection={priceDirection} mode={mode}/>}
-
+          )}
+          
+          {signalData && <SignalCard data={signalData} onDownloadPng={handleDownloadPng} onDownloadPdf={handleDownloadPdf} realtimePrice={realtimePrice} priceDirection={priceDirection} mode={mode}/>}
+        </div>
       </div>
     </div>
   );

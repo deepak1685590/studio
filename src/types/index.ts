@@ -95,6 +95,22 @@ export interface SidewaysMarket {
     range: [string, string];
 }
 
+export interface VolumeTimeframeData {
+    totalVolume: number;
+    buyVolume: number;
+    sellVolume: number;
+    dominantSide: 'Buy' | 'Sell' | 'Neutral';
+}
+
+export interface VolumeAnalysis {
+    '5m': VolumeTimeframeData;
+    '15m': VolumeTimeframeData;
+    '1H': VolumeTimeframeData;
+    '4H': VolumeTimeframeData;
+    '1D': VolumeTimeframeData;
+}
+
+
 export interface SignalData {
   symbol: string;
   price: number;
@@ -136,4 +152,5 @@ export interface SignalData {
   trendStrength: TrendStrength;
   momentum: Momentum;
   sidewaysMarket?: SidewaysMarket;
+  volumeAnalysis: VolumeAnalysis;
 }

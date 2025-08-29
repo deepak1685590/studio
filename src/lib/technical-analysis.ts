@@ -1,5 +1,5 @@
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -64,6 +64,31 @@ const pseudoRandom = (seedStr: string): number => {
     h3 = Math.imul(h1 ^ (h3 >>> 17), 597399067);
     h4 = Math.imul(h2 ^ (h4 >>> 19), 2869860233);
     return ((h1^h2^h3^h4)>>>0) / 4294967296;
+}
+
+const generateVolumeAnalysis = (seed: string): VolumeAnalysis => {
+    const analysis: Partial<VolumeAnalysis> = {};
+    const timeframes: (keyof VolumeAnalysis)[] = ['5m', '15m', '1H', '4H', '1D'];
+
+    timeframes.forEach(tf => {
+        const totalVolume = pseudoRandom(seed + tf + 'vol_total') * 50000 + 10000;
+        const buyRatio = pseudoRandom(seed + tf + 'vol_buy_ratio') * 0.4 + 0.3; // 30% to 70%
+        const buyVolume = totalVolume * buyRatio;
+        const sellVolume = totalVolume * (1 - buyRatio);
+        
+        let dominantSide: 'Buy' | 'Sell' | 'Neutral' = 'Neutral';
+        if (buyRatio > 0.55) dominantSide = 'Buy';
+        else if (buyRatio < 0.45) dominantSide = 'Sell';
+
+        analysis[tf] = {
+            totalVolume,
+            buyVolume,
+            sellVolume,
+            dominantSide,
+        };
+    });
+
+    return analysis as VolumeAnalysis;
 }
 
 export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, forceMock = false): Promise<SignalData> => {
@@ -180,6 +205,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const volumeImbalance = netFlow > 0 ? `🟢 Buyers in Control (+${Math.round(netFlow)} units)` : `🔴 Sellers in Control (${Math.round(netFlow)} units)`;
       
     const reversalConfirmed = pseudoRandom(seed + 'reversal') > 0.6;
+    
+    const volumeAnalysis = generateVolumeAnalysis(seed);
 
     const confluenceFactors = [
         `MA Trend: ${isBullish ? 'Bullish' : 'Bearish'} (Price vs 50/200 EMA)`,
@@ -264,6 +291,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             movingAverageAnalysis,
             trendStrength,
             momentum: { score: 50, rating: 'Neutral' },
+            volumeAnalysis,
             sidewaysMarket,
         };
     }
@@ -369,8 +397,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const zoneMin = isBullish ? Math.min(fib618, pivot) : Math.max(fib618, pivot);
     const zoneMax = isBullish ? Math.max(fib618, pivot) : Math.min(fib618, pivot);
 
-    if (isBullish ? (parseFloat(entry) >= zoneMin && parseFloat(entry) <= zoneMax) : (parseFloat(entry) <= zoneMin && parseFloat(entry) >= zoneMax)) {
-        goldenPullbackZone = {
+    if (shouldShowGoldenZone) {
+         goldenPullbackZone = {
             min: (isBullish ? zoneMin : zoneMax).toFixed(2),
             max: (isBullish ? zoneMax : zoneMin).toFixed(2),
         };
@@ -448,5 +476,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         movingAverageAnalysis,
         trendStrength,
         momentum,
+        volumeAnalysis,
     };
 };
