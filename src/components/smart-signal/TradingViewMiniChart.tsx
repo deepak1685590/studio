@@ -16,31 +16,55 @@ const TradingViewMiniChart: React.FC<TradingViewMiniChartProps> = ({ symbol }) =
     container.current.innerHTML = '';
 
     const script = document.createElement("script");
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js";
+    script.src = "https://s3.tradingview.com/tv.js";
     script.type = "text/javascript";
     script.async = true;
     
-    const widgetConfig = {
-      "symbol": `BINANCE:${symbol.toUpperCase()}USDT`,
-      "width": "100%",
-      "height": "100%",
-      "locale": "en",
-      "dateRange": "12M",
-      "colorTheme": "dark",
-      "isTransparent": true,
-      "autosize": true,
-      "largeChartUrl": ""
+    script.onload = () => {
+      if (container.current && 'TradingView' in window && typeof window.TradingView.widget === 'function') {
+        new (window as any).TradingView.widget({
+          "autosize": true,
+          "symbol": `BINANCE:${symbol.toUpperCase()}USDT`,
+          "interval": "15",
+          "timezone": "Etc/UTC",
+          "theme": "dark",
+          "style": "1",
+          "locale": "en",
+          "toolbar_bg": "#f1f3f6",
+          "enable_publishing": false,
+          "hide_side_toolbar": false,
+          "allow_symbol_change": true,
+          "details": true,
+          "hotlist": true,
+          "calendar": true,
+          "studies": [
+            "MASimple@tv-basicstudies"
+          ],
+          "chart_type": "heikin_ashi",
+          "container_id": `tradingview_widget_container_${container.current.id}`
+        });
+      }
     };
+    
+    // Give the container a unique ID for the widget to target
+    container.current.id = `tradingview_container_${Math.random().toString(36).substr(2, 9)}`;
 
-    script.innerHTML = JSON.stringify(widgetConfig);
+    const widgetContainer = document.createElement('div');
+    widgetContainer.id = `tradingview_widget_container_${container.current.id}`;
+    widgetContainer.style.height = "100%";
+    widgetContainer.style.width = "100%";
+    container.current.appendChild(widgetContainer);
     
     container.current.appendChild(script);
 
   }, [symbol]);
 
   return (
-    <div className="tradingview-widget-container" ref={container} style={{ height: "100%", width: "100%" }}>
-      <div className="tradingview-widget-container__widget" style={{ height: "calc(100% - 32px)", width: "100%" }}></div>
+    <div 
+      className="tradingview-widget-container" 
+      ref={container} 
+      style={{ height: "100%", width: "100%" }}
+    >
     </div>
   );
 }
