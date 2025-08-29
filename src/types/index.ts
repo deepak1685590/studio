@@ -80,9 +80,9 @@ export interface VolumeTimeframeData {
 export interface VolumeAnalysis {
   '5m': VolumeTimeframeData;
   '15m': VolumeTimeframeData;
-  '1h': VolumeTimeframeData;
-  '4h': VolumeTimeframeData;
-  '1d': VolumeTimeframeData;
+  '1H': VolumeTimeframeData;
+  '4H': VolumeTimeframeData;
+  '1D': VolumeTimeframeData;
 }
 
 export interface SignalData {

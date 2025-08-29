@@ -102,7 +102,7 @@ const calculateADX = (klines: any[], period: number) => {
 };
 
 const generateVolumeAnalysis = (): VolumeAnalysis => {
-    const timeframes: ('5m' | '15m' | '1h' | '4h' | '1d')[] = ['5m', '15m', '1h', '4h', '1d'];
+    const timeframes: (keyof VolumeAnalysis)[] = ['5m', '15m', '1H', '4H', '1D'];
     const analysis: Partial<VolumeAnalysis> = {};
 
     timeframes.forEach(tf => {
