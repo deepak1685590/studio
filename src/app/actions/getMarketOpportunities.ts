@@ -13,8 +13,10 @@ export interface Opportunity {
   timeframe: '5m' | '15m' | '1H' | '4H' | '1D';
 }
 
-const cryptoAssets = ['BTC/USD', 'ETH/USD', 'SOL/USD', 'XRP/USD', 'DOGE/USD', 'ADA/USD', 'AVAX/USD', 'LINK/USD'];
-const forexAssets = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'NZD/USD', 'GBP/JPY'];
+// Curated list of top-tier crypto assets
+const cryptoAssets = ['BTC/USD', 'ETH/USD', 'SOL/USD', 'BNB/USD', 'XRP/USD', 'DOGE/USD'];
+// Curated list of major and high-volume forex pairs
+const forexAssets = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'USD/CHF'];
 const opportunityTypes: Opportunity['type'][] = ['Bullish Breakout', 'Bearish Reversal', 'Range Expansion', 'Volume Spike'];
 const timeframes: Opportunity['timeframe'][] = ['5m', '15m', '1H', '4H'];
 
