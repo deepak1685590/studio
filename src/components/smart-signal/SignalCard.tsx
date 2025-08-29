@@ -15,19 +15,34 @@ import WhaleAlert from './WhaleAlert';
 import VolumeAnalysisTable from './VolumeAnalysisTable';
 import TradingViewWidget from './TradingViewWidget';
 
-interface SignalCardProps {
-  data: SignalData;
-  onDownload: () => void;
-  realtimePrice: number | null;
-  priceDirection: 'up' | 'down' | 'neutral';
-}
-
 const SectionHeader = ({ children, icon }: { children: React.ReactNode, icon?: React.ReactNode }) => (
-  <h4 className="font-headline text-lg text-primary mt-4 mb-2 border-b border-primary/20 pb-1 flex items-center gap-2">
+  <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">
     {icon}
     {children}
   </h4>
 );
+
+const SectionWrapper = ({ children, className, borderColor = 'primary' }: { children: React.ReactNode, className?: string, borderColor?: 'primary' | 'accent' }) => {
+    const borderClasses = borderColor === 'primary' 
+        ? 'border-primary/30 shadow-[0_0_15px_rgba(var(--border-raw),0.2)]' 
+        : 'border-accent/30 shadow-[0_0_15px_rgba(var(--accent-raw),0.2)]';
+    
+    // We need to parse the HSL variable to use it in rgba
+    const cssVars = `
+        :root {
+            --border-raw: var(--primary);
+            --accent-raw: var(--accent);
+        }
+    `;
+
+    return (
+        <div className={cn('p-4 bg-black/30 rounded-lg border', borderClasses, className)}>
+            <style>{cssVars.replace(/--primary/g, '180 100% 45.1%').replace(/--accent/g, '271 76% 53%')}</style>
+            {children}
+        </div>
+    );
+};
+
 
 const LevelItem = ({ label, value, valueClass }: { label: string; value: string | number; valueClass?: string }) => (
   <div className="flex justify-between text-sm">
@@ -39,7 +54,7 @@ const LevelItem = ({ label, value, valueClass }: { label: string; value: string 
 const ChecklistItem = ({ label, passed }: { label: string; passed: boolean }) => (
   <div className="flex items-center gap-2">
     {passed ? <CheckCircle2 className="text-green-400" /> : <XCircle className="text-red-400" />}
-    <span className={passed ? "text-green-400" : "text-red-400"}>{label}</span>
+    <span className={cn("text-sm", passed ? "text-green-400/90" : "text-red-400/90")}>{label}</span>
   </div>
 );
 
@@ -67,8 +82,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
 
   return (
-    <div id="signal-card-content" className="mt-5 p-5 bg-black/70 border-2 border-primary rounded-xl text-sm leading-relaxed shadow-lg">
-      <header className="mb-4 pb-4 border-b border-primary/20 bg-gradient-to-b from-primary/10 to-transparent -m-5 p-5 rounded-t-xl">
+    <div id="signal-card-content" className="mt-5 p-5 bg-black/70 border-2 border-primary rounded-xl text-sm leading-relaxed shadow-lg space-y-4">
+      <header className="pb-4 border-b border-primary/20 bg-gradient-to-b from-primary/10 to-transparent -m-5 mb-0 p-5 rounded-t-xl">
         <div className="flex justify-between items-center">
           <div className='flex items-center gap-3'>
             <div className={cn("flex items-center justify-center w-10 h-10 rounded-full", data.isBullish ? 'bg-green-500/20' : 'bg-red-500/20')}>
@@ -93,32 +108,35 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
         </div>
       </header>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 font-mono">
-        <div className="flex justify-between text-lg items-center py-1">
-            <span className="text-foreground/70 text-sm">Live Price:</span>
-            <span className={cn("font-mono flex items-center gap-2 transition-colors duration-300",
-                priceDirection === 'up' && 'text-green-400',
-                priceDirection === 'down' && 'text-red-400',
-            )}>
-                 <span className={cn(
-                    "w-3 h-3 rounded-full transition-all",
-                    priceDirection === 'up' && 'bg-green-500 shadow-[0_0_8px_theme(colors.green.500)] animate-pulse',
-                    priceDirection === 'down' && 'bg-red-500 shadow-[0_0_8px_theme(colors.red.500)] animate-pulse',
-                    priceDirection === 'neutral' && 'bg-gray-500'
-                 )}></span>
-                ${displayPrice.toFixed(4)}
-            </span>
+      <SectionWrapper borderColor="primary">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 font-mono">
+            <div className="flex justify-between text-lg items-center py-1">
+                <span className="text-foreground/70 text-sm">Live Price:</span>
+                <span className={cn("font-mono flex items-center gap-2 transition-colors duration-300",
+                    priceDirection === 'up' && 'text-green-400',
+                    priceDirection === 'down' && 'text-red-400',
+                )}>
+                     <span className={cn(
+                        "w-3 h-3 rounded-full transition-all",
+                        priceDirection === 'up' && 'bg-green-500 shadow-[0_0_8px_theme(colors.green.500)] animate-pulse',
+                        priceDirection === 'down' && 'bg-red-500 shadow-[0_0_8px_theme(colors.red.500)] animate-pulse',
+                        priceDirection === 'neutral' && 'bg-gray-500'
+                     )}></span>
+                    ${displayPrice.toFixed(4)}
+                </span>
+            </div>
+            <LevelItem label="Entry (Single)" value={`≈ ${data.entry}`} />
+            <LevelItem label="Stop-Loss" value={`${data.sl}`} />
+            <LevelItem label="Take-Profit 1" value={`${data.tp1}`} />
+            <LevelItem label="Take-Profit 2" value={`${data.tp2}`} />
+            <LevelItem label="Risk/Reward" value={`1 : ${data.riskReward.toFixed(1)}`} />
+            <LevelItem label="Confidence" value={`${data.confidenceBreakdown.overall}% (${data.confidence})`} />
         </div>
-        <LevelItem label="Entry (Single)" value={`≈ ${data.entry}`} />
-        <LevelItem label="Stop-Loss" value={`${data.sl}`} />
-        <LevelItem label="Take-Profit 1" value={`${data.tp1}`} />
-        <LevelItem label="Take-Profit 2" value={`${data.tp2}`} />
-        <LevelItem label="Risk/Reward" value={`1 : ${data.riskReward.toFixed(1)}`} />
-        <LevelItem label="Confidence" value={`${data.confidenceBreakdown.overall}% (${data.confidence})`} />
-      </div>
+      </SectionWrapper>
+
 
       {data.goldenPullbackZone && (
-        <Alert className="mt-4 border-primary/50 bg-primary/10 text-primary">
+        <Alert className="border-primary/50 bg-primary/10 text-primary">
           <Target className="h-4 w-4 text-primary" />
           <AlertTitle className="font-headline text-primary">
             {data.isBullish ? 'High-Probability Buy Zone' : 'High-Probability Sell Zone'}
@@ -132,85 +150,109 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
 
       <ConfidenceBreakdown breakdown={data.confidenceBreakdown} />
-
-      <SectionHeader icon={<Scaling />}>Quantum Data Stream</SectionHeader>
-      <div className="h-[400px] w-full rounded-lg overflow-hidden border-2 border-primary/20 p-1 bg-black/30">
-        <TradingViewWidget symbol={data.symbol} />
+        
+      <div>
+        <SectionHeader icon={<Scaling />}>Quantum Data Stream</SectionHeader>
+        <div className="h-[400px] w-full rounded-lg overflow-hidden border-2 border-primary/20 p-1 bg-black/30">
+          <TradingViewWidget symbol={data.symbol} />
+        </div>
       </div>
 
-      <SectionHeader icon={<BarChart />}>Multi-Timeframe Analysis</SectionHeader>
-      <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
+      <div>
+        <SectionHeader icon={<BarChart />}>Multi-Timeframe Analysis</SectionHeader>
+        <SectionWrapper borderColor="accent">
+            <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
+        </SectionWrapper>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <SectionHeader icon={<BookOpen />}>Pattern Recognition</SectionHeader>
-          <div className="p-4 bg-black/30 rounded-lg border border-primary/20">
+          <SectionWrapper borderColor="primary">
             <h5 className="font-bold text-primary">{data.chartPattern.name}</h5>
             <p className="text-xs text-foreground/80 mt-1">{data.chartPattern.description}</p>
-          </div>
+          </SectionWrapper>
         </div>
         <div>
           <SectionHeader icon={<CheckCircle2 />}>Trader's Checklist</SectionHeader>
-          <div className="p-4 bg-black/30 rounded-lg border border-primary/20 space-y-2">
-              <ChecklistItem label={`R/R > 1.5 (${data.riskReward.toFixed(1)})`} passed={data.tradersChecklist.riskRewardPass} />
-              <ChecklistItem label="HTF Alignment" passed={data.tradersChecklist.mtfAlignmentPass} />
-              <ChecklistItem label="Volume Confirmation" passed={data.tradersChecklist.volumeConfirmationPass} />
-              <ChecklistItem label="Entry in Zone" passed={data.tradersChecklist.entryInZonePass} />
-              <ChecklistItem label="Market Structure OK" passed={data.tradersChecklist.structureAligmentPass} />
-              <ChecklistItem label="Liquidity Sweep" passed={data.tradersChecklist.liquiditySweepPass} />
-          </div>
+          <SectionWrapper borderColor="accent">
+              <div className="space-y-2">
+                <ChecklistItem label={`R/R > 1.5 (${data.riskReward.toFixed(1)})`} passed={data.tradersChecklist.riskRewardPass} />
+                <ChecklistItem label="HTF Alignment" passed={data.tradersChecklist.mtfAlignmentPass} />
+                <ChecklistItem label="Volume Confirmation" passed={data.tradersChecklist.volumeConfirmationPass} />
+                <ChecklistItem label="Entry in Zone" passed={data.tradersChecklist.entryInZonePass} />
+                <ChecklistItem label="Market Structure OK" passed={data.tradersChecklist.structureAligmentPass} />
+                <ChecklistItem label="Liquidity Sweep" passed={data.tradersChecklist.liquiditySweepPass} />
+              </div>
+          </SectionWrapper>
         </div>
       </div>
 
-      <SectionHeader icon={<Zap />}>Signals Detected ({data.confluenceCount})</SectionHeader>
-      <ul className="list-disc list-inside space-y-1 text-xs pl-2 columns-2">
-        {data.confluenceFactors.map((factor, i) => <li key={i}>{factor}</li>)}
-      </ul>
+      <div>
+        <SectionHeader icon={<Zap />}>Signals Detected ({data.confluenceCount})</SectionHeader>
+        <SectionWrapper borderColor="primary">
+            <ul className="list-disc list-inside space-y-1 text-xs pl-2 columns-2">
+                {data.confluenceFactors.map((factor, i) => <li key={i}>{factor}</li>)}
+            </ul>
+        </SectionWrapper>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <SectionHeader icon={<GitCommitHorizontal />}>Fibonacci Re-Entry Levels</SectionHeader>
-            <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
-                <LevelItem label="Aggressive Entry (38.2%)" value={data.fibonacciLevels.level_382} />
-                <LevelItem label="Standard Entry (50.0%)" value={data.fibonacciLevels.level_500} />
-                <LevelItem label="Conservative Entry (61.8%)" value={data.fibonacciLevels.level_618} />
-            </div>
+            <SectionWrapper borderColor="accent">
+                <div className="space-y-1">
+                    <LevelItem label="Aggressive Entry (38.2%)" value={data.fibonacciLevels.level_382} />
+                    <LevelItem label="Standard Entry (50.0%)" value={data.fibonacciLevels.level_500} />
+                    <LevelItem label="Conservative Entry (61.8%)" value={data.fibonacciLevels.level_618} />
+                </div>
+            </SectionWrapper>
           </div>
           <div>
             <SectionHeader icon={<GitCommitHorizontal />}>Key Levels</SectionHeader>
-            <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
-                <LevelItem label="Daily Pivot" value={data.pivot} />
-                <LevelItem label="Support 1" value={data.s1} />
-                <LevelItem label="Resistance 1" value={data.r1} />
-            </div>
+            <SectionWrapper borderColor="primary">
+                <div className="space-y-1">
+                    <LevelItem label="Daily Pivot" value={data.pivot} />
+                    <LevelItem label="Support 1" value={data.s1} />
+                    <LevelItem label="Resistance 1" value={data.r1} />
+                </div>
+            </SectionWrapper>
         </div>
       </div>
       
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <SectionHeader icon={<GitCommitHorizontal />}>Liquidity & Structure</SectionHeader>
-           <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
-            <LevelItem label="Liquidity Pool" value={data.liquidityPool} />
-            <LevelItem label="Market Structure" value={data.marketStructure} />
-            <LevelItem label="Swing High" value={data.swingHigh} />
-            <LevelItem label="Swing Low" value={data.swingLow} />
-          </div>
+           <SectionWrapper borderColor="accent">
+               <div className="space-y-1">
+                <LevelItem label="Liquidity Pool" value={data.liquidityPool} />
+                <LevelItem label="Market Structure" value={data.marketStructure} />
+                <LevelItem label="Swing High" value={data.swingHigh} />
+                <LevelItem label="Swing Low" value={data.swingLow} />
+              </div>
+           </SectionWrapper>
         </div>
         <div>
           <SectionHeader icon={<Magnet />}>Volume Analysis (Compact)</SectionHeader>
-           <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
-            <LevelItem label="Buyer Volume" value={`${data.buyVolume} units`} />
-            <LevelItem label="Seller Volume" value={`${data.sellVolume} units`} />
-            <LevelItem label="Net Flow" value={data.volumeImbalance} />
-            <LevelItem label="Demand Zone" value={`$${data.demandZone[0]} - $${data.demandZone[1]}`} />
-            <LevelItem label="Supply Zone" value={`$${data.supplyZone[0]} - $${data.supplyZone[1]}`} />
-            <LevelItem label="Fair Value Gap" value={`$${data.fvg[0]} - $${data.fvg[1]}`} />
-          </div>
+           <SectionWrapper borderColor="primary">
+               <div className="space-y-1">
+                <LevelItem label="Buyer Volume" value={`${data.buyVolume} units`} />
+                <LevelItem label="Seller Volume" value={`${data.sellVolume} units`} />
+                <LevelItem label="Net Flow" value={data.volumeImbalance} />
+                <LevelItem label="Demand Zone" value={`$${data.demandZone[0]} - $${data.demandZone[1]}`} />
+                <LevelItem label="Supply Zone" value={`$${data.supplyZone[0]} - $${data.supplyZone[1]}`} />
+                <LevelItem label="Fair Value Gap" value={`$${data.fvg[0]} - $${data.fvg[1]}`} />
+              </div>
+           </SectionWrapper>
         </div>
       </div>
 
-      <SectionHeader icon={<Magnet />}>Institutional Volume Flow</SectionHeader>
-      <VolumeAnalysisTable data={data.volumeAnalysis} />
+      <div>
+        <SectionHeader icon={<Magnet />}>Institutional Volume Flow</SectionHeader>
+        <SectionWrapper borderColor="accent">
+            <VolumeAnalysisTable data={data.volumeAnalysis} />
+        </SectionWrapper>
+      </div>
 
       {data.mode === '3' && <EliteAiInsight data={{
         symbol: data.symbol,
@@ -244,3 +286,4 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
 };
 
 export default SignalCard;
+
