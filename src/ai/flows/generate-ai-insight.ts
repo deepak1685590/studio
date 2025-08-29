@@ -35,7 +35,10 @@ const GenerateAiInsightInputSchema = z.object({
 export type GenerateAiInsightInput = z.infer<typeof GenerateAiInsightInputSchema>;
 
 const GenerateAiInsightOutputSchema = z.object({
-  insight: z.string().describe('The AI-generated insight summarizing the trading opportunity.'),
+  executiveSummary: z.string().describe('A powerful, single-paragraph summary that sounds like a Bloomberg Pro Terminal alert. This is the primary, high-level insight.'),
+  keyStrengths: z.array(z.string()).describe('A bulleted list of the key technical and fundamental strengths supporting this trading setup.'),
+  potentialRisks: z.array(z.string()).describe('A bulleted list of potential risks, counter-arguments, or weaknesses in this setup.'),
+  strategicRecommendation: z.string().describe('A final paragraph providing actionable advice on how to approach the trade, including entry timing and management.'),
 });
 export type GenerateAiInsightOutput = z.infer<typeof GenerateAiInsightOutputSchema>;
 
@@ -63,38 +66,53 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateAiInsightOutputSchema},
   tools: [getMarketNews],
   prompt: `You are ELITE-AI, a world-class trading strategist with 20 years of institutional experience.
-Your task is to analyze a trading setup for {{symbol}} and deliver a powerful, single-paragraph summary that sounds like a Bloomberg Pro Terminal alert.
+Your task is to analyze a trading setup for {{symbol}} and provide a detailed, multi-faceted analysis for a professional trader.
 
 First, use the getMarketNews tool to fetch the latest headlines for {{symbol}}.
-Then, synthesize the technical data provided with the news sentiment.
+Then, synthesize ALL the technical data provided with the news sentiment to generate your analysis.
 
-Structure your analysis paragraph as follows:
-- Start with: "Strong [bullish/bearish] setup presents itself..."
-- Mention price, entry, SL, TP, and confluence count.
-- Highlight the detected chart pattern: {{chartPatternName}}.
-- Comment on key smart money levels like demand zones ({{demandZone}}) and Fair Value Gaps ({{fvg}}).
-- Crucially, comment on the multi-timeframe alignment. Note if higher timeframes (4H, Daily) support the 15m signal.
-- **Integrate the news sentiment.** State whether the headlines are providing "tailwinds" (supporting the trade) or "headwinds" (contradicting the trade).
-- Note volume bias based on {{volumeImbalance}}.
-- End with a sharp, confident conclusion about the opportunity.
+Your output must be structured into four distinct parts:
 
-Tone: Professional, urgent, elite. Use Markdown formatting.
+1.  **Executive Summary:**
+    - A powerful, single-paragraph summary that sounds like a Bloomberg Pro Terminal alert.
+    - Start with: "Strong [bullish/bearish] setup presents itself..."
+    - Mention price, entry, SL, TP, and confluence count.
+    - Integrate the chart pattern, smart money levels (demand zone, FVG), multi-timeframe alignment, and volume bias.
+    - State whether news is providing "tailwinds" or "headwinds."
+    - End with a sharp, confident conclusion.
 
-Technical Data:
-Price: \${{price}}
-Trend: {{#if isBullish}}Bullish{{else}}Bearish{{/if}}
-Action: {{action}}
-Entry: \${{entry}}, SL: \${{sl}}, TP1: \${{tp1}}
-Confluence: {{confluenceCount}} factors
-Chart Pattern: {{chartPatternName}}
-Demand Zone: {{demandZone}}
-FVG: {{fvg}}
-Volume: {{volumeImbalance}}
-Multi-Timeframe Analysis:
-- 15m: {{multiTimeframeAnalysis.15m}}
-- 1H: {{multiTimeframeAnalysis.1H}}
-- 4H: {{multiTimeframeAnalysis.4H}}
-- Daily: {{multiTimeframeAnalysis.Daily}}`,
+2.  **Key Strengths:**
+    - A bulleted list of all the factors SUPPORTING this trade.
+    - Be specific. Examples: "Strong alignment across 4H and Daily timeframes provides macro support," or "Significant volume imbalance confirms buying pressure," or "Recent positive news headlines act as a tailwind."
+
+3.  **Potential Risks:**
+    - A bulleted list of all the factors that could INVALIDATE this trade.
+    - Consider counter-arguments. Examples: "The Daily timeframe is showing a neutral trend, which could limit upside," or "The trade is against the prevailing news sentiment, suggesting a high-risk setup," or "Upcoming CPI data could introduce volatility."
+
+4.  **Strategic Recommendation:**
+    - A final paragraph of actionable advice.
+    - Recommend the best course of action. Example: "Given the confluence of factors, a patient entry is advised. Wait for a pullback to the demand zone between $... and $... before committing. If the price breaks below the stop-loss with high volume, the setup is invalidated."
+
+Tone: Professional, balanced, elite, and deeply analytical. Use Markdown for lists.
+
+---
+**Technical Data for Analysis:**
+- Asset: {{symbol}}
+- Price: \${{price}}
+- Trend: {{#if isBullish}}Bullish{{else}}Bearish{{/if}}
+- Action: {{action}}
+- Entry: \${{entry}}, SL: \${{sl}}, TP1: \${{tp1}}
+- Confluence: {{confluenceCount}} factors
+- Chart Pattern: {{chartPatternName}}
+- Demand Zone: {{demandZone}}
+- FVG: {{fvg}}
+- Volume: {{volumeImbalance}}
+- Multi-Timeframe Analysis:
+  - 15m: {{multiTimeframeAnalysis.15m}}
+  - 1H: {{multiTimeframeAnalysis.1H}}
+  - 4H: {{multiTimeframeAnalysis.4H}}
+  - Daily: {{multiTimeframeAnalysis.Daily}}
+---`,
 });
 
 const generateAiInsightFlow = ai.defineFlow(
@@ -105,8 +123,6 @@ const generateAiInsightFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return {
-      insight: output!.insight,
-    };
+    return output!;
   }
 );
