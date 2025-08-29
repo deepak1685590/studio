@@ -328,7 +328,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                         <span className="text-foreground/80">Liquidity Analysis:</span>
                     </div>
                     <div className="text-right">
-                        <span className="font-mono text-base text-accent">{data.smartMoney.liquidity.level}</span>
+                        <div className="font-mono text-base text-accent">{data.smartMoney.liquidity.type}: {data.smartMoney.liquidity.level}</div>
                         <p className="text-xs text-foreground/70">{data.smartMoney.liquidity.description}</p>
                     </div>
                 </div>
