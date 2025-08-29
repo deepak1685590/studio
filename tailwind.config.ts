@@ -99,13 +99,35 @@ export default {
          'pulse-glow': {
           '0%, 100%': { boxShadow: '0 0 20px hsl(var(--primary) / 0.5)' },
           '50%': { boxShadow: '0 0 30px hsl(var(--primary) / 0.7)' },
-        }
+        },
+        'neon-blue': {
+          '0%, 100%': {
+            'text-shadow': '0 0 5px #22d3ee, 0 0 10px #22d3ee, 0 0 20px #22d3ee, 0 0 40px #0891b2, 0 0 80px #0891b2',
+            color: '#e0f2fe',
+          },
+          '50%': {
+            'text-shadow': '0 0 10px #22d3ee, 0 0 20px #22d3ee, 0 0 40px #0891b2, 0 0 80px #0891b2, 0 0 100px #0891b2',
+            color: '#f0f9ff',
+          },
+        },
+        'neon-purple': {
+          '0%, 100%': {
+            'text-shadow': '0 0 5px #d8b4fe, 0 0 10px #d8b4fe, 0 0 20px #d8b4fe, 0 0 40px #a855f7, 0 0 80px #a855f7',
+            color: '#f3e8ff',
+          },
+          '50%': {
+            'text-shadow': '0 0 10px #d8b4fe, 0 0 20px #d8b4fe, 0 0 40px #a855f7, 0 0 80px #a855f7, 0 0 100px #a855f7',
+            color: '#fae8ff',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'flicker': 'flicker 3s infinite alternate',
         'pulse-glow': 'pulse-glow 2.5s infinite alternate',
+        'neon-blue': 'neon-blue 2s ease-in-out infinite alternate',
+        'neon-purple': 'neon-purple 2.5s ease-in-out infinite alternate',
       },
       textShadow: {
         DEFAULT: '0 2px 4px var(--tw-shadow-color)',

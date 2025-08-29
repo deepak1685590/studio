@@ -27,7 +27,7 @@ const SmartSignalWidget = () => {
   const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    if (!signalData || isMockData) return;
+    if (isMockData || !signalData) return;
 
     // Close previous connection if it exists
     if (ws.current) {
@@ -128,8 +128,10 @@ const SmartSignalWidget = () => {
 
   return (
     <div className="smartsignal-widget max-w-3xl mx-auto border-2 border-primary rounded-xl overflow-hidden shadow-[0_0_30px_var(--primary)] bg-black/70 backdrop-blur-sm">
-      <header className="widget-header p-4 text-center font-headline text-2xl bg-gradient-to-r from-accent to-primary text-background">
-        🚀 SmartSignal Pro - Quantum Analysis Engine
+      <header className="widget-header p-4 text-center font-headline text-2xl bg-black/50">
+        <span className="animate-neon-blue">🚀 SmartSignal Pro</span>
+        <span className="text-primary mx-2">-</span>
+        <span className="animate-neon-purple">Quantum Analysis Engine</span>
       </header>
       <div className="widget-body p-6 space-y-4">
         <div>
