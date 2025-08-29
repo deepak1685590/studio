@@ -73,8 +73,8 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   }, [initialSymbol]);
 
   useEffect(() => {
-    // Only connect if we have signal data, are not using mock data, and it's a known crypto asset
-    if (isMockData || !signalData || !cryptoAssetsForWebsocket.includes(signalData.symbol.toUpperCase())) {
+    // Only connect if we have signal data, are not using mock data, and it's a known crypto asset without a '/'
+    if (isMockData || !signalData || !cryptoAssetsForWebsocket.includes(signalData.symbol.toUpperCase()) || signalData.symbol.includes('/')) {
       if (ws.current) {
         ws.current.close();
       }
