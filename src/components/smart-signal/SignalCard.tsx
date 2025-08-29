@@ -229,9 +229,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         
       <div>
         <SectionHeader icon={<BarChart />} title="Multi-Timeframe Analysis" />
-        <SectionWrapper>
-            <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
-        </SectionWrapper>
+        <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

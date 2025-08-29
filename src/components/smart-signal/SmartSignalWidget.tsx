@@ -16,6 +16,7 @@ import jsPDF from 'jspdf';
 import { cn } from '@/lib/utils';
 import TradingViewWidget from './TradingViewWidget';
 import VolumeAnalysisTable from './VolumeAnalysisTable';
+import { Skeleton } from '../ui/skeleton';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -164,6 +165,20 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const buttonColor = isBullish === true ? 'border-green-400/80 bg-green-500/20 hover:bg-green-400 hover:text-background' : isBullish === false ? 'border-red-500/80 bg-red-500/20 hover:bg-red-500 hover:text-white' : 'border-primary bg-primary/20 hover:bg-primary hover:text-background';
   const inputColor = isBullish === true ? 'border-green-400/50 focus:shadow-[0_0_15px_rgba(74,222,128,0.5)]' : isBullish === false ? 'border-red-500/50 focus:shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]';
 
+  const LoadingSkeleton = () => (
+    <div className="p-6 space-y-4">
+      <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2 flex items-center justify-center">
+        <Skeleton className="w-full h-full" />
+      </div>
+       <div className="bg-black/30 rounded-lg border border-primary/20 p-2">
+        <div className="space-y-2">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className={cn(
@@ -234,17 +249,20 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       </div>
 
       <div className="widget-body p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <div className="space-y-6">
-          <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
-            <TradingViewWidget symbol={signalData?.symbol || initialSymbol} />
+        {loading ? <LoadingSkeleton /> : (
+          <div className="space-y-6">
+            <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
+              <TradingViewWidget symbol={signalData?.symbol || initialSymbol} />
+            </div>
+            {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} />}
           </div>
-          {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} />}
-        </div>
+        )}
         
         <div className="lg:mt-0">
           {loading && (
              <div className="text-center text-primary/80 italic p-4">
-                Initializing Quantum Matrix... This may take a moment.
+                <p className="mb-4">Initializing Quantum Matrix...</p>
+                <Skeleton className="h-64 w-full" />
              </div>
           )}
           
