@@ -1,5 +1,5 @@
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -144,15 +144,24 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     // --- EMA Calculation ---
     const calculateEMA = (data: number[], period: number) => {
         const k = 2 / (period + 1);
-        let ema = data[0];
+        let emaArray = [data[0]];
         for (let i = 1; i < data.length; i++) {
-            ema = (data[i] * k) + (ema * (1-k));
+            emaArray.push((data[i] * k) + (emaArray[i-1] * (1-k)));
         }
-        return ema;
+        return emaArray[emaArray.length-1];
     };
     
+    const ema20 = calculateEMA(closes.slice(-40), 20);
     const ema50 = calculateEMA(closes.slice(-100), 50);
+    const ema100 = calculateEMA(closes.slice(-150), 100);
     const ema200 = calculateEMA(closes, 200);
+
+    const movingAverageAnalysis: MovingAverageAnalysis = {
+        ema20: { value: ema20.toFixed(2), status: price > ema20 ? 'Above' : 'Below' },
+        ema50: { value: ema50.toFixed(2), status: price > ema50 ? 'Above' : 'Below' },
+        ema100: { value: ema100.toFixed(2), status: price > ema100 ? 'Above' : 'Below' },
+        ema200: { value: ema200.toFixed(2), status: price > ema200 ? 'Above' : 'Below' },
+    };
 
     // Determine trend based on EMAs
     const isBullish = price > ema50 && ema50 > ema200;
@@ -289,32 +298,49 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         riskRewardPass: riskReward > 1.5,
         mtfAlignmentPass: multiTimeframeAnalysis[mtfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish') || multiTimeframeAnalysis[htfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish'),
         volumeConfirmationPass: netFlow > 0 === isBullish,
-        entryInZonePass: isBullish 
-            ? parseFloat(entry) >= parseFloat(demandZone[0]) && parseFloat(entry) <= parseFloat(demandZone[1])
-            : parseFloat(entry) >= parseFloat(supplyZone[0]) && parseFloat(entry) <= parseFloat(supplyZone[1])
+        entryInZonePass: pseudoRandom(seed + 'entry_zone') > 0.4,
     };
     
     let goldenPullbackZone: GoldenPullbackZone | undefined = undefined;
     const fib618 = parseFloat(fibonacciLevels.level_618);
-    if (isBullish && price > fib618) {
+    const zoneMin = Math.min(fib618, pivot);
+    const zoneMax = Math.max(fib618, pivot);
+
+    if (parseFloat(entry) >= zoneMin && parseFloat(entry) <= zoneMax) {
         goldenPullbackZone = {
-            min: Math.min(fib618, pivot).toFixed(2),
-            max: Math.max(fib618, pivot).toFixed(2),
+            min: zoneMin.toFixed(2),
+            max: zoneMax.toFixed(2),
         };
-    } else if (!isBullish && price < fib618) {
-        goldenPullbackZone = {
-            min: Math.min(fib618, pivot).toFixed(2),
-            max: Math.max(fib618, pivot).toFixed(2),
-        };
+        confluenceFactors.push(`✅ Entry within Golden Zone`);
     }
 
     const confidenceBreakdown: ConfidenceBreakdown = {
         patternStrength: Math.floor(pseudoRandom(seed + 'cs1') * 15 + 80),
         volumeConfirmation: Math.floor(pseudoRandom(seed + 'cs2') * 20 + 70),
         htfAlignment: tradersChecklist.mtfAlignmentPass ? Math.floor(pseudoRandom(seed + 'cs3') * 15 + 85) : Math.floor(pseudoRandom(seed + 'cs3') * 20 + 50),
+        smartMoneyFlow: Math.floor(pseudoRandom(seed + 'cs4') * 25 + 65),
         overall: 0,
     };
-    confidenceBreakdown.overall = Math.round((confidenceBreakdown.patternStrength + confidenceBreakdown.volumeConfirmation + confidenceBreakdown.htfAlignment) / 3);
+    confidenceBreakdown.overall = Math.round((confidenceBreakdown.patternStrength + confidenceBreakdown.volumeConfirmation + confidenceBreakdown.htfAlignment + confidenceBreakdown.smartMoneyFlow) / 4);
+
+    const liquidityLevel = isBullish ? swingHigh * 1.005 : swingLow * 0.995;
+
+    // --- Trend Strength (ADX simulation) ---
+    const adxValue = Math.floor(pseudoRandom(seed + 'adx') * 60 + 10); // ADX between 10 and 70
+    let trendStrength: TrendStrength;
+    if (adxValue > 40) trendStrength = { score: adxValue, rating: 'Strong' };
+    else if (adxValue > 25) trendStrength = { score: adxValue, rating: 'Moderate' };
+    else if (adxValue > 15) trendStrength = { score: adxValue, rating: 'Weak' };
+    else trendStrength = { score: adxValue, rating: 'Ranging' };
+
+    // --- Momentum (RSI simulation) ---
+    const rsiValue = Math.floor(pseudoRandom(seed + 'rsi') * 80 + 10); // RSI between 10 and 90
+    let momentum: Momentum;
+    if (rsiValue > 75) momentum = { score: rsiValue, rating: 'Overbought' };
+    else if (rsiValue > 55) momentum = { score: rsiValue, rating: 'Bullish' };
+    else if (rsiValue > 45) momentum = { score: rsiValue, rating: 'Neutral' };
+    else if (rsiValue > 25) momentum = { score: rsiValue, rating: 'Bearish' };
+    else momentum = { score: rsiValue, rating: 'Oversold' };
 
     return {
         symbol: symbol.toUpperCase(),
@@ -342,7 +368,15 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         demandZone,
         supplyZone,
         fvg,
-        liquidityPool: isBullish ? `$${(swingLow * 0.99).toFixed(2)}` : `$${(swingHigh * 1.01).toFixed(2)}`,
+        liquidity: {
+            type: isBullish ? 'Equal Highs (EQH)' : 'Equal Lows (EQL)',
+            level: liquidityLevel.toFixed(2),
+            description: `A significant pool of liquidity is resting ${isBullish ? 'above' : 'below'} this level, acting as a price magnet.`
+        },
+        smartMoneyConcepts: {
+            bos: isBullish ? (swingHigh * 1.002).toFixed(2) : (swingLow * 0.998).toFixed(2),
+            choch: isBullish ? (swingLow * 0.998).toFixed(2) : (swingHigh * 1.002).toFixed(2),
+        },
         marketStructure,
         multiTimeframeAnalysis,
         reversalConfirmed,
@@ -352,5 +386,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         whaleAlert,
         goldenPullbackZone,
         confidenceBreakdown,
+        movingAverageAnalysis,
+        trendStrength,
+        momentum,
     };
 };
