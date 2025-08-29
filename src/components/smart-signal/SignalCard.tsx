@@ -6,7 +6,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, CandlestickChart, CircleDot, Move, Gauge, Activity } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, CandlestickChart, CircleDot, Move, Gauge, Activity, FileDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,7 @@ import VolumeAnalysisTable from './VolumeAnalysisTable';
 import TradingViewWidget from './TradingViewWidget';
 import SidewaysMarketAlert from './SidewaysMarketAlert';
 import OracleInsight from './OracleInsight';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 const SectionHeader = ({ children, icon }: { children: React.ReactNode, icon?: React.ReactNode }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">
@@ -154,12 +155,13 @@ const LevelItem: React.FC<{
 
 interface SignalCardProps {
     data: SignalData;
-    onDownload: () => void;
+    onDownloadPng: () => void;
+    onDownloadPdf: () => void;
     realtimePrice: number | null;
     priceDirection: 'up' | 'down' | 'neutral';
 }
 
-const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice, priceDirection }) => {
+const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection }) => {
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
 
   const levelStatus = useMemo(() => {
@@ -459,9 +461,17 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
 
       <div className="flex justify-between items-center mt-6">
         <small className="text-foreground/50">Generated: {new Date().toLocaleString()}</small>
-        <Button onClick={onDownload} className="font-headline uppercase gap-2 bg-gradient-to-r from-accent to-blue-500 text-white hover:opacity-90">
-          <Download size={16} /> Download Signal Card
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="font-headline uppercase gap-2 bg-gradient-to-r from-accent to-blue-500 text-white hover:opacity-90">
+              <FileDown size={16} /> Download
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={onDownloadPng}>Download as PNG</DropdownMenuItem>
+            <DropdownMenuItem onClick={onDownloadPdf}>Download as PDF</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

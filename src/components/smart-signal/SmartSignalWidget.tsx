@@ -12,6 +12,7 @@ import html2canvas from 'html2canvas';
 import { Rocket, BrainCircuit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timeframe } from '@/types';
+import jsPDF from 'jspdf';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -23,7 +24,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const [symbol, setSymbol] = useState(initialSymbol);
   const [mode, setMode] = useState('3');
   const [timeframe, setTimeframe] = useState<Timeframe>('15m');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [signalData, setSignalData] = useState<SignalData | null>(null);
   const [realtimePrice, setRealtimePrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
@@ -120,7 +121,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     };
   }, []);
 
-  const handleDownload = () => {
+  const handleDownloadPng = () => {
     const cardElement = document.getElementById('signal-card-content');
     if (cardElement) {
         html2canvas(cardElement, {
@@ -130,13 +131,37 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
         }).then(canvas => {
             const link = document.createElement('a');
             link.download = `SmartSignal_${symbol.toUpperCase()}_${new Date().toISOString()}.png`;
-            link.href = canvas.toDataURL();
+            link.href = canvas.toDataURL('image/png');
             link.click();
-            toast({ title: "Success", description: "Signal card downloaded." });
+            toast({ title: "Success", description: "PNG Signal card downloaded." });
         }).catch(err => {
             console.error("html2canvas error:", err);
             toast({ title: "Error", description: "Could not generate image.", variant: "destructive" });
         });
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    const cardElement = document.getElementById('signal-card-content');
+    if (cardElement) {
+      html2canvas(cardElement, {
+        backgroundColor: '#000000',
+        scale: 2,
+        useCORS: true,
+      }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'px',
+          format: [canvas.width, canvas.height]
+        });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`SmartSignal_${symbol.toUpperCase()}_${new Date().toISOString()}.pdf`);
+        toast({ title: "Success", description: "PDF Signal card downloaded." });
+      }).catch(err => {
+        console.error("PDF generation error:", err);
+        toast({ title: "Error", description: "Could not generate PDF.", variant: "destructive" });
+      });
     }
   };
 
@@ -210,7 +235,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
              </div>
         )}
 
-        {signalData && <SignalCard data={signalData} onDownload={handleDownload} realtimePrice={realtimePrice} priceDirection={priceDirection}/>}
+        {signalData && <SignalCard data={signalData} onDownloadPng={handleDownloadPng} onDownloadPdf={handleDownloadPdf} realtimePrice={realtimePrice} priceDirection={priceDirection}/>}
 
       </div>
     </div>
