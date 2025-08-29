@@ -52,79 +52,58 @@ const ChecklistItem = ({ label, passed }: { label: string; passed: boolean }) =>
   </div>
 );
 
-const SignalStrengthIndicator = ({ level }: { level: number }) => {
-    const totalBars = 10;
-    const activeBars = Math.min(totalBars, Math.max(1, level));
-
-    const getColor = (index: number) => {
-        const ratio = (index + 1) / totalBars;
-        if (ratio <= 0.4) return 'bg-blue-500 shadow-[0_0_4px_theme(colors.blue.500)]';
-        if (ratio <= 0.8) return 'bg-green-500 shadow-[0_0_6px_theme(colors.green.500)]';
-        return 'bg-purple-500 shadow-[0_0_8px_theme(colors.purple.500)] animate-pulse';
-    };
-
-    return (
-        <div className="flex items-center gap-2">
-            <span className="text-xs font-headline text-primary/80">STRENGTH</span>
-            <div className="flex items-end gap-1">
-                {Array.from({ length: totalBars }).map((_, i) => (
-                    <div 
-                        key={i} 
-                        className={cn(
-                            "w-1.5 rounded-full transition-all duration-300",
-                            i < activeBars ? getColor(i) : 'bg-primary/20',
-                            i < 4 ? 'h-2' : i < 8 ? 'h-3' : 'h-4'
-                        )}
-                    />
-                ))}
-            </div>
-        </div>
-    );
-};
-
-
-const QuantumConfidenceMeter = ({ score, label }: { score: number, label: string }) => {
-    const circumference = 2 * Math.PI * 18; // 2 * pi * radius
+const QuantumConfidenceMeter = ({ score, label, isBullish }: { score: number, label: string, isBullish: boolean }) => {
+    const circumference = 2 * Math.PI * 28; // 2 * pi * radius
     const offset = circumference - (score / 100) * circumference;
 
-    const getColor = (s: number) => {
-        if (s > 85) return 'stroke-green-400 text-green-400';
-        if (s > 70) return 'stroke-yellow-400 text-yellow-400';
-        return 'stroke-orange-400 text-orange-400';
+    const getColor = () => {
+        if (isBullish) {
+            if (score > 85) return 'stroke-green-400 text-green-400 shadow-[0_0_15px_theme(colors.green.500)]';
+            if (score > 70) return 'stroke-yellow-400 text-yellow-400 shadow-[0_0_15px_theme(colors.yellow.500)]';
+            return 'stroke-orange-400 text-orange-400 shadow-[0_0_15px_theme(colors.orange.500)]';
+        } else { // Bearish
+            if (score > 85) return 'stroke-red-400 text-red-400 shadow-[0_0_15px_theme(colors.red.500)]';
+            if (score > 70) return 'stroke-orange-400 text-orange-400 shadow-[0_0_15px_theme(colors.orange.500)]';
+            return 'stroke-yellow-400 text-yellow-400 shadow-[0_0_15px_theme(colors.yellow.500)]';
+        }
     };
+    
+    const colorClasses = getColor();
 
     return (
         <div className="flex flex-col items-center gap-2">
-            <div className="relative h-16 w-16">
-                <svg className="absolute top-0 left-0 w-full h-full" viewBox="0 0 40 40">
+            <div className="relative h-20 w-20">
+                <svg className="absolute top-0 left-0 w-full h-full" viewBox="0 0 60 60">
+                    {/* Background Circle */}
                     <circle
                         className="stroke-primary/10"
-                        cx="20"
-                        cy="20"
-                        r="18"
-                        strokeWidth="3"
+                        cx="30"
+                        cy="30"
+                        r="28"
+                        strokeWidth="4"
                         fill="transparent"
                     />
+                    {/* Meter Circle */}
                     <circle
-                        className={`transition-all duration-700 ease-in-out ${getColor(score)}`}
-                        cx="20"
-                        cy="20"
-                        r="18"
-                        strokeWidth="3"
+                        className={cn("transition-all duration-700 ease-in-out", colorClasses.split(' ')[0])}
+                        cx="30"
+                        cy="30"
+                        r="28"
+                        strokeWidth="4"
                         fill="transparent"
                         strokeDasharray={circumference}
                         strokeDashoffset={offset}
                         strokeLinecap="round"
-                        transform="rotate(-90 20 20)"
+                        transform="rotate(-90 30 30)"
                     />
                 </svg>
-                <div className={`absolute inset-0 flex items-center justify-center font-headline text-xl ${getColor(score)}`}>
-                    {score}<span className="text-xs">%</span>
+                <div className={cn("absolute inset-0 flex items-center justify-center font-headline text-3xl", colorClasses.split(' ')[1])}>
+                    {score}<span className="text-sm">%</span>
                 </div>
             </div>
             <div className="text-center">
                 <div className="text-xs font-headline text-primary/80">CONFIDENCE</div>
-                <div className={`text-xs font-bold ${getColor(score)}`}>{label.toUpperCase()}</div>
+                <div className={cn("text-xs font-bold", colorClasses.split(' ')[1])}>{label.toUpperCase()}</div>
             </div>
         </div>
     );
@@ -185,14 +164,15 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
 
   const levelStatus = useMemo(() => {
     if (realtimePrice === null) {
-      return { entry: 'none', tp1: 'none', tp2: 'none' };
+      return { entry: 'none', sl: 'none', tp1: 'none', tp2: 'none' };
     }
-
+  
     const entry = parseFloat(data.entry);
     const tp1 = parseFloat(data.tp1);
     const tp2 = parseFloat(data.tp2);
     
-    const proximityThreshold = Math.abs(tp1 - entry) * 0.05; // 5% of the range to TP1
+    // Use a small percentage of the price for proximity checks
+    const proximityThreshold = realtimePrice * 0.005; // 0.5% of current price
 
     const checkStatus = (level: number, isEntry = false) => {
        if (data.isBullish) {
@@ -209,10 +189,11 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
     
     return {
       entry: checkStatus(entry, true),
+      sl: 'none', // SL doesn't need a status
       tp1: checkStatus(tp1),
       tp2: checkStatus(tp2),
     };
-
+  
   }, [realtimePrice, data.entry, data.tp1, data.tp2, data.isBullish]);
 
 
@@ -238,7 +219,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
              <Badge variant="outline" className="flex items-center gap-1 text-xs">
                 <Timer size={12} /> {data.timeframe.toUpperCase()}
              </Badge>
-             <SignalStrengthIndicator level={data.confluenceCount} />
           </div>
         </div>
       </header>
@@ -262,7 +242,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
                     </span>
                 </div>
                 <LevelItem label="Entry" value={parseFloat(data.entry)} status={levelStatus.entry} />
-                <LevelItem label="Stop-Loss" value={parseFloat(data.sl)} status="none" />
+                <LevelItem label="Stop-Loss" value={parseFloat(data.sl)} status={levelStatus.sl} />
                 <LevelItem label="Take-Profit 1" value={parseFloat(data.tp1)} status={levelStatus.tp1} />
                 <LevelItem label="Take-Profit 2" value={parseFloat(data.tp2)} status={levelStatus.tp2} />
                 <div className="flex justify-between text-sm pt-1">
@@ -271,7 +251,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
                 </div>
             </div>
             <div className="flex justify-center items-center md:col-span-1 pt-4 md:pt-0">
-                <QuantumConfidenceMeter score={data.confidenceBreakdown.overall} label={data.confidence} />
+                 <QuantumConfidenceMeter score={data.confidenceBreakdown.overall} label={data.confidence} isBullish={data.isBullish} />
             </div>
         </div>
       </SectionWrapper>
@@ -450,3 +430,5 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
 };
 
 export default SignalCard;
+
+    
