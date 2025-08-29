@@ -432,7 +432,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <>
             <EliteAiInsight data={{
                 symbol: data.symbol,
-                price: displayPrice,
+                price: data.price,
                 isBullish: data.isBullish,
                 action: data.action,
                 entry: parseFloat(data.entry),
@@ -452,7 +452,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             }} />
              <OracleInsight data={{
                 symbol: data.symbol,
-                price: displayPrice,
+                price: data.price,
                 isBullish: data.isBullish,
                 volatility: data.volatility,
             }} />

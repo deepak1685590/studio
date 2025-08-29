@@ -38,7 +38,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
 
     fetchInsight();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.symbol, data.entry]); // Only re-run when the symbol or initial entry changes, not on every price tick.
+  }, [data.symbol, data.entry, data.sl, data.tp1]); // Only re-run when the core signal parameters change.
 
   const copyToClipboard = () => {
     if (!insight) return;
