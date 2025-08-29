@@ -61,23 +61,83 @@ const ChecklistItem = ({ label, passed }: { label: string; passed: boolean }) =>
 );
 
 const SignalStrengthIndicator = ({ level }: { level: number }) => {
-    const totalBars = 8;
-    const activeBars = Math.max(1, Math.min(totalBars, Math.round(level / 1.5)));
+    const totalBars = 10;
+    const activeBars = Math.min(totalBars, Math.max(1, level));
+
+    const getColor = (index: number) => {
+        const ratio = (index + 1) / totalBars;
+        if (ratio <= 0.4) return 'bg-blue-500 shadow-[0_0_4px_theme(colors.blue.500)]';
+        if (ratio <= 0.8) return 'bg-green-500 shadow-[0_0_6px_theme(colors.green.500)]';
+        return 'bg-purple-500 shadow-[0_0_8px_theme(colors.purple.500)] animate-pulse';
+    };
+
     return (
-        <div className="flex items-center gap-1">
-            <span className="text-xs font-mono text-foreground/70">STR</span>
-            {Array.from({ length: totalBars }).map((_, i) => (
-                <div 
-                    key={i} 
-                    className={cn(
-                        "w-1 h-3 rounded-full transition-all",
-                        i < activeBars ? 'bg-primary shadow-[0_0_4px_theme(colors.primary)]' : 'bg-primary/20'
-                    )}
-                />
-            ))}
+        <div className="flex items-center gap-2">
+            <span className="text-xs font-headline text-primary/80">STRENGTH</span>
+            <div className="flex items-end gap-1">
+                {Array.from({ length: totalBars }).map((_, i) => (
+                    <div 
+                        key={i} 
+                        className={cn(
+                            "w-1.5 rounded-full transition-all duration-300",
+                            i < activeBars ? getColor(i) : 'bg-primary/20',
+                            i < 4 ? 'h-2' : i < 8 ? 'h-3' : 'h-4'
+                        )}
+                    />
+                ))}
+            </div>
         </div>
     );
 };
+
+
+const QuantumConfidenceMeter = ({ score, label }: { score: number, label: string }) => {
+    const circumference = 2 * Math.PI * 18; // 2 * pi * radius
+    const offset = circumference - (score / 100) * circumference;
+
+    const getColor = (s: number) => {
+        if (s > 85) return 'stroke-green-400 text-green-400';
+        if (s > 70) return 'stroke-yellow-400 text-yellow-400';
+        return 'stroke-orange-400 text-orange-400';
+    };
+
+    return (
+        <div className="flex flex-col items-center gap-2">
+            <div className="relative h-16 w-16">
+                <svg className="absolute top-0 left-0 w-full h-full" viewBox="0 0 40 40">
+                    <circle
+                        className="stroke-primary/10"
+                        cx="20"
+                        cy="20"
+                        r="18"
+                        strokeWidth="3"
+                        fill="transparent"
+                    />
+                    <circle
+                        className={`transition-all duration-700 ease-in-out ${getColor(score)}`}
+                        cx="20"
+                        cy="20"
+                        r="18"
+                        strokeWidth="3"
+                        fill="transparent"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={offset}
+                        strokeLinecap="round"
+                        transform="rotate(-90 20 20)"
+                    />
+                </svg>
+                <div className={`absolute inset-0 flex items-center justify-center font-headline text-xl ${getColor(score)}`}>
+                    {score}<span className="text-xs">%</span>
+                </div>
+            </div>
+            <div className="text-center">
+                <div className="text-xs font-headline text-primary/80">CONFIDENCE</div>
+                <div className={`text-xs font-bold ${getColor(score)}`}>{label.toUpperCase()}</div>
+            </div>
+        </div>
+    );
+};
+
 
 interface SignalCardProps {
     data: SignalData;
@@ -117,28 +177,32 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
       </header>
       
       <SectionWrapper borderColor="primary">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 font-mono">
-            <div className="flex justify-between text-lg items-center py-1">
-                <span className="text-foreground/70 text-sm">Live Price:</span>
-                <span className={cn("font-mono flex items-center gap-2 transition-colors duration-300",
-                    priceDirection === 'up' && 'text-green-400',
-                    priceDirection === 'down' && 'text-red-400',
-                )}>
-                     <span className={cn(
-                        "w-3 h-3 rounded-full transition-all",
-                        priceDirection === 'up' && 'bg-green-500 shadow-[0_0_8px_theme(colors.green.500)] animate-pulse',
-                        priceDirection === 'down' && 'bg-red-500 shadow-[0_0_8px_theme(colors.red.500)] animate-pulse',
-                        priceDirection === 'neutral' && 'bg-gray-500'
-                     )}></span>
-                    ${displayPrice.toFixed(4)}
-                </span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 font-mono">
+            <div className="md:col-span-2 space-y-1">
+                <div className="flex justify-between text-lg items-center py-1">
+                    <span className="text-foreground/70 text-sm">Live Price:</span>
+                    <span className={cn("font-mono flex items-center gap-2 transition-colors duration-300",
+                        priceDirection === 'up' && 'text-green-400',
+                        priceDirection === 'down' && 'text-red-400',
+                    )}>
+                         <span className={cn(
+                            "w-3 h-3 rounded-full transition-all",
+                            priceDirection === 'up' && 'bg-green-500 shadow-[0_0_8px_theme(colors.green.500)] animate-pulse',
+                            priceDirection === 'down' && 'bg-red-500 shadow-[0_0_8px_theme(colors.red.500)] animate-pulse',
+                            priceDirection === 'neutral' && 'bg-gray-500'
+                         )}></span>
+                        ${displayPrice.toFixed(4)}
+                    </span>
+                </div>
+                <LevelItem label="Entry (Single)" value={`≈ ${data.entry}`} />
+                <LevelItem label="Stop-Loss" value={`${data.sl}`} />
+                <LevelItem label="Take-Profit 1" value={`${data.tp1}`} />
+                <LevelItem label="Take-Profit 2" value={`${data.tp2}`} />
+                <LevelItem label="Risk/Reward" value={`1 : ${data.riskReward.toFixed(1)}`} />
             </div>
-            <LevelItem label="Entry (Single)" value={`≈ ${data.entry}`} />
-            <LevelItem label="Stop-Loss" value={`${data.sl}`} />
-            <LevelItem label="Take-Profit 1" value={`${data.tp1}`} />
-            <LevelItem label="Take-Profit 2" value={`${data.tp2}`} />
-            <LevelItem label="Risk/Reward" value={`1 : ${data.riskReward.toFixed(1)}`} />
-            <LevelItem label="Confidence" value={`${data.confidenceBreakdown.overall}% (${data.confidence})`} />
+            <div className="flex justify-center items-center md:col-span-1 pt-4 md:pt-0">
+                <QuantumConfidenceMeter score={data.confidenceBreakdown.overall} label={data.confidence} />
+            </div>
         </div>
       </SectionWrapper>
 
