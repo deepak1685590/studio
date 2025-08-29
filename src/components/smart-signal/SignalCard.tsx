@@ -6,7 +6,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, CandlestickChart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -221,6 +221,17 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
 
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
       {data.sidewaysMarket && <SidewaysMarketAlert alert={data.sidewaysMarket} />}
+      {data.candlestickPattern && (
+        <Alert className={cn("mt-4", data.isBullish ? "border-green-500/50 bg-green-900/30" : "border-red-500/50 bg-red-900/30")}>
+          <CandlestickChart className={cn("h-5 w-5", data.isBullish ? "text-green-400" : "text-red-400")} />
+          <AlertTitle className={cn("font-headline text-lg", data.isBullish ? "text-green-400" : "text-red-400")}>
+            {data.candlestickPattern.name} Detected
+          </AlertTitle>
+          <AlertDescription className="text-foreground/90">
+            {data.candlestickPattern.description}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <ConfidenceBreakdown breakdown={data.confidenceBreakdown} />
         

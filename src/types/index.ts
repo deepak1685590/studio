@@ -28,6 +28,11 @@ export interface ChartPattern {
     description: string;
 }
 
+export interface CandlestickPattern {
+    name: string;
+    description: string;
+}
+
 export interface TradersChecklist {
     riskRewardPass: boolean;
     mtfAlignmentPass: boolean;
@@ -123,4 +128,5 @@ export interface SignalData {
   volumeAnalysis: VolumeAnalysis;
   sidewaysMarket?: SidewaysMarket;
   volatility: number;
+  candlestickPattern?: CandlestickPattern;
 }

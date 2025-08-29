@@ -1,5 +1,5 @@
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, VolumeAnalysis, VolumeTimeframeData, SidewaysMarket } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, VolumeAnalysis, VolumeTimeframeData, SidewaysMarket, CandlestickPattern } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -32,9 +32,9 @@ const getMockKlines = (price: number, interval: Timeframe) => {
 
   for (let i = 0; i < 100; i++) {
     const open = currentPrice;
-    const high = open * (1 + (Math.random() - 0.45) * 0.02);
-    const low = open * (1 + (Math.random() - 0.55) * 0.02);
-    const close = (high + low) / 2 * (1 + (Math.random() - 0.5) * 0.01);
+    const high = open * (1 + (pseudoRandom(i.toString()) - 0.45) * 0.02);
+    const low = open * (1 + (pseudoRandom(i.toString() + 'low') - 0.55) * 0.02);
+    const close = (high + low) / 2 * (1 + (pseudoRandom(i.toString()+'close') - 0.5) * 0.01);
     currentPrice = close;
     klines.push([
       Date.now() - (100 - i) * intervalMinutes * 60 * 1000,
@@ -42,7 +42,7 @@ const getMockKlines = (price: number, interval: Timeframe) => {
       high.toFixed(4),
       low.toFixed(4),
       close.toFixed(4),
-      (Math.random() * 1000).toFixed(4),
+      (pseudoRandom(i.toString()+'vol') * 1000).toFixed(4),
     ]);
   }
   return klines;
@@ -216,15 +216,17 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     let whaleAlert: WhaleAlert | undefined = undefined;
     const majorCoins = ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE'];
     if (majorCoins.includes(symbol.toUpperCase())) {
-        const isBullishWhale = pseudoRandom(seed + 'whale_bull') > 0.5;
-        whaleAlert = {
-            amount: parseFloat((pseudoRandom(seed + 'whale_amount') * 2000 + 500).toFixed(0)),
-            symbol: symbol.toUpperCase(),
-            destination: isBullishWhale ? 'Cold Wallet' : 'Exchanges',
-            impactProbability: 'HIGH',
-            historicalPattern: isBullishWhale ? '78% chance of short-term rally' : '73% chance of price drop within 4h',
-        };
-        confluenceFactors.unshift(`🚨 WHALE SIGHTING: Large volume detected!`);
+         if (pseudoRandom(seed + 'whale_event') > 0.4) { // 60% chance of a whale alert for major coins
+            const isBullishWhale = pseudoRandom(seed + 'whale_bull') > 0.5;
+            whaleAlert = {
+                amount: parseFloat((pseudoRandom(seed + 'whale_amount') * 2000 + 500).toFixed(0)),
+                symbol: symbol.toUpperCase(),
+                destination: isBullishWhale ? 'Cold Wallet' : 'Exchanges',
+                impactProbability: 'HIGH',
+                historicalPattern: isBullishWhale ? '78% chance of short-term rally' : '73% chance of price drop within 4h',
+            };
+            confluenceFactors.unshift(`🚨 WHALE SIGHTING: Large volume detected!`);
+        }
     }
 
 
@@ -280,19 +282,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         const liquidityPulse = (pseudoRandom(seed + 'pulse') * 150 + 50).toFixed(0);
         confluenceFactors.push(`Subspace Liquidity Pulse: ${liquidityPulse}M units detected`);
     }
-
-    const confluenceCount = confluenceFactors.length;
-    const confidence = confluenceCount >= 6 ? "Very High" : confluenceCount >= 4 ? "High" : "Medium";
-    
-    const action = isBullish ? "Buy on Pullback" : "Sell on Rally";
-    const entry = entryPrice.toFixed(2);
-    const sl = isBullish ? (parseFloat(entry) - atr*atrMultiplier).toFixed(2) : (parseFloat(entry) + atr*atrMultiplier).toFixed(2);
-    const tp1 = isBullish ? (parseFloat(entry) + atr*tpMultiplier1).toFixed(2) : (parseFloat(entry) - atr*tpMultiplier1).toFixed(2);
-    const tp2 = isBullish ? (parseFloat(entry) + atr*tpMultiplier2).toFixed(2) : (parseFloat(entry) - atr*tpMultiplier2).toFixed(2);
-
-    const risk = Math.abs(parseFloat(entry) - parseFloat(sl));
-    const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
-    const riskReward = risk > 0 ? reward / risk : 0;
     
     const bullishPatterns = [
         { name: 'Bull Flag', description: 'A continuation pattern suggesting the uptrend will resume after a brief consolidation.' },
@@ -307,6 +296,38 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const chartPattern: ChartPattern = isBullish 
         ? bullishPatterns[Math.floor(pseudoRandom(seed+'pattern') * bullishPatterns.length)] 
         : bearishPatterns[Math.floor(pseudoRandom(seed+'pattern') * bearishPatterns.length)];
+    
+     const bullishCandlesticks = [
+        { name: 'Bullish Engulfing', description: 'A strong reversal indicator where a large green candle engulfs the previous red candle.' },
+        { name: 'Hammer', description: 'A bullish reversal pattern that forms after a decline, suggesting a potential bottom.' },
+        { name: 'Morning Star', description: 'A three-candle pattern indicating a bullish reversal after a downtrend.' },
+    ];
+    const bearishCandlesticks = [
+        { name: 'Bearish Engulfing', description: 'A strong reversal indicator where a large red candle engulfs the previous green candle.' },
+        { name: 'Shooting Star', description: 'A bearish reversal pattern that forms after a rise, suggesting a potential top.' },
+        { name: 'Evening Star', description: 'A three-candle pattern indicating a bearish reversal after an uptrend.' },
+    ];
+    let candlestickPattern: CandlestickPattern | undefined = undefined;
+    if (pseudoRandom(seed + 'candlestick_event') > 0.3) { // 70% chance of detecting a pattern
+        candlestickPattern = isBullish
+            ? bullishCandlesticks[Math.floor(pseudoRandom(seed+'candlestick') * bullishCandlesticks.length)]
+            : bearishCandlesticks[Math.floor(pseudoRandom(seed+'candlestick') * bearishCandlesticks.length)];
+        confluenceFactors.push(`✅ Candlestick: ${candlestickPattern.name}`);
+    }
+
+
+    const confluenceCount = confluenceFactors.length;
+    const confidence = confluenceCount >= 6 ? "Very High" : confluenceCount >= 4 ? "High" : "Medium";
+    
+    const action = isBullish ? "Buy on Pullback" : "Sell on Rally";
+    const entry = entryPrice.toFixed(2);
+    const sl = isBullish ? (parseFloat(entry) - atr*atrMultiplier).toFixed(2) : (parseFloat(entry) + atr*atrMultiplier).toFixed(2);
+    const tp1 = isBullish ? (parseFloat(entry) + atr*tpMultiplier1).toFixed(2) : (parseFloat(entry) - atr*tpMultiplier1).toFixed(2);
+    const tp2 = isBullish ? (parseFloat(entry) + atr*tpMultiplier2).toFixed(2) : (parseFloat(entry) - atr*tpMultiplier2).toFixed(2);
+
+    const risk = Math.abs(parseFloat(entry) - parseFloat(sl));
+    const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
+    const riskReward = risk > 0 ? reward / risk : 0;
     
     const marketStructure = isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL';
 
@@ -388,5 +409,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         volumeAnalysis,
         sidewaysMarket,
         volatility,
+        candlestickPattern,
     };
 };
