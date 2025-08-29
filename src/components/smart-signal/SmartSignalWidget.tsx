@@ -23,9 +23,10 @@ const SmartSignalWidget = () => {
   const { toast } = useToast();
 
   const ws = useRef<WebSocket | null>(null);
+  const isUsingMockData = useRef(false);
 
   useEffect(() => {
-    if (!signalData) return;
+    if (!signalData || isUsingMockData.current) return;
 
     // Close previous connection if it exists
     if (ws.current) {
@@ -85,6 +86,7 @@ const SmartSignalWidget = () => {
     }
     setLoading(true);
     setSignalData(null);
+    isUsingMockData.current = false;
     try {
       const data = await getSignalData(symbol, mode, timeframe);
       setSignalData(data);
@@ -93,6 +95,7 @@ const SmartSignalWidget = () => {
       console.error("Error generating signal:", error);
       toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
       // Fallback to mock data on error
+      isUsingMockData.current = true;
       const mockData = await getSignalData(symbol, mode, timeframe, true);
       setSignalData(mockData);
       setRealtimePrice(mockData.price); // Initialize with fetched price
