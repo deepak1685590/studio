@@ -1,4 +1,4 @@
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, SidewaysMarket } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, SidewaysMarket, VolumeAnalysis } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -98,6 +98,33 @@ const calculateADX = (klines: any[], period: number) => {
 
     const adx = ema(dx, period);
     return adx[adx.length - 1];
+};
+
+const generateVolumeAnalysis = (): VolumeAnalysis => {
+    const timeframes: ('5m' | '15m' | '1H' | '4H' | '1D')[] = ['5m', '15m', '1H', '4H', '1D'];
+    const analysis: Partial<VolumeAnalysis> = {};
+
+    timeframes.forEach(tf => {
+        const totalVolume = Math.random() * 10000 + 5000; // 5k to 15k
+        const buyRatio = Math.random();
+        const buyVolume = Math.round(totalVolume * buyRatio);
+        const sellVolume = Math.round(totalVolume * (1 - buyRatio));
+        
+        let dominantSide: 'Buy' | 'Sell' | 'Neutral' = 'Neutral';
+        if (buyRatio > 0.55) {
+            dominantSide = 'Buy';
+        } else if (buyRatio < 0.45) {
+            dominantSide = 'Sell';
+        }
+
+        analysis[tf] = {
+            buyVolume,
+            sellVolume,
+            totalVolume,
+            dominantSide,
+        };
+    });
+    return analysis as VolumeAnalysis;
 };
 
 
@@ -350,6 +377,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         overall: 0,
     };
     confidenceBreakdown.overall = Math.round((confidenceBreakdown.technical + confidenceBreakdown.volume + confidenceBreakdown.structure + confidenceBreakdown.sentiment) / 4);
+    
+    const volumeAnalysis = generateVolumeAnalysis();
 
     return {
         symbol: symbol.toUpperCase(),
@@ -388,5 +417,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         goldenPullbackZone,
         confidenceBreakdown,
         sidewaysMarket,
+        volumeAnalysis,
     };
 };

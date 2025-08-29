@@ -14,6 +14,7 @@ import WhaleAlert from './WhaleAlert';
 import OracleInsight from './OracleInsight';
 import TradingViewMiniChart from './TradingViewMiniChart';
 import SidewaysMarketAlert from './SidewaysMarketAlert';
+import VolumeAnalysisTable from './VolumeAnalysisTable';
 
 interface SignalCardProps {
   data: SignalData;
@@ -111,6 +112,9 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
 
       <SectionHeader icon={<BarChart />}>Multi-Timeframe Analysis</SectionHeader>
       <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
+
+      <SectionHeader icon={<Magnet />}>Institutional Volume Flow</SectionHeader>
+      <VolumeAnalysisTable data={data.volumeAnalysis} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
         <div>

@@ -69,6 +69,21 @@ export interface SidewaysMarket {
   adx: number;
 }
 
+export interface VolumeTimeframeData {
+  buyVolume: number;
+  sellVolume: number;
+  totalVolume: number;
+  dominantSide: 'Buy' | 'Sell' | 'Neutral';
+}
+
+export interface VolumeAnalysis {
+  '5m': VolumeTimeframeData;
+  '15m': VolumeTimeframeData;
+  '1H': VolumeTimeframeData;
+  '4H': VolumeTimeframeData;
+  '1D': VolumeTimeframeData;
+}
+
 export interface SignalData {
   symbol: string;
   price: number;
@@ -106,4 +121,5 @@ export interface SignalData {
   goldenPullbackZone?: GoldenPullbackZone;
   confidenceBreakdown: ConfidenceBreakdown;
   sidewaysMarket?: SidewaysMarket;
+  volumeAnalysis: VolumeAnalysis;
 }
