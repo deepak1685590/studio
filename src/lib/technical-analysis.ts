@@ -1,4 +1,4 @@
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, SidewaysMarket } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -47,10 +47,63 @@ const getMockKlines = (price: number, interval: Timeframe) => {
   return klines;
 };
 
+// Helper function to calculate ADX
+const calculateADX = (klines: any[], period: number) => {
+    if (klines.length < period * 2) return 0;
+
+    let trueRanges = [];
+    let directionalMovementsUp = [];
+    let directionalMovementsDown = [];
+
+    for (let i = 1; i < klines.length; i++) {
+        const high = parseFloat(klines[i][2]);
+        const low = parseFloat(klines[i][3]);
+        const close = parseFloat(klines[i][4]);
+        const prevHigh = parseFloat(klines[i - 1][2]);
+        const prevLow = parseFloat(klines[i - 1][3]);
+        const prevClose = parseFloat(klines[i - 1][4]);
+
+        const tr = Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
+        trueRanges.push(tr);
+
+        const upMove = high - prevHigh;
+        const downMove = prevLow - low;
+
+        directionalMovementsUp.push(upMove > downMove && upMove > 0 ? upMove : 0);
+        directionalMovementsDown.push(downMove > upMove && downMove > 0 ? downMove : 0);
+    }
+    
+    const ema = (data: number[], length: number) => {
+        let result = [];
+        let sum = 0;
+        for (let i = 0; i < length; i++) sum += data[i];
+        result.push(sum / length);
+        for (let i = length; i < data.length; i++) {
+            result.push((data[i] * (2 / (length + 1))) + result[result.length - 1] * (1 - (2 / (length + 1))));
+        }
+        return result;
+    };
+
+    const smoothedTR = ema(trueRanges, period);
+    const smoothedDMUp = ema(directionalMovementsUp, period);
+    const smoothedDMDown = ema(directionalMovementsDown, period);
+
+    let diPlus = smoothedDMUp.map((val, i) => (smoothedTR[i] === 0 ? 0 : (val / smoothedTR[i]) * 100));
+    let diMinus = smoothedDMDown.map((val, i) => (smoothedTR[i] === 0 ? 0 : (val / smoothedTR[i]) * 100));
+
+    let dx = diPlus.map((val, i) => {
+        const sum = val + diMinus[i];
+        return sum === 0 ? 0 : (Math.abs(val - diMinus[i]) / sum) * 100;
+    });
+
+    const adx = ema(dx, period);
+    return adx[adx.length - 1];
+};
+
+
 export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, forceMock = false): Promise<SignalData> => {
     let price, klines: any[], symbolWithUSDT = symbol.toUpperCase() + "USDT";
     
-    // Map our Timeframe type to Binance's interval strings
     const timeframeToInterval = {
       '5m': '5m',
       '15m': '15m',
@@ -104,6 +157,21 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     }
     const atr = trSum / atrPeriod;
 
+    // Sideways Market Detection using ADX
+    let sidewaysMarket: SidewaysMarket | undefined;
+    const adxPeriod = 14;
+    const adxValue = calculateADX(klines, adxPeriod);
+    if (adxValue < 20) {
+        const rangePeriod = 25;
+        const rangeHighs = highPrices.slice(-rangePeriod);
+        const rangeLows = lowPrices.slice(-rangePeriod);
+        sidewaysMarket = {
+            isSideways: true,
+            range: [Math.max(...rangeHighs).toFixed(2), Math.min(...rangeLows).toFixed(2)],
+            adx: parseFloat(adxValue.toFixed(2))
+        };
+    }
+
     // Fibonacci Retracement Levels
     const fibRange = swingHigh - swingLow;
     const fibonacciLevels: FibonacciLevels = {
@@ -112,7 +180,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         level_618: (swingHigh - fibRange * 0.618).toFixed(2),
     };
 
-    // Scalping parameters
     const timeframeMultipliers = {
         '5m': { atr: 1.5, tp1: 1.5, tp2: 3 },
         '15m': { atr: 2, tp1: 2, tp2: 4 },
@@ -127,7 +194,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const superTrendMultiplier = 2.5;
     const upperBand = (swingHigh + swingLow) / 2 + (superTrendMultiplier * atr);
     const lowerBand = (swingHigh + swingLow) / 2 - (superTrendMultiplier * atr);
-    const isBullish = lastClose > lowerBand; // simplified
+    const isBullish = lastClose > lowerBand;
 
     const demandZone: [string, string] = isBullish ? [(lastClose * 0.98).toFixed(2), (lastClose * 0.99).toFixed(2)] : [(swingLow * 0.995).toFixed(2), (swingLow).toFixed(2)];
     const supplyZone: [string, string] = isBullish ? [(swingHigh).toFixed(2), (swingHigh * 1.005).toFixed(2)] : [(lastClose * 1.01).toFixed(2), (lastClose * 1.02).toFixed(2)];
@@ -155,7 +222,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         confluenceFactors.push(`✅ Reversal Confirmed`);
     }
 
-    // Always generate a whale alert for demonstration
     const isBullishWhale = Math.random() > 0.5;
     const whaleAlert: WhaleAlert = {
         amount: parseFloat((Math.random() * 2000 + 500).toFixed(0)), // 500 - 2500
@@ -190,18 +256,15 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     const analysisTimeframes = mtfMap[timeframe] || mtfMap['15m']!;
     
-    // Set the trend for the current timeframe
     const currentTfKey = timeframe === '1d' ? 'Daily' : timeframe.toUpperCase() as keyof MultiTimeframeAnalysis;
     multiTimeframeAnalysis[currentTfKey] = isBullish ? 'Bullish' : 'Bearish';
     
-    // Set trends for other relevant timeframes
     analysisTimeframes.forEach(tf => {
         if (!multiTimeframeAnalysis[tf]) {
             multiTimeframeAnalysis[tf] = trends[Math.floor(Math.random() * 3)];
         }
     });
     
-    // Ensure all required fields for the AI are present, even if just neutral
     const requiredTfs: (keyof MultiTimeframeAnalysis)[] = ['15m', '1H', '4H', 'Daily'];
     requiredTfs.forEach(tf => {
         if (!multiTimeframeAnalysis[tf]) {
@@ -267,7 +330,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     let goldenPullbackZone: GoldenPullbackZone | undefined = undefined;
     const fib618 = parseFloat(fibonacciLevels.level_618);
-    // Only show the pullback zone if it's a valid opportunity
     if (isBullish && price > fib618) {
         goldenPullbackZone = {
             min: Math.min(fib618, pivot).toFixed(2),
@@ -325,5 +387,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         whaleAlert,
         goldenPullbackZone,
         confidenceBreakdown,
+        sidewaysMarket,
     };
 };

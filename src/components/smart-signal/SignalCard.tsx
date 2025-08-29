@@ -13,6 +13,7 @@ import ConfidenceBreakdown from './ConfidenceBreakdown';
 import WhaleAlert from './WhaleAlert';
 import OracleInsight from './OracleInsight';
 import TradingViewMiniChart from './TradingViewMiniChart';
+import SidewaysMarketAlert from './SidewaysMarketAlert';
 
 interface SignalCardProps {
   data: SignalData;
@@ -45,7 +46,6 @@ const ChecklistItem = ({ label, passed }: { label: string; passed: boolean }) =>
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice, priceDirection }) => {
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
   
-  // The Oracle appears only on Elite Mode with very high confidence.
   const showOracle = data.mode === '3' && data.confidenceBreakdown.overall > 92;
 
   return (
@@ -85,6 +85,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
         <LevelItem label="Risk/Reward" value={`1 : ${data.riskReward.toFixed(1)}`} />
         <LevelItem label="Confidence" value={`${data.confidenceBreakdown.overall}% (${data.confidence})`} />
       </div>
+
+      {data.sidewaysMarket?.isSideways && <SidewaysMarketAlert alert={data.sidewaysMarket} />}
 
       {data.goldenPullbackZone && (
         <Alert className="mt-4 border-primary/50 bg-primary/10 text-primary">

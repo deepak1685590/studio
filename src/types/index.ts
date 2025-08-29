@@ -63,6 +63,12 @@ export interface WhaleAlert {
   historicalPattern: string;
 }
 
+export interface SidewaysMarket {
+  isSideways: boolean;
+  range: [string, string];
+  adx: number;
+}
+
 export interface SignalData {
   symbol: string;
   price: number;
@@ -99,4 +105,5 @@ export interface SignalData {
   whaleAlert?: WhaleAlert;
   goldenPullbackZone?: GoldenPullbackZone;
   confidenceBreakdown: ConfidenceBreakdown;
+  sidewaysMarket?: SidewaysMarket;
 }
