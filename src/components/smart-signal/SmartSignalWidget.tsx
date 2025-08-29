@@ -32,8 +32,13 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 
   const ws = useRef<WebSocket | null>(null);
 
-  const handleGenerateSignal = async (overrideSymbol?: string) => {
-    const targetSymbol = (overrideSymbol || symbol).toUpperCase();
+  // This effect updates the symbol in the input when a new opportunity is selected.
+  useEffect(() => {
+    setSymbol(initialSymbol);
+  }, [initialSymbol]);
+
+  const handleGenerateSignal = async () => {
+    const targetSymbol = symbol.toUpperCase();
     if (!targetSymbol) {
       toast({ title: "Input Error", description: "Please enter a symbol.", variant: "destructive" });
       return;
@@ -110,11 +115,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       setLoading(false);
     }
   };
-  
-  useEffect(() => {
-    handleGenerateSignal(initialSymbol);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialSymbol]);
 
   useEffect(() => {
     // Cleanup function to close WebSocket on component unmount
@@ -196,7 +196,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             </div>
         </div>
 
-        <Button onClick={() => handleGenerateSignal()} disabled={loading} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">
+        <Button onClick={handleGenerateSignal} disabled={loading} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">
           {loading ? (
             <>
               <BrainCircuit className="mr-2 h-4 w-4 animate-spin" />
