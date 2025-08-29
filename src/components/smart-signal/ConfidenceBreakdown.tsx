@@ -3,17 +3,25 @@
 
 import React from 'react';
 import { ConfidenceBreakdown as ConfidenceBreakdownType } from '@/types';
-import { BrainCircuit, TrendingUp, BarChart4, Network, DollarSign, Layers } from 'lucide-react';
+import { BrainCircuit, TrendingUp, BarChart4, Layers, DollarSign } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ConfidenceBreakdownProps {
   breakdown: ConfidenceBreakdownType;
+  isBullish: boolean;
 }
 
-const ScoreBar = ({ label, score, icon }: { label: string; score: number, icon: React.ReactNode }) => {
+const ScoreBar = ({ label, score, icon, isBullish }: { label: string; score: number, icon: React.ReactNode, isBullish: boolean }) => {
   const getScoreColor = (value: number) => {
-    if (value >= 85) return 'bg-green-500';
-    if (value >= 70) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (isBullish) {
+      if (value >= 85) return 'bg-green-400';
+      if (value >= 70) return 'bg-teal-400';
+      return 'bg-yellow-500';
+    }
+    // Bearish
+    if (value >= 85) return 'bg-red-500';
+    if (value >= 70) return 'bg-rose-500';
+    return 'bg-orange-500';
   };
 
   return (
@@ -25,7 +33,7 @@ const ScoreBar = ({ label, score, icon }: { label: string; score: number, icon: 
       <div className="w-2/3">
         <div className="w-full bg-primary/20 h-2.5 rounded-full">
           <div 
-            className={`h-full rounded-full ${getScoreColor(score)}`}
+            className={cn('h-full rounded-full transition-all duration-500', getScoreColor(score))}
             style={{ width: `${score}%` }}
           ></div>
         </div>
@@ -35,21 +43,25 @@ const ScoreBar = ({ label, score, icon }: { label: string; score: number, icon: 
   );
 };
 
-const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ breakdown }) => {
+const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ breakdown, isBullish }) => {
+  const overallColor = isBullish 
+    ? (breakdown.overall > 75 ? 'text-green-400' : 'text-yellow-400')
+    : (breakdown.overall > 75 ? 'text-red-400' : 'text-orange-400');
+
   return (
     <div className="mt-4 p-4 bg-black/30 rounded-lg border border-primary/20">
       <h4 className="font-headline text-lg text-primary mb-3 flex items-center gap-2">
         <BrainCircuit /> AI Confidence Matrix
       </h4>
       <div className="flex flex-col gap-2">
-        <ScoreBar label="Pattern Strength" score={breakdown.patternStrength} icon={<TrendingUp size={16} />} />
-        <ScoreBar label="Volume Confirmation" score={breakdown.volumeConfirmation} icon={<BarChart4 size={16} />} />
-        <ScoreBar label="HTF Alignment" score={breakdown.htfAlignment} icon={<Layers size={16} />} />
-        <ScoreBar label="Smart Money Flow" score={breakdown.smartMoneyFlow} icon={<DollarSign size={16} />} />
+        <ScoreBar label="Pattern Strength" score={breakdown.patternStrength} icon={<TrendingUp size={16} />} isBullish={isBullish} />
+        <ScoreBar label="Volume Confirmation" score={breakdown.volumeConfirmation} icon={<BarChart4 size={16} />} isBullish={isBullish} />
+        <ScoreBar label="HTF Alignment" score={breakdown.htfAlignment} icon={<Layers size={16} />} isBullish={isBullish} />
+        <ScoreBar label="Smart Money Flow" score={breakdown.smartMoneyFlow} icon={<DollarSign size={16} />} isBullish={isBullish} />
       </div>
        <div className="mt-4 pt-3 border-t border-primary/20 flex justify-between items-center">
         <span className="font-bold text-sm">Overall Confidence Score:</span>
-        <span className="font-headline text-2xl text-primary">{breakdown.overall}%</span>
+        <span className={cn("font-headline text-2xl", overallColor)} style={{textShadow: '0 0 10px currentColor'}}>{breakdown.overall}%</span>
       </div>
     </div>
   );

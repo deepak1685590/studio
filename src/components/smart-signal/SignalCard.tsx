@@ -284,7 +284,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </Alert>
       )}
 
-      <ConfidenceBreakdown breakdown={data.confidenceBreakdown} />
+      <ConfidenceBreakdown breakdown={data.confidenceBreakdown} isBullish={data.isBullish} />
         
       <div>
         <SectionHeader icon={<Scaling />}>Quantum Data Stream</SectionHeader>
