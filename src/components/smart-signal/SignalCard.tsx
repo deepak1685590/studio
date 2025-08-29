@@ -99,9 +99,10 @@ interface SignalCardProps {
     onDownloadPdf: () => void;
     realtimePrice: number | null;
     priceDirection: 'up' | 'down' | 'neutral';
+    mode: string;
 }
 
-const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection }) => {
+const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
 
   const eliteAiInsightData: GenerateAiInsightInput = useMemo(() => ({
