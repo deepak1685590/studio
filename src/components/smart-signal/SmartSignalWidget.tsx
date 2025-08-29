@@ -17,6 +17,8 @@ interface SmartSignalWidgetProps {
   initialSymbol?: string;
 }
 
+const cryptoAssetsForWebsocket = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'DOGE'];
+
 const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = 'BTC' }) => {
   const [symbol, setSymbol] = useState(initialSymbol);
   const [mode, setMode] = useState('3');
@@ -71,7 +73,13 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   }, [initialSymbol]);
 
   useEffect(() => {
-    if (isMockData || !signalData) return;
+    // Only connect if we have signal data, are not using mock data, and it's a known crypto asset
+    if (isMockData || !signalData || !cryptoAssetsForWebsocket.includes(signalData.symbol.toUpperCase())) {
+      if (ws.current) {
+        ws.current.close();
+      }
+      return;
+    }
 
     // Close previous connection if it exists
     if (ws.current) {
@@ -79,7 +87,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     }
     
     // Reset price for new symbol
-    setRealtimePrice(null);
+    setRealtimePrice(signalData.price);
     setPriceDirection('neutral');
 
     const wsSymbol = signalData.symbol.toLowerCase() + 'usdt';
