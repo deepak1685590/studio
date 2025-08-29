@@ -1,5 +1,5 @@
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, VolumeAnalysis, VolumeTimeframeData, SidewaysMarket, CandlestickPattern, MovingAverages, MarketInternals, SmartMoneyConcepts } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -66,35 +66,6 @@ const pseudoRandom = (seedStr: string): number => {
     return ((h1^h2^h3^h4)>>>0) / 4294967296;
 }
 
-const generateVolumeAnalysis = (symbol: string): VolumeAnalysis => {
-    const timeframes: (keyof VolumeAnalysis)[] = ['5m', '15m', '1H', '4H', '1D'];
-    const analysis: Partial<VolumeAnalysis> = {};
-
-    timeframes.forEach(tf => {
-        const seed = `${symbol}-${tf}`;
-        const totalVolume = pseudoRandom(seed + 'total') * 10000 + 5000;
-        const buyRatio = pseudoRandom(seed + 'ratio');
-        const buyVolume = Math.round(totalVolume * buyRatio);
-        const sellVolume = Math.round(totalVolume * (1 - buyRatio));
-        
-        let dominantSide: 'Buy' | 'Sell' | 'Neutral' = 'Neutral';
-        if (buyRatio > 0.55) {
-            dominantSide = 'Buy';
-        } else if (buyRatio < 0.45) {
-            dominantSide = 'Sell';
-        }
-
-        analysis[tf] = {
-            buyVolume,
-            sellVolume,
-            totalVolume,
-            dominantSide,
-        };
-    });
-    return analysis as VolumeAnalysis;
-};
-
-
 export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, forceMock = false): Promise<SignalData> => {
     let price, klines: any[], symbolWithUSDT = symbol.toUpperCase() + "USDT";
     const seed = `${symbol}-${timeframe}-${mode}`;
@@ -127,9 +98,9 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         }
     }
     
-    const closes = klines.map(k => parseFloat(k[4]));
-    const highPrices = klines.map(k => parseFloat(k[2]));
-    const lowPrices = klines.map(k => parseFloat(k[3]));
+    const closes = klines.map((k: any[]) => parseFloat(k[4]));
+    const highPrices = klines.map((k: any[]) => parseFloat(k[2]));
+    const lowPrices = klines.map((k: any[]) => parseFloat(k[3]));
 
     const recentHighs = highPrices.slice(-50);
     const recentLows = lowPrices.slice(-50);
@@ -153,37 +124,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     }
     const atr = trSum / atrPeriod;
 
-    // Simulate ADX for Trend Strength
-    const trendStrengthValue = Math.floor(pseudoRandom(seed + 'adx') * 60 + 10); // ADX value 10-70
-    let trendStrengthRating: MarketInternals['trendStrength']['rating'] = 'Ranging';
-    if (trendStrengthValue > 40) trendStrengthRating = 'Strong';
-    else if (trendStrengthValue > 25) trendStrengthRating = 'Moderate';
-    else if (trendStrengthValue > 15) trendStrengthRating = 'Weak';
-    
-    let sidewaysMarket: SidewaysMarket | undefined = undefined;
-    if (trendStrengthRating === 'Weak' || trendStrengthRating === 'Ranging') {
-        sidewaysMarket = {
-            adx: trendStrengthValue,
-            range: [swingLow.toFixed(2), swingHigh.toFixed(2)],
-        };
-    }
-
-    // Simulate RSI for Momentum
-    const momentumValue = Math.floor(pseudoRandom(seed + 'momentum_rsi') * 100);
-    let momentumRating: MarketInternals['momentum']['rating'] = 'Neutral';
-    if (momentumValue > 70) momentumRating = 'Overbought';
-    else if (momentumValue > 60) momentumRating = 'Bullish';
-    else if (momentumValue < 30) momentumRating = 'Oversold';
-    else if (momentumValue < 40) momentumRating = 'Bearish';
-
-
-    const marketInternals: MarketInternals = {
-        trendStrength: { value: trendStrengthValue, rating: trendStrengthRating },
-        momentum: { value: momentumValue, rating: momentumRating },
-    };
-
-    const volatility = Math.min(100, Math.round((atr / lastClose) * 20000));
-
     const fibRange = swingHigh - swingLow;
     const fibonacciLevels: FibonacciLevels = {
         level_382: (swingHigh - fibRange * 0.382).toFixed(2),
@@ -201,7 +141,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const multipliers = timeframeMultipliers[timeframe] || timeframeMultipliers['15m'];
     const { atr: atrMultiplier, tp1: tpMultiplier1, tp2: tpMultiplier2 } = multipliers;
 
-    // --- Advanced EMA Calculation ---
+    // --- EMA Calculation ---
     const calculateEMA = (data: number[], period: number) => {
         const k = 2 / (period + 1);
         let ema = data[0];
@@ -211,43 +151,17 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         return ema;
     };
     
-    const ema20 = calculateEMA(closes.slice(-50), 20);
     const ema50 = calculateEMA(closes.slice(-100), 50);
-    const ema100 = calculateEMA(closes.slice(-150), 100);
     const ema200 = calculateEMA(closes, 200);
-
-    const movingAverages: MovingAverages = {
-        ema20: { value: ema20.toFixed(2), status: price > ema20 ? 'Above' : 'Below' },
-        ema50: { value: ema50.toFixed(2), status: price > ema50 ? 'Above' : 'Below' },
-        ema100: { value: ema100.toFixed(2), status: price > ema100 ? 'Above' : 'Below' },
-        ema200: { value: ema200.toFixed(2), status: price > ema200 ? 'Above' : 'Below' },
-    };
 
     // Determine trend based on EMAs
     const isBullish = price > ema50 && ema50 > ema200;
 
-    // --- Smart Money Concepts ---
-    const smartMoney: SmartMoneyConcepts = {
-      breakOfStructure: {
-        level: isBullish ? `$${(swingHigh * 1.002).toFixed(2)}` : `$${(swingLow * 0.998).toFixed(2)}`,
-        direction: isBullish ? 'up' : 'down',
-      },
-      changeOfCharacter: {
-        level: isBullish ? `$${(swingLow * 0.995).toFixed(2)}` : `$${(swingHigh * 1.005).toFixed(2)}`,
-        direction: isBullish ? 'down' : 'up',
-      },
-      liquidity: {
-        type: isBullish ? 'Equal Highs' : 'Equal Lows',
-        level: isBullish ? `$${(swingHigh * 1.01).toFixed(2)}` : `$${(swingLow * 0.99).toFixed(2)}`,
-        description: isBullish ? 'Liquidity pool resting above recent highs.' : 'Sell-side liquidity below recent lows.',
-      }
-    };
+    const demandZone: [string, string] = [(lastClose * 0.98).toFixed(2), (lastClose * 0.99).toFixed(2)];
+    const supplyZone: [string, string] = [(lastClose * 1.01).toFixed(2), (lastClose * 1.02).toFixed(2)];
+    const fvg: [string, string] = [(lastClose * 0.985).toFixed(2), (lastClose * 0.995).toFixed(2)];
 
-    const demandZone: [string, string] = isBullish ? [(lastClose * 0.98).toFixed(2), (lastClose * 0.99).toFixed(2)] : [(swingLow * 0.995).toFixed(2), (swingLow).toFixed(2)];
-    const supplyZone: [string, string] = isBullish ? [(swingHigh).toFixed(2), (swingHigh * 1.005).toFixed(2)] : [(lastClose * 1.01).toFixed(2), (lastClose * 1.02).toFixed(2)];
-    const fvg: [string, string] = isBullish ? [(lastClose * 0.985).toFixed(2), (lastClose * 0.995).toFixed(2)] : [(lastClose * 1.005).toFixed(2), (lastClose * 1.015).toFixed(2)];
-
-    const recentVolumes = klines.slice(-20).map(k => parseFloat(k[5]));
+    const recentVolumes = klines.slice(-20).map((k: any[]) => parseFloat(k[5]));
     const avgVolume = recentVolumes.reduce((a, b) => a + b, 0) / recentVolumes.length;
     
     const buyVolume = avgVolume * (isBullish ? 1.2 : 0.8) * (1 + (pseudoRandom(seed+'buy') - 0.5) * 0.2);
@@ -262,8 +176,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         `MA Trend: ${isBullish ? 'Bullish' : 'Bearish'} (Price vs 50/200 EMA)`,
         price > pivot ? `Price above Pivot ($${pivot.toFixed(2)})` : `Price below Pivot ($${pivot.toFixed(2)})`,
         volumeImbalance,
-        `Momentum: ${marketInternals.momentum.rating}`,
-        `Trend Strength: ${marketInternals.trendStrength.rating} (ADX: ${marketInternals.trendStrength.value})`,
     ];
 
     if (reversalConfirmed) {
@@ -355,25 +267,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         ? bullishPatterns[Math.floor(pseudoRandom(seed+'pattern') * bullishPatterns.length)] 
         : bearishPatterns[Math.floor(pseudoRandom(seed+'pattern') * bearishPatterns.length)];
     
-     const bullishCandlesticks = [
-        { name: 'Bullish Engulfing', description: 'A strong reversal indicator where a large green candle engulfs the previous red candle.' },
-        { name: 'Hammer', description: 'A bullish reversal pattern that forms after a decline, suggesting a potential bottom.' },
-        { name: 'Morning Star', description: 'A three-candle pattern indicating a bullish reversal after a downtrend.' },
-    ];
-    const bearishCandlesticks = [
-        { name: 'Bearish Engulfing', description: 'A strong reversal indicator where a large red candle engulfs the previous green candle.' },
-        { name: 'Shooting Star', description: 'A bearish reversal pattern that forms after a rise, suggesting a potential top.' },
-        { name: 'Evening Star', description: 'A three-candle pattern indicating a bearish reversal after an uptrend.' },
-    ];
-    let candlestickPattern: CandlestickPattern | undefined = undefined;
-    if (pseudoRandom(seed + 'candlestick_event') > 0.3) { // 70% chance of detecting a pattern
-        candlestickPattern = isBullish
-            ? bullishCandlesticks[Math.floor(pseudoRandom(seed+'candlestick') * bullishCandlesticks.length)]
-            : bearishCandlesticks[Math.floor(pseudoRandom(seed+'candlestick') * bearishCandlesticks.length)];
-        confluenceFactors.push(`✅ Candlestick: ${candlestickPattern.name}`);
-    }
-
-
     const confluenceCount = confluenceFactors.length;
     const confidence = confluenceCount >= 6 ? "Very High" : confluenceCount >= 4 ? "High" : "Medium";
     
@@ -398,9 +291,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         volumeConfirmationPass: netFlow > 0 === isBullish,
         entryInZonePass: isBullish 
             ? parseFloat(entry) >= parseFloat(demandZone[0]) && parseFloat(entry) <= parseFloat(demandZone[1])
-            : parseFloat(entry) >= parseFloat(supplyZone[0]) && parseFloat(entry) <= parseFloat(supplyZone[1]),
-        structureAligmentPass: pseudoRandom(seed + 'structure') > 0.3,
-        liquiditySweepPass: pseudoRandom(seed + 'liquidity') > 0.4,
+            : parseFloat(entry) >= parseFloat(supplyZone[0]) && parseFloat(entry) <= parseFloat(supplyZone[1])
     };
     
     let goldenPullbackZone: GoldenPullbackZone | undefined = undefined;
@@ -421,12 +312,9 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         patternStrength: Math.floor(pseudoRandom(seed + 'cs1') * 15 + 80),
         volumeConfirmation: Math.floor(pseudoRandom(seed + 'cs2') * 20 + 70),
         htfAlignment: tradersChecklist.mtfAlignmentPass ? Math.floor(pseudoRandom(seed + 'cs3') * 15 + 85) : Math.floor(pseudoRandom(seed + 'cs3') * 20 + 50),
-        smartMoneyFlow: Math.floor(pseudoRandom(seed + 'cs4') * 25 + 75),
         overall: 0,
     };
-    confidenceBreakdown.overall = Math.round((confidenceBreakdown.patternStrength + confidenceBreakdown.volumeConfirmation + confidenceBreakdown.htfAlignment + confidenceBreakdown.smartMoneyFlow) / 4);
-    
-    const volumeAnalysis = generateVolumeAnalysis(symbol);
+    confidenceBreakdown.overall = Math.round((confidenceBreakdown.patternStrength + confidenceBreakdown.volumeConfirmation + confidenceBreakdown.htfAlignment) / 3);
 
     return {
         symbol: symbol.toUpperCase(),
@@ -464,12 +352,5 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         whaleAlert,
         goldenPullbackZone,
         confidenceBreakdown,
-        volumeAnalysis,
-        sidewaysMarket,
-        volatility,
-        candlestickPattern,
-        movingAverages,
-        marketInternals,
-        smartMoney,
     };
 };

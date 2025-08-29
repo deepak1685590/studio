@@ -29,18 +29,11 @@ export interface ChartPattern {
     description: string;
 }
 
-export interface CandlestickPattern {
-    name: string;
-    description: string;
-}
-
 export interface TradersChecklist {
     riskRewardPass: boolean;
     mtfAlignmentPass: boolean;
     volumeConfirmationPass: boolean;
     entryInZonePass: boolean;
-    structureAligmentPass: boolean;
-    liquiditySweepPass: boolean;
 }
 
 export interface FibonacciLevels {
@@ -59,7 +52,6 @@ export interface ConfidenceBreakdown {
   patternStrength: number;
   volumeConfirmation: number;
   htfAlignment: number;
-  smartMoneyFlow: number;
 }
 
 export interface WhaleAlert {
@@ -70,47 +62,6 @@ export interface WhaleAlert {
   historicalPattern: string;
 }
 
-export interface VolumeTimeframeData {
-  buyVolume: number;
-  sellVolume: number;
-  totalVolume: number;
-  dominantSide: 'Buy' | 'Sell' | 'Neutral';
-}
-
-export interface VolumeAnalysis {
-  '5m': VolumeTimeframeData;
-  '15m': VolumeTimeframeData;
-  '1H': VolumeTimeframeData;
-  '4H': VolumeTimeframeData;
-  '1D': VolumeTimeframeData;
-}
-
-export interface SidewaysMarket {
-  adx: number;
-  range: [string, string];
-}
-
-export interface MovingAverages {
-  ema20: { value: string; status: 'Above' | 'Below' };
-  ema50: { value: string; status: 'Above' | 'Below' };
-  ema100: { value: string; status: 'Above' | 'Below' };
-  ema200: { value: string; status: 'Above' | 'Below' };
-}
-
-export interface MarketInternals {
-    trendStrength: { value: number; rating: 'Strong' | 'Moderate' | 'Weak' | 'Ranging' };
-    momentum: { value: number; rating: 'Overbought' | 'Bullish' | 'Bearish' | 'Oversold' | 'Neutral' };
-}
-
-export interface SmartMoneyConcepts {
-  breakOfStructure: { level: string; direction: 'up' | 'down' };
-  changeOfCharacter: { level: string; direction: 'up' | 'down' };
-  liquidity: { 
-    type: 'Equal Highs' | 'Equal Lows' | 'Liquidity Void';
-    level: string;
-    description: string;
-  };
-}
 
 export interface SignalData {
   symbol: string;
@@ -148,11 +99,4 @@ export interface SignalData {
   whaleAlert?: WhaleAlert;
   goldenPullbackZone?: GoldenPullbackZone;
   confidenceBreakdown: ConfidenceBreakdown;
-  volumeAnalysis: VolumeAnalysis;
-  sidewaysMarket?: SidewaysMarket;
-  volatility: number;
-  candlestickPattern?: CandlestickPattern;
-  movingAverages: MovingAverages;
-  marketInternals: MarketInternals;
-  smartMoney: SmartMoneyConcepts;
 }
