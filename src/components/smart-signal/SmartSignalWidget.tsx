@@ -73,17 +73,18 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   }, [initialSymbol]);
 
   useEffect(() => {
-    // Only connect if we have signal data, are not using mock data, and it's a known crypto asset without a '/'
-    if (isMockData || !signalData || !cryptoAssetsForWebsocket.includes(signalData.symbol.toUpperCase()) || signalData.symbol.includes('/')) {
-      if (ws.current) {
-        ws.current.close();
-      }
-      return;
-    }
-
     // Close previous connection if it exists
     if (ws.current) {
       ws.current.close();
+    }
+    
+    if (isMockData || !signalData) {
+      return;
+    }
+
+    // Definitive check to prevent connection for forex pairs or invalid symbols
+    if (signalData.symbol.includes('/') || !cryptoAssetsForWebsocket.includes(signalData.symbol.toUpperCase())) {
+      return;
     }
     
     // Reset price for new symbol
