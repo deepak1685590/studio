@@ -13,8 +13,12 @@ import { Rocket, BrainCircuit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timeframe } from '@/types';
 
-const SmartSignalWidget = () => {
-  const [symbol, setSymbol] = useState('BTC');
+interface SmartSignalWidgetProps {
+  initialSymbol?: string;
+}
+
+const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = 'BTC' }) => {
+  const [symbol, setSymbol] = useState(initialSymbol);
   const [mode, setMode] = useState('3');
   const [timeframe, setTimeframe] = useState<Timeframe>('15m');
   const [loading, setLoading] = useState(false);
@@ -25,6 +29,11 @@ const SmartSignalWidget = () => {
   const { toast } = useToast();
 
   const ws = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    // If a new symbol is passed via props (from the opportunities widget), update the state.
+    setSymbol(initialSymbol);
+  }, [initialSymbol]);
 
   useEffect(() => {
     if (isMockData || !signalData) return;
@@ -127,7 +136,7 @@ const SmartSignalWidget = () => {
   };
 
   return (
-    <div className="smartsignal-widget max-w-3xl mx-auto border-2 border-primary rounded-xl overflow-hidden shadow-[0_0_30px_var(--primary)] bg-black/70 backdrop-blur-sm">
+    <div className="smartsignal-widget w-full border-2 border-primary rounded-xl overflow-hidden shadow-[0_0_30px_var(--primary)] bg-black/70 backdrop-blur-sm">
       <header className="widget-header p-4 text-center font-headline text-2xl bg-black/50">
         <span className="animate-neon-blue">🚀 SmartSignal Pro</span>
         <span className="text-primary mx-2">-</span>
