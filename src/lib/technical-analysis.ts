@@ -1,5 +1,5 @@
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -208,8 +208,74 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         }
     }
 
+    // --- Trend Strength (ADX simulation) ---
+    const adxValue = Math.floor(pseudoRandom(seed + 'adx') * 60 + 10); // ADX between 10 and 70
+    let trendStrength: TrendStrength;
+    let sidewaysMarket: SidewaysMarket | undefined = undefined;
 
-    const entryPrice = isBullish ? (price * 0.998) : (price * 1.002);
+    if (adxValue > 40) trendStrength = { score: adxValue, rating: 'Strong' };
+    else if (adxValue > 25) trendStrength = { score: adxValue, rating: 'Moderate' };
+    else if (adxValue > 15) trendStrength = { score: adxValue, rating: 'Weak' };
+    else {
+        trendStrength = { score: adxValue, rating: 'Ranging' };
+        sidewaysMarket = {
+            adx: adxValue,
+            range: [swingHigh.toFixed(2), swingLow.toFixed(2)]
+        }
+    }
+    
+    // If market is ranging, we don't generate a directional signal.
+    if (sidewaysMarket) {
+         return {
+            symbol: symbol.toUpperCase(),
+            price,
+            mode,
+            timeframe,
+            isBullish: pseudoRandom(seed + 'sideways_bull') > 0.5, // Random for UI color
+            action: "Monitor for Breakout",
+            entry: "N/A",
+            sl: "N/A",
+            tp1: "N/A",
+            tp2: "N/A",
+            riskReward: 0,
+            confidence: "Low",
+            confluenceFactors: ["Market is in a consolidation phase.", `ADX below 15 indicates weak trend.`],
+            confluenceCount: 2,
+            swingHigh: swingHigh.toFixed(2),
+            swingLow: swingLow.toFixed(2),
+            pivot: pivot.toFixed(2),
+            s1: s1.toFixed(2),
+            r1: r1.toFixed(2),
+            buyVolume: buyVolume.toFixed(0),
+            sellVolume: sellVolume.toFixed(0),
+            volumeImbalance: "Neutral",
+            demandZone,
+            supplyZone,
+            fvg,
+            liquidity: { type: 'Range-Bound', level: 'N/A', description: 'Liquidity is building on both sides of the range.' },
+            smartMoneyConcepts: { bos: 'N/A', choch: 'N/A' },
+            marketStructure: "Consolidating",
+            multiTimeframeAnalysis: {},
+            reversalConfirmed: false,
+            chartPattern: { name: 'Ranging Market', description: 'Price is moving sideways in a defined channel. Await a clear breakout before entry.' },
+            tradersChecklist: { riskRewardPass: false, mtfAlignmentPass: false, volumeConfirmationPass: false, entryInZonePass: false },
+            fibonacciLevels,
+            confidenceBreakdown: { overall: adxValue, patternStrength: 20, volumeConfirmation: 20, htfAlignment: 20, smartMoneyFlow: 20 },
+            movingAverageAnalysis,
+            trendStrength,
+            momentum: { score: 50, rating: 'Neutral' },
+            sidewaysMarket,
+        };
+    }
+
+    const fib618 = parseFloat(fibonacciLevels.level_618);
+    const fib500 = parseFloat(fibonacciLevels.level_500);
+    const shouldShowGoldenZone = pseudoRandom(seed + 'golden_zone_chance') > 0.5; // 50% chance to force a golden zone setup
+
+    const entryPrice = shouldShowGoldenZone 
+      ? (fib618 + fib500) / 2 // Place entry squarely in the golden zone
+      : isBullish ? (price * 0.998) : (price * 1.002);
+
     const fibValues = Object.values(fibonacciLevels).map(parseFloat);
     const closestFib = fibValues.reduce((prev, curr) => Math.abs(curr - entryPrice) < Math.abs(prev - entryPrice) ? curr : prev);
     if (Math.abs(closestFib - entryPrice) / entryPrice < 0.005) {
@@ -276,8 +342,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         ? bullishPatterns[Math.floor(pseudoRandom(seed+'pattern') * bullishPatterns.length)] 
         : bearishPatterns[Math.floor(pseudoRandom(seed+'pattern') * bearishPatterns.length)];
     
-    const confluenceCount = confluenceFactors.length;
-    const confidence = confluenceCount >= 6 ? "Very High" : confluenceCount >= 4 ? "High" : "Medium";
     
     const action = isBullish ? "Buy on Pullback" : "Sell on Rally";
     const entry = entryPrice.toFixed(2);
@@ -302,14 +366,13 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     };
     
     let goldenPullbackZone: GoldenPullbackZone | undefined = undefined;
-    const fib618 = parseFloat(fibonacciLevels.level_618);
-    const zoneMin = Math.min(fib618, pivot);
-    const zoneMax = Math.max(fib618, pivot);
+    const zoneMin = isBullish ? Math.min(fib618, pivot) : Math.max(fib618, pivot);
+    const zoneMax = isBullish ? Math.max(fib618, pivot) : Math.min(fib618, pivot);
 
-    if (parseFloat(entry) >= zoneMin && parseFloat(entry) <= zoneMax) {
+    if (isBullish ? (parseFloat(entry) >= zoneMin && parseFloat(entry) <= zoneMax) : (parseFloat(entry) <= zoneMin && parseFloat(entry) >= zoneMax)) {
         goldenPullbackZone = {
-            min: zoneMin.toFixed(2),
-            max: zoneMax.toFixed(2),
+            min: (isBullish ? zoneMin : zoneMax).toFixed(2),
+            max: (isBullish ? zoneMax : zoneMin).toFixed(2),
         };
         confluenceFactors.push(`✅ Entry within Golden Zone`);
     }
@@ -322,16 +385,12 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         overall: 0,
     };
     confidenceBreakdown.overall = Math.round((confidenceBreakdown.patternStrength + confidenceBreakdown.volumeConfirmation + confidenceBreakdown.htfAlignment + confidenceBreakdown.smartMoneyFlow) / 4);
+    
+    const confluenceCount = confluenceFactors.length;
+    const confidence = confidenceBreakdown.overall >= 85 ? "Very High" : confidenceBreakdown.overall >= 75 ? "High" : "Medium";
 
     const liquidityLevel = isBullish ? swingHigh * 1.005 : swingLow * 0.995;
 
-    // --- Trend Strength (ADX simulation) ---
-    const adxValue = Math.floor(pseudoRandom(seed + 'adx') * 60 + 10); // ADX between 10 and 70
-    let trendStrength: TrendStrength;
-    if (adxValue > 40) trendStrength = { score: adxValue, rating: 'Strong' };
-    else if (adxValue > 25) trendStrength = { score: adxValue, rating: 'Moderate' };
-    else if (adxValue > 15) trendStrength = { score: adxValue, rating: 'Weak' };
-    else trendStrength = { score: adxValue, rating: 'Ranging' };
 
     // --- Momentum (RSI simulation) ---
     const rsiValue = Math.floor(pseudoRandom(seed + 'rsi') * 80 + 10); // RSI between 10 and 90

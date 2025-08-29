@@ -14,9 +14,10 @@ import ConfidenceBreakdown from './ConfidenceBreakdown';
 import WhaleAlert from './WhaleAlert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import type { GenerateAiInsightInput } from '@/ai/flows/generate-ai-insight';
+import SidewaysMarketAlert from './SidewaysMarketAlert';
 
-const SectionHeader = ({ children }: { children: React.ReactNode }) => (
-  <h4 className="font-headline text-lg text-primary mb-2">{children}</h4>
+const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
+  <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
 );
 
 const SectionWrapper = ({ children, className }: { children: React.ReactNode, className?: string }) => (
@@ -122,6 +123,21 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     chartPatternName: data.chartPattern.name,
   }), [data]);
 
+  const oracleInsightData = useMemo(() => ({
+    symbol: data.symbol,
+    price: data.price,
+    isBullish: data.isBullish,
+    volatility: data.trendStrength.score,
+  }), [data.symbol, data.price, data.isBullish, data.trendStrength.score]);
+
+  if (data.sidewaysMarket) {
+    return (
+        <div id="signal-card-content" className="mt-5 p-5 bg-black/70 border-2 rounded-xl text-sm leading-relaxed shadow-lg space-y-4 border-yellow-500 shadow-yellow-500/20">
+            <SidewaysMarketAlert alert={data.sidewaysMarket} livePrice={displayPrice} />
+        </div>
+    )
+  }
+
   return (
     <div id="signal-card-content" className={cn(
         "mt-5 p-5 bg-black/70 border-2 rounded-xl text-sm leading-relaxed shadow-lg space-y-4",
@@ -186,24 +202,22 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
       {data.goldenPullbackZone && (
         <Alert className="border-primary/50 bg-primary/10 text-primary">
-          <Target className="h-4 w-4 text-primary" />
-          <AlertTitle className="font-headline text-primary">
-            {data.isBullish ? 'High-Probability Buy Zone' : 'High-Probability Sell Zone'}
+          <Target className="h-5 w-5 text-primary" />
+          <AlertTitle className="font-headline text-lg text-primary">
+            High-Probability Pullback Zone Detected
           </AlertTitle>
-          <AlertDescription className="font-mono text-lg">
+          <AlertDescription className="font-mono text-xl mt-1">
             ${data.goldenPullbackZone.min} - ${data.goldenPullbackZone.max}
           </AlertDescription>
         </Alert>
       )}
-
+      
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
       
       <ConfidenceBreakdown breakdown={data.confidenceBreakdown} isBullish={data.isBullish} />
         
       <div>
-        <SectionHeader>
-            <div className='flex items-center gap-2'><BarChart />Multi-Timeframe Analysis</div>
-        </SectionHeader>
+        <SectionHeader icon={<BarChart />} title="Multi-Timeframe Analysis" />
         <SectionWrapper>
             <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
         </SectionWrapper>
@@ -211,14 +225,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <SectionHeader><div className="flex items-center gap-2"><BookOpen />Pattern Recognition</div></SectionHeader>
+          <SectionHeader icon={<BookOpen />} title="Pattern Recognition" />
           <SectionWrapper>
             <h5 className="font-bold text-primary">{data.chartPattern.name}</h5>
             <p className="text-xs text-foreground/80 mt-1">{data.chartPattern.description}</p>
           </SectionWrapper>
         </div>
         <div>
-          <SectionHeader><div className="flex items-center gap-2"><CheckCircle2 />Trader's Checklist</div></SectionHeader>
+          <SectionHeader icon={<CheckCircle2 />} title="Trader's Checklist" />
           <SectionWrapper>
               <div className="space-y-2">
                 <ChecklistItem label={`R/R > 1.5 (${data.riskReward.toFixed(1)})`} passed={data.tradersChecklist.riskRewardPass} />
@@ -232,7 +246,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <SectionHeader><div className="flex items-center gap-2"><GitCommitHorizontal />Fibonacci Levels</div></SectionHeader>
+          <SectionHeader icon={<GitCommitHorizontal />} title="Fibonacci Levels" />
           <SectionWrapper>
               <div className="space-y-1">
                 <div className="flex justify-between text-sm"><span className="text-foreground/70">Aggressive (38.2%):</span><span className="font-mono">${data.fibonacciLevels.level_382}</span></div>
@@ -242,7 +256,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
           </SectionWrapper>
         </div>
         <div>
-          <SectionHeader><div className="flex items-center gap-2"><Scaling />Key Levels</div></SectionHeader>
+          <SectionHeader icon={<Scaling />} title="Key Levels" />
           <SectionWrapper>
                <div className="space-y-1">
                 <div className="flex justify-between text-sm"><span className="text-foreground/70">Swing High:</span><span className="font-mono">${data.swingHigh}</span></div>
@@ -255,7 +269,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       
        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <SectionHeader><div className="flex items-center gap-2"><Building />Institutional Interest</div></SectionHeader>
+          <SectionHeader icon={<Building />} title="Institutional Interest" />
            <SectionWrapper>
                <div className="space-y-1">
                 <div className="flex justify-between text-sm"><span className="text-foreground/70">Demand Zone:</span><span className="font-mono">${data.demandZone[0]} - ${data.demandZone[1]}</span></div>
@@ -265,21 +279,20 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
            </SectionWrapper>
         </div>
         <div>
-          <SectionHeader><div className="flex items-center gap-2"><Magnet />Liquidity & Structure</div></SectionHeader>
+          <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
            <SectionWrapper>
                <div className="space-y-1">
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Liquidity Pool:</span><span className="font-mono">{data.liquidityPool}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Market Structure:</span><span className="font-mono">{data.marketStructure}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Reversal Confirmed:</span><span className="font-mono">{data.reversalConfirmed ? 'Yes' : 'No'}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">{data.liquidity.type}:</span><span className="font-mono">${data.liquidity.level}</span></div>
+                <p className="text-xs text-foreground/70 pt-1">{data.liquidity.description}</p>
+                <div className="flex justify-between text-sm pt-1"><span className="text-foreground/70">Break of Structure:</span><span className="font-mono">${data.smartMoneyConcepts.bos}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Change of Character:</span><span className="font-mono">${data.smartMoneyConcepts.choch}</span></div>
               </div>
            </SectionWrapper>
         </div>
       </div>
 
       <div>
-        <SectionHeader>
-            <div className='flex items-center gap-2'><Zap />Signals Detected ({data.confluenceCount})</div>
-        </SectionHeader>
+        <SectionHeader icon={<Zap />} title={`Signals Detected (${data.confluenceCount})`} />
         <SectionWrapper>
             <ul className="list-disc list-inside space-y-1 text-xs pl-2 columns-2">
                 {data.confluenceFactors.map((factor, i) => <li key={i}>{factor}</li>)}
@@ -308,4 +321,3 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
-
