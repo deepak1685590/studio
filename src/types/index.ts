@@ -50,10 +50,10 @@ export interface GoldenPullbackZone {
 
 export interface ConfidenceBreakdown {
   overall: number;
-  technical: number;
-  volume: number;
-  structure: number;
-  sentiment: number;
+  patternStrength: number;
+  volumeConfirmation: number;
+  htfAlignment: number;
+  smartMoneyFlow: number;
 }
 
 export interface WhaleAlert {

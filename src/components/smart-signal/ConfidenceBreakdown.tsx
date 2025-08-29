@@ -1,8 +1,9 @@
+
 "use client";
 
 import React from 'react';
 import { ConfidenceBreakdown as ConfidenceBreakdownType } from '@/types';
-import { BrainCircuit, TrendingUp, BarChart4, Network, MessageSquareQuote } from 'lucide-react';
+import { BrainCircuit, TrendingUp, BarChart4, Network, DollarSign, Layers } from 'lucide-react';
 
 interface ConfidenceBreakdownProps {
   breakdown: ConfidenceBreakdownType;
@@ -41,10 +42,10 @@ const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ breakdown }) 
         <BrainCircuit /> AI Confidence Matrix
       </h4>
       <div className="flex flex-col gap-2">
-        <ScoreBar label="Technical Patterns" score={breakdown.technical} icon={<TrendingUp size={16} />} />
-        <ScoreBar label="Volume Analysis" score={breakdown.volume} icon={<BarChart4 size={16} />} />
-        <ScoreBar label="Market Structure" score={breakdown.structure} icon={<Network size={16} />} />
-        <ScoreBar label="Sentiment Data" score={breakdown.sentiment} icon={<MessageSquareQuote size={16} />} />
+        <ScoreBar label="Pattern Strength" score={breakdown.patternStrength} icon={<TrendingUp size={16} />} />
+        <ScoreBar label="Volume Confirmation" score={breakdown.volumeConfirmation} icon={<BarChart4 size={16} />} />
+        <ScoreBar label="HTF Alignment" score={breakdown.htfAlignment} icon={<Layers size={16} />} />
+        <ScoreBar label="Smart Money Flow" score={breakdown.smartMoneyFlow} icon={<DollarSign size={16} />} />
       </div>
        <div className="mt-4 pt-3 border-t border-primary/20 flex justify-between items-center">
         <span className="font-bold text-sm">Overall Confidence Score:</span>

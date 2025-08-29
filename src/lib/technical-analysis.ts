@@ -317,13 +317,13 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     }
 
     const confidenceBreakdown: ConfidenceBreakdown = {
-        technical: Math.floor(Math.random() * 15 + 80), // 80-95
-        volume: Math.floor(Math.random() * 20 + 70), // 70-90
-        structure: Math.floor(Math.random() * 15 + 82), // 82-97
-        sentiment: Math.floor(Math.random() * 25 + 65), // 65-90
+        patternStrength: Math.floor(Math.random() * 15 + 80), // 80-95
+        volumeConfirmation: Math.floor(Math.random() * 20 + 70), // 70-90
+        htfAlignment: tradersChecklist.mtfAlignmentPass ? Math.floor(Math.random() * 15 + 85) : Math.floor(Math.random() * 20 + 50), // 85-100 if pass, 50-70 if fail
+        smartMoneyFlow: Math.floor(Math.random() * 25 + 75), // 75-100
         overall: 0,
     };
-    confidenceBreakdown.overall = Math.round((confidenceBreakdown.technical + confidenceBreakdown.volume + confidenceBreakdown.structure + confidenceBreakdown.sentiment) / 4);
+    confidenceBreakdown.overall = Math.round((confidenceBreakdown.patternStrength + confidenceBreakdown.volumeConfirmation + confidenceBreakdown.htfAlignment + confidenceBreakdown.smartMoneyFlow) / 4);
     
     const volumeAnalysis = generateVolumeAnalysis();
 
