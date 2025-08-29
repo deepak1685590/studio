@@ -14,6 +14,8 @@ import ConfidenceBreakdown from './ConfidenceBreakdown';
 import WhaleAlert from './WhaleAlert';
 import VolumeAnalysisTable from './VolumeAnalysisTable';
 import TradingViewWidget from './TradingViewWidget';
+import SidewaysMarketAlert from './SidewaysMarketAlert';
+import OracleInsight from './OracleInsight';
 
 const SectionHeader = ({ children, icon }: { children: React.ReactNode, icon?: React.ReactNode }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">
@@ -148,6 +150,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
       )}
 
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
+      {data.sidewaysMarket && <SidewaysMarketAlert alert={data.sidewaysMarket} />}
 
       <ConfidenceBreakdown breakdown={data.confidenceBreakdown} />
         
@@ -254,26 +257,36 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
         </SectionWrapper>
       </div>
 
-      {data.mode === '3' && <EliteAiInsight data={{
-        symbol: data.symbol,
-        price: displayPrice,
-        isBullish: data.isBullish,
-        action: data.action,
-        entry: parseFloat(data.entry),
-        sl: parseFloat(data.sl),
-        tp1: parseFloat(data.tp1),
-        confluenceCount: data.confluenceCount,
-        demandZone: `$${data.demandZone[0]} - $${data.demandZone[1]}`,
-        fvg: `$${data.fvg[0]} - $${data.fvg[1]}`,
-        volumeImbalance: data.volumeImbalance,
-        multiTimeframeAnalysis: {
-          '15m': data.multiTimeframeAnalysis['15m'] || 'Neutral',
-          '1H': data.multiTimeframeAnalysis['1H'] || 'Neutral',
-          '4H': data.multiTimeframeAnalysis['4H'] || 'Neutral',
-          'Daily': data.multiTimeframeAnalysis['Daily'] || 'Neutral',
-        },
-        chartPatternName: data.chartPattern.name,
-      }} />}
+      {data.mode === '3' && (
+        <>
+            <EliteAiInsight data={{
+                symbol: data.symbol,
+                price: displayPrice,
+                isBullish: data.isBullish,
+                action: data.action,
+                entry: parseFloat(data.entry),
+                sl: parseFloat(data.sl),
+                tp1: parseFloat(data.tp1),
+                confluenceCount: data.confluenceCount,
+                demandZone: `$${data.demandZone[0]} - $${data.demandZone[1]}`,
+                fvg: `$${data.fvg[0]} - $${data.fvg[1]}`,
+                volumeImbalance: data.volumeImbalance,
+                multiTimeframeAnalysis: {
+                '15m': data.multiTimeframeAnalysis['15m'] || 'Neutral',
+                '1H': data.multiTimeframeAnalysis['1H'] || 'Neutral',
+                '4H': data.multiTimeframeAnalysis['4H'] || 'Neutral',
+                'Daily': data.multiTimeframeAnalysis['Daily'] || 'Neutral',
+                },
+                chartPatternName: data.chartPattern.name,
+            }} />
+             <OracleInsight data={{
+                symbol: data.symbol,
+                price: displayPrice,
+                isBullish: data.isBullish,
+                volatility: data.volatility,
+            }} />
+        </>
+      )}
 
       <div className="flex justify-between items-center mt-6">
         <small className="text-foreground/50">Generated: {new Date().toLocaleString()}</small>
@@ -286,4 +299,3 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
 };
 
 export default SignalCard;
-

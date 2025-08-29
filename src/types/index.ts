@@ -79,6 +79,11 @@ export interface VolumeAnalysis {
   '1D': VolumeTimeframeData;
 }
 
+export interface SidewaysMarket {
+  adx: number;
+  range: [string, string];
+}
+
 export interface SignalData {
   symbol: string;
   price: number;
@@ -116,4 +121,6 @@ export interface SignalData {
   goldenPullbackZone?: GoldenPullbackZone;
   confidenceBreakdown: ConfidenceBreakdown;
   volumeAnalysis: VolumeAnalysis;
+  sidewaysMarket?: SidewaysMarket;
+  volatility: number;
 }

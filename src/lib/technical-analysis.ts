@@ -1,5 +1,5 @@
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, VolumeAnalysis, VolumeTimeframeData } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, VolumeAnalysis, VolumeTimeframeData, SidewaysMarket } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -132,6 +132,20 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     }
     const atr = trSum / atrPeriod;
 
+    // Simulate ADX
+    const adx = Math.floor(Math.random() * 50 + 10); // 10-60
+    let sidewaysMarket: SidewaysMarket | undefined = undefined;
+    if (adx < 25) {
+        sidewaysMarket = {
+            adx,
+            range: [swingLow.toFixed(2), swingHigh.toFixed(2)],
+        };
+    }
+
+    // Volatility for Oracle
+    const volatility = Math.min(100, Math.round((atr / lastClose) * 20000));
+
+
     // Fibonacci Retracement Levels
     const fibRange = swingHigh - swingLow;
     const fibonacciLevels: FibonacciLevels = {
@@ -207,7 +221,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     let multiTimeframeAnalysis: MultiTimeframeAnalysis = {};
 
     const mtfMap: {[key in Timeframe]?: (keyof MultiTimeframeAnalysis)[]} = {
-        '5m': ['15m', '1h'],
+        '5m': ['15m', '1H'],
         '15m': ['1H', '4H', 'Daily'],
         '1h': ['4H', 'Daily'],
         '4h': ['Daily', 'Weekly'],
@@ -350,5 +364,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         goldenPullbackZone,
         confidenceBreakdown,
         volumeAnalysis,
+        sidewaysMarket,
+        volatility,
     };
 };
