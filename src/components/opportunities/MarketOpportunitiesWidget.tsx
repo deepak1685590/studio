@@ -27,10 +27,10 @@ const ConvictionMeter = ({ score }: { score: number }) => {
     const circumference = 2 * Math.PI * 18; // 2 * pi * radius
     const offset = circumference - (score / 100) * circumference;
 
-    const getColor = (s: number) => {
-        if (s > 90) return 'stroke-green-400';
-        if (s > 80) return 'stroke-yellow-400';
-        return 'stroke-orange-400';
+    const getColorClasses = (s: number) => {
+        if (s > 90) return 'stroke-green-400 text-green-400';
+        if (s > 80) return 'stroke-yellow-400 text-yellow-400';
+        return 'stroke-orange-400 text-orange-400';
     };
 
     return (
@@ -45,7 +45,7 @@ const ConvictionMeter = ({ score }: { score: number }) => {
                     fill="transparent"
                 />
                 <circle
-                    className={`transition-all duration-500 ease-in-out ${getColor(score)}`}
+                    className={`transition-all duration-500 ease-in-out ${getColorClasses(score)}`}
                     cx="20"
                     cy="20"
                     r="18"
@@ -57,7 +57,7 @@ const ConvictionMeter = ({ score }: { score: number }) => {
                     transform="rotate(-90 20 20)"
                 />
             </svg>
-            <div className={`absolute inset-0 flex items-center justify-center font-bold text-sm ${getColor(score).replace('stroke-', 'text-')}`}>
+            <div className={`absolute inset-0 flex items-center justify-center font-bold text-sm ${getColorClasses(score)}`}>
                 {score}
             </div>
         </div>
