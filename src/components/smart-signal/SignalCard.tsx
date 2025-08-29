@@ -159,7 +159,7 @@ const LevelItem: React.FC<{
   return (
     <div className={cn(
         "flex justify-between items-center text-sm transition-all duration-300 p-1 -m-1 rounded-md",
-        status === 'near' && 'bg-primary/20 animate-pulse'
+        status === 'near' && !isTakeProfit && 'bg-primary/20 animate-pulse'
       )}>
       <div className="flex items-center gap-2">
         <span className={getLabelColor()}>{label}:</span>
@@ -192,22 +192,23 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
     const tp1 = parseFloat(data.tp1);
     const tp2 = parseFloat(data.tp2);
     
-    // Proximity check (e.g., 0.5% of the price range)
-    const proximityThreshold = Math.abs(tp1 - entry) * 0.1; // 10% of the range to TP1
+    const proximityThreshold = Math.abs(tp1 - entry) * 0.05; // 5% of the range to TP1
 
-    const checkStatus = (level: number) => {
-      if (data.isBullish) {
+    const checkStatus = (level: number, isEntry = false) => {
+       if (data.isBullish) {
         if (realtimePrice >= level) return 'hit';
-        if (Math.abs(realtimePrice - level) <= proximityThreshold) return 'near';
       } else { // Bearish
         if (realtimePrice <= level) return 'hit';
-        if (Math.abs(realtimePrice - level) <= proximityThreshold) return 'near';
+      }
+      // Proximity check only for entry
+      if (isEntry && Math.abs(realtimePrice - level) <= proximityThreshold) {
+          return 'near';
       }
       return 'none';
     };
     
     return {
-      entry: checkStatus(entry),
+      entry: checkStatus(entry, true),
       tp1: checkStatus(tp1),
       tp2: checkStatus(tp2),
     };
@@ -289,7 +290,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
       )}
 
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
-      {data.sidewaysMarket && <SidewaysMarketAlert alert={data.sidewaysMarket} />}
+      {data.sidewaysMarket && <SidewaysMarketAlert alert={data.sidewaysMarket} livePrice={displayPrice} />}
       {data.candlestickPattern && (
         <Alert className={cn("mt-4", data.isBullish ? "border-green-500/50 bg-green-900/30" : "border-red-500/50 bg-red-900/30")}>
           <CandlestickChart className={cn("h-5 w-5", data.isBullish ? "text-green-400" : "text-red-400")} />
