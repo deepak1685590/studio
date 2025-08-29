@@ -59,13 +59,13 @@ const QuantumConfidenceMeter = ({ score, label, isBullish }: { score: number, la
 
     const getColor = () => {
         if (isBullish) {
-            if (score > 85) return 'stroke-green-400 text-green-400 shadow-[0_0_15px_theme(colors.green.500)]';
-            if (score > 70) return 'stroke-yellow-400 text-yellow-400 shadow-[0_0_15px_theme(colors.yellow.500)]';
-            return 'stroke-orange-400 text-orange-400 shadow-[0_0_15px_theme(colors.orange.500)]';
+            if (score > 85) return 'stroke-green-400 text-green-400 shadow-[0_0_15px_theme(colors.green.400)]';
+            if (score > 70) return 'stroke-teal-400 text-teal-400 shadow-[0_0_15px_theme(colors.teal.400)]';
+            return 'stroke-yellow-500 text-yellow-500 shadow-[0_0_15px_theme(colors.yellow.500)]';
         } else { // Bearish
-            if (score > 85) return 'stroke-red-400 text-red-400 shadow-[0_0_15px_theme(colors.red.500)]';
-            if (score > 70) return 'stroke-orange-400 text-orange-400 shadow-[0_0_15px_theme(colors.orange.500)]';
-            return 'stroke-yellow-400 text-yellow-400 shadow-[0_0_15px_theme(colors.yellow.500)]';
+            if (score > 85) return 'stroke-red-500 text-red-500 shadow-[0_0_15px_theme(colors.red.500)]';
+            if (score > 70) return 'stroke-orange-500 text-orange-500 shadow-[0_0_15px_theme(colors.orange.500)]';
+            return 'stroke-yellow-500 text-yellow-500 shadow-[0_0_15px_theme(colors.yellow.500)]';
         }
     };
     
@@ -173,16 +173,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     const tp1 = parseFloat(data.tp1);
     const tp2 = parseFloat(data.tp2);
     
-    // Use a small percentage of the price for proximity checks
-    const proximityThreshold = realtimePrice * 0.005; // 0.5% of current price
+    const proximityThreshold = realtimePrice * 0.005;
 
     const checkStatus = (level: number, isEntry = false) => {
        if (data.isBullish) {
         if (realtimePrice >= level) return 'hit';
-      } else { // Bearish
+      } else {
         if (realtimePrice <= level) return 'hit';
       }
-      // Proximity check only for entry
       if (isEntry && Math.abs(realtimePrice - level) <= proximityThreshold) {
           return 'near';
       }
@@ -191,7 +189,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     
     return {
       entry: checkStatus(entry, true),
-      sl: 'none', // SL doesn't need a status
+      sl: 'none',
       tp1: checkStatus(tp1),
       tp2: checkStatus(tp2),
     };
@@ -200,12 +198,18 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
 
   return (
-    <div id="signal-card-content" className="mt-5 p-5 bg-black/70 border-2 border-primary rounded-xl text-sm leading-relaxed shadow-lg space-y-4">
-      <header className="pb-4 border-b border-primary/20 bg-gradient-to-b from-primary/10 to-transparent -m-5 mb-0 p-5 rounded-t-xl">
+    <div id="signal-card-content" className={cn(
+        "mt-5 p-5 bg-black/70 border-2 rounded-xl text-sm leading-relaxed shadow-lg space-y-4",
+        data.isBullish ? "border-green-400 shadow-green-400/20" : "border-red-500 shadow-red-500/20"
+    )}>
+      <header className={cn(
+          "pb-4 border-b -m-5 mb-0 p-5 rounded-t-xl transition-colors",
+          data.isBullish ? "border-green-400/30 bg-gradient-to-b from-green-900/40 to-transparent" : "border-red-500/30 bg-gradient-to-b from-red-900/40 to-transparent"
+      )}>
         <div className="flex justify-between items-center">
           <div className='flex items-center gap-3'>
             <div className={cn("flex items-center justify-center w-10 h-10 rounded-full", data.isBullish ? 'bg-green-500/20' : 'bg-red-500/20')}>
-              {data.isBullish ? <TrendingUp className="w-6 h-6 text-green-400" /> : <TrendingDown className="w-6 h-6 text-red-400" />}
+              {data.isBullish ? <TrendingUp className="w-6 h-6 text-green-400" /> : <TrendingDown className="w-6 h-6 text-red-500" />}
             </div>
             <div>
               <h3 className="font-headline text-2xl text-foreground">{data.symbol}</h3>

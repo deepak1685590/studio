@@ -13,6 +13,7 @@ import { Rocket, BrainCircuit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timeframe } from '@/types';
 import jsPDF from 'jspdf';
+import { cn } from '@/lib/utils';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -28,25 +29,20 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const [signalData, setSignalData] = useState<SignalData | null>(null);
   const [realtimePrice, setRealtimePrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
-  const [isMockData, setIsMockData] = useState(false);
   const { toast } = useToast();
 
   const ws = useRef<WebSocket | null>(null);
-  const currentSymbolRef = useRef(initialSymbol);
+  const previousPriceRef = useRef<number | null>(null);
 
-  const handleGenerateSignal = useCallback(async (isInitialLoad = false) => {
-    const targetSymbol = isInitialLoad ? initialSymbol : symbol.toUpperCase();
-    if (!targetSymbol) {
-      if (!isInitialLoad) {
-        toast({ title: "Input Error", description: "Please enter a symbol.", variant: "destructive" });
-      }
+  const handleGenerateSignal = useCallback(async () => {
+    if (!symbol) {
+      toast({ title: "Input Error", description: "Please enter a symbol.", variant: "destructive" });
       return;
     }
     setLoading(true);
     setSignalData(null);
     setRealtimePrice(null);
-    setIsMockData(false);
-    currentSymbolRef.current = targetSymbol;
+    previousPriceRef.current = null;
 
     if (ws.current) {
       ws.current.close();
@@ -54,21 +50,16 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     }
 
     try {
-      const data = await getSignalData(targetSymbol, mode, timeframe);
-      
-      if (currentSymbolRef.current !== targetSymbol) {
-        return; 
-      }
-
+      const data = await getSignalData(symbol.toUpperCase(), mode, timeframe);
       setSignalData(data);
       setRealtimePrice(data.price);
+      previousPriceRef.current = data.price;
 
       if (typeof window !== 'undefined') {
         const isCrypto = cryptoAssetsForWebsocket.includes(data.symbol.toUpperCase());
         const isForex = data.symbol.includes('/');
         
         if (isCrypto && !isForex) {
-          setPriceDirection('neutral');
           const wsSymbol = data.symbol.toLowerCase() + 'usdt';
           const socket = new WebSocket(`wss://stream.binance.com:9443/ws/${wsSymbol}@trade`);
           ws.current = socket;
@@ -77,21 +68,23 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
           socket.onmessage = (event) => {
             const messageData = JSON.parse(event.data);
             const newPrice = parseFloat(messageData.p);
-            setRealtimePrice(prevPrice => {
-              if (prevPrice !== null) {
-                if (newPrice > prevPrice) setPriceDirection('up');
-                else if (newPrice < prevPrice) setPriceDirection('down');
+            
+            setRealtimePrice(newPrice);
+            
+            if (previousPriceRef.current !== null) {
+              if (newPrice > previousPriceRef.current) {
+                setPriceDirection('up');
+              } else if (newPrice < previousPriceRef.current) {
+                setPriceDirection('down');
               }
-              return newPrice;
-            });
+            }
+            previousPriceRef.current = newPrice;
           };
           socket.onerror = (error) => {
             console.error('WebSocket Error:', error);
-            toast({ title: "WebSocket Error", description: "Could not connect to live price feed.", variant: "destructive" });
           };
           socket.onclose = () => {
             console.log(`WebSocket disconnected for ${wsSymbol}`);
-            if (ws.current === socket) ws.current = null;
           };
         }
       }
@@ -99,17 +92,16 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     } catch (error) {
       console.error("Error generating signal:", error);
       toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
-      setIsMockData(true);
-      const mockData = await getSignalData(targetSymbol, mode, timeframe, true);
+      const mockData = await getSignalData(symbol.toUpperCase(), mode, timeframe, true);
       setSignalData(mockData);
       setRealtimePrice(mockData.price);
     } finally {
       setLoading(false);
     }
-  }, [symbol, mode, timeframe, toast, initialSymbol]);
+  }, [symbol, mode, timeframe, toast]);
   
   useEffect(() => {
-    handleGenerateSignal(true);
+    handleGenerateSignal();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -165,8 +157,17 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     }
   };
 
+  const isBullish = signalData?.isBullish;
+  const borderColor = isBullish === true ? 'border-green-400/80 shadow-green-400/30' : isBullish === false ? 'border-red-500/80 shadow-red-500/30' : 'border-primary shadow-primary/30';
+  const buttonColor = isBullish === true ? 'border-green-400/80 bg-green-500/20 hover:bg-green-400 hover:text-background' : isBullish === false ? 'border-red-500/80 bg-red-500/20 hover:bg-red-500 hover:text-white' : 'border-primary bg-primary/20 hover:bg-primary hover:text-background';
+  const inputColor = isBullish === true ? 'border-green-400/50 focus:shadow-[0_0_15px_rgba(74,222,128,0.5)]' : isBullish === false ? 'border-red-500/50 focus:shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]';
+
+
   return (
-    <div className="smartsignal-widget w-full border-2 border-primary rounded-xl overflow-hidden shadow-[0_0_30px_var(--primary)] bg-black/70 backdrop-blur-sm">
+    <div className={cn(
+      "smartsignal-widget w-full border-2 rounded-xl overflow-hidden shadow-[0_0_30px_var(--tw-shadow-color)] bg-black/70 backdrop-blur-sm transition-all duration-500",
+      borderColor
+    )}>
       <header className="widget-header p-4 text-center font-headline text-2xl bg-black/50">
         <span className="animate-neon-blue">🚀 SmartSignal Pro</span>
         <span className="text-primary mx-2">-</span>
@@ -180,7 +181,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             value={symbol}
             onChange={(e) => setSymbol(e.target.value)}
             placeholder="e.g. BTC"
-            className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]"
+            className={cn("bg-input text-foreground", inputColor)}
           />
         </div>
         
@@ -188,7 +189,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             <div>
                 <label htmlFor="modeSelect" className="text-sm font-bold text-primary/80">Select Mode</label>
                 <Select value={mode} onValueChange={setMode}>
-                  <SelectTrigger id="modeSelect" className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]">
+                  <SelectTrigger id="modeSelect" className={cn("bg-input text-foreground", inputColor)}>
                     <SelectValue placeholder="Select analysis mode" />
                   </SelectTrigger>
                   <SelectContent>
@@ -201,7 +202,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             <div>
                 <label htmlFor="timeframeSelect" className="text-sm font-bold text-primary/80">Select Timeframe</label>
                 <Select value={timeframe} onValueChange={(value) => setTimeframe(value as Timeframe)}>
-                  <SelectTrigger id="timeframeSelect" className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]">
+                  <SelectTrigger id="timeframeSelect" className={cn("bg-input text-foreground", inputColor)}>
                     <SelectValue placeholder="Select timeframe" />
                   </SelectTrigger>
                   <SelectContent>
@@ -215,7 +216,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             </div>
         </div>
 
-        <Button onClick={() => handleGenerateSignal(false)} disabled={loading} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">
+        <Button onClick={() => handleGenerateSignal()} disabled={loading} className={cn("w-full font-headline uppercase border-2 transition-all duration-300", buttonColor)}>
           {loading ? (
             <>
               <BrainCircuit className="mr-2 h-4 w-4 animate-spin" />
