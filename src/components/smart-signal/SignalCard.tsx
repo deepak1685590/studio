@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import ConfidenceBreakdown from './ConfidenceBreakdown';
 import WhaleAlert from './WhaleAlert';
 import VolumeAnalysisTable from './VolumeAnalysisTable';
+import TradingViewWidget from './TradingViewWidget';
 
 interface SignalCardProps {
   data: SignalData;
@@ -133,7 +134,9 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
       <ConfidenceBreakdown breakdown={data.confidenceBreakdown} />
 
       <SectionHeader icon={<Scaling />}>Quantum Data Stream</SectionHeader>
-      {/* TradingView Chart can go here if needed */}
+      <div className="h-[400px] w-full rounded-lg overflow-hidden border-2 border-primary/20 p-1 bg-black/30">
+        <TradingViewWidget symbol={data.symbol} />
+      </div>
 
       <SectionHeader icon={<BarChart />}>Multi-Timeframe Analysis</SectionHeader>
       <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
