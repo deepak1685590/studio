@@ -3,7 +3,6 @@
 import React from 'react';
 import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
-import TradingViewWidget from './TradingViewWidget';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
 import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target } from 'lucide-react';
@@ -103,7 +102,9 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
       <ConfidenceBreakdown breakdown={data.confidenceBreakdown} />
 
       <SectionHeader icon={<Scaling />}>Quantum Data Stream</SectionHeader>
-      <TradingViewWidget symbol={data.symbol} timeframe={data.timeframe} />
+      <div className="h-96 w-full bg-black/30 rounded-lg border border-primary/20 flex items-center justify-center">
+        <p className="text-primary/50 font-headline">Live Chart Placeholder</p>
+      </div>
 
       <SectionHeader icon={<BarChart />}>Multi-Timeframe Analysis</SectionHeader>
       <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
