@@ -1,5 +1,7 @@
+'use server';
+
 /**
- * @fileOverview A service to fetch general, high-impact financial market news from a live API.
+ * @fileOverview A server action to fetch general, high-impact financial market news from a live API.
  */
 
 import { NEWS_API_KEY } from '@/config';
@@ -12,7 +14,7 @@ interface NewsAPIArticle {
   };
 }
 
-interface NewsItem {
+export interface NewsItem {
   headline: string;
   impact: 'High' | 'Medium' | 'Low';
 }
@@ -35,10 +37,11 @@ const assessImpact = (headline: string): 'High' | 'Medium' | 'Low' => {
 
 /**
  * Fetches general market news from the NewsAPI.org service.
+ * This is a server action and will only run on the server.
  *
  * @returns {Promise<NewsItem[]>} A promise that resolves to an array of live news items.
  */
-export const getGeneralMarketNews = async (): Promise<NewsItem[]> => {
+export const getNews = async (): Promise<NewsItem[]> => {
   const apiKey = NEWS_API_KEY;
   
   if (!apiKey || apiKey === 'YOUR_NEWS_API_KEY_HERE') {
@@ -52,7 +55,7 @@ export const getGeneralMarketNews = async (): Promise<NewsItem[]> => {
   const url = `https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey=${apiKey}`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(`NewsAPI error: ${errorData.message}`);
@@ -64,13 +67,15 @@ export const getGeneralMarketNews = async (): Promise<NewsItem[]> => {
       return [{ headline: "No recent financial news found.", impact: 'Low' }];
     }
 
-    return data.articles.slice(0, 10).map((article: NewsAPIArticle) => ({
+    return data.articles.slice(0, 15).map((article: NewsAPIArticle) => ({
       headline: article.title,
       impact: assessImpact(article.title),
     }));
 
   } catch (error) {
     console.error("Failed to fetch live news:", error);
-    return [{ headline: "Could not fetch the latest news due to an API error. Please check your key or try again later.", impact: 'High' }];
+    // Return a more specific error message if possible
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+    return [{ headline: `Could not fetch news. Error: ${errorMessage}`, impact: 'High' }];
   }
 };

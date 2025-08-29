@@ -4,14 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { Rss, X, Newspaper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { getGeneralMarketNews } from '@/services/general-market-news-service';
+import { getNews, NewsItem } from '@/app/actions/getNews';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '../ui/badge';
-
-interface NewsItem {
-  headline: string;
-  impact: 'High' | 'Medium' | 'Low';
-}
 
 const LiveNewsWidget = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -20,7 +15,7 @@ const LiveNewsWidget = () => {
   const fetchNews = async () => {
     setLoading(true);
     try {
-      const headlines = await getGeneralMarketNews();
+      const headlines = await getNews();
       setNews(headlines);
     } catch (error) {
       console.error("Failed to fetch news:", error);
