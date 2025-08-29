@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo } from 'react';
@@ -17,6 +16,8 @@ import TradingViewWidget from './TradingViewWidget';
 import SidewaysMarketAlert from './SidewaysMarketAlert';
 import OracleInsight from './OracleInsight';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import type { GenerateAiInsightInput } from '@/ai/flows/generate-ai-insight';
+import type { OracleInsightInput } from '@/ai/flows/oracle-insight';
 
 const SectionHeader = ({ children, icon }: { children: React.ReactNode, icon?: React.ReactNode }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">
@@ -196,6 +197,34 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
   
   }, [realtimePrice, data.entry, data.tp1, data.tp2, data.isBullish]);
 
+  // Create stable data objects for AI components to prevent re-fetching on price tick.
+  const eliteAiInsightData: GenerateAiInsightInput = useMemo(() => ({
+    symbol: data.symbol,
+    price: data.price,
+    isBullish: data.isBullish,
+    action: data.action,
+    entry: parseFloat(data.entry),
+    sl: parseFloat(data.sl),
+    tp1: parseFloat(data.tp1),
+    confluenceCount: data.confluenceCount,
+    demandZone: `$${data.demandZone[0]} - ${data.demandZone[1]}`,
+    fvg: `$${data.fvg[0]} - ${data.fvg[1]}`,
+    volumeImbalance: data.volumeImbalance,
+    multiTimeframeAnalysis: {
+      '15m': data.multiTimeframeAnalysis['15m'] || 'Neutral',
+      '1H': data.multiTimeframeAnalysis['1H'] || 'Neutral',
+      '4H': data.multiTimeframeAnalysis['4H'] || 'Neutral',
+      'Daily': data.multiTimeframeAnalysis['Daily'] || 'Neutral',
+    },
+    chartPatternName: data.chartPattern.name,
+  }), [data]);
+
+  const oracleInsightData: OracleInsightInput = useMemo(() => ({
+    symbol: data.symbol,
+    price: data.price,
+    isBullish: data.isBullish,
+    volatility: data.volatility,
+  }), [data]);
 
   return (
     <div id="signal-card-content" className={cn(
@@ -466,32 +495,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
       {data.mode === '3' && (
         <>
-            <EliteAiInsight data={{
-                symbol: data.symbol,
-                price: data.price,
-                isBullish: data.isBullish,
-                action: data.action,
-                entry: parseFloat(data.entry),
-                sl: parseFloat(data.sl),
-                tp1: parseFloat(data.tp1),
-                confluenceCount: data.confluenceCount,
-                demandZone: `$${data.demandZone[0]} - ${data.demandZone[1]}`,
-                fvg: `$${data.fvg[0]} - ${data.fvg[1]}`,
-                volumeImbalance: data.volumeImbalance,
-                multiTimeframeAnalysis: {
-                '15m': data.multiTimeframeAnalysis['15m'] || 'Neutral',
-                '1H': data.multiTimeframeAnalysis['1H'] || 'Neutral',
-                '4H': data.multiTimeframeAnalysis['4H'] || 'Neutral',
-                'Daily': data.multiTimeframeAnalysis['Daily'] || 'Neutral',
-                },
-                chartPatternName: data.chartPattern.name,
-            }} />
-             <OracleInsight data={{
-                symbol: data.symbol,
-                price: data.price,
-                isBullish: data.isBullish,
-                volatility: data.volatility,
-            }} />
+            <EliteAiInsight data={eliteAiInsightData} />
+             <OracleInsight data={oracleInsightData} />
         </>
       )}
 
