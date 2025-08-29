@@ -30,9 +30,41 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 
   const ws = useRef<WebSocket | null>(null);
 
+  const handleGenerateSignal = async (overrideSymbol?: string) => {
+    const targetSymbol = overrideSymbol || symbol;
+    if (!targetSymbol) {
+      toast({ title: "Input Error", description: "Please enter a symbol.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    setSignalData(null);
+    setIsMockData(false);
+    
+    try {
+      const data = await getSignalData(targetSymbol, mode, timeframe);
+      setSignalData(data);
+      setRealtimePrice(data.price); // Initialize with fetched price
+    } catch (error) {
+      console.error("Error generating signal:", error);
+      toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
+      // Fallback to mock data on error
+      setIsMockData(true);
+      const mockData = await getSignalData(targetSymbol, mode, timeframe, true);
+      setSignalData(mockData);
+      setRealtimePrice(mockData.price); // Initialize with fetched price
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   useEffect(() => {
-    // If a new symbol is passed via props (from the opportunities widget), update the state.
-    setSymbol(initialSymbol);
+    // If a new symbol is passed via props (from the opportunities widget), update the state
+    // and automatically trigger a new analysis.
+    if (initialSymbol && initialSymbol !== symbol) {
+      setSymbol(initialSymbol);
+      handleGenerateSignal(initialSymbol);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSymbol]);
 
   useEffect(() => {
@@ -88,32 +120,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       }
     };
   }, [signalData, isMockData, toast]);
-
-  const handleGenerateSignal = async () => {
-    if (!symbol) {
-      toast({ title: "Input Error", description: "Please enter a symbol.", variant: "destructive" });
-      return;
-    }
-    setLoading(true);
-    setSignalData(null);
-    setIsMockData(false);
-    
-    try {
-      const data = await getSignalData(symbol, mode, timeframe);
-      setSignalData(data);
-      setRealtimePrice(data.price); // Initialize with fetched price
-    } catch (error) {
-      console.error("Error generating signal:", error);
-      toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
-      // Fallback to mock data on error
-      setIsMockData(true);
-      const mockData = await getSignalData(symbol, mode, timeframe, true);
-      setSignalData(mockData);
-      setRealtimePrice(mockData.price); // Initialize with fetched price
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDownload = () => {
     const cardElement = document.getElementById('signal-card-content');
@@ -185,7 +191,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             </div>
         </div>
 
-        <Button onClick={handleGenerateSignal} disabled={loading} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">
+        <Button onClick={() => handleGenerateSignal()} disabled={loading} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">
           {loading ? (
             <>
               <BrainCircuit className="mr-2 h-4 w-4 animate-spin" />
