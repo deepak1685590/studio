@@ -31,7 +31,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const { toast } = useToast();
 
   const ws = useRef<WebSocket | null>(null);
-  const analysisCompletedForSymbol = useRef<string | null>(null);
+  const currentSymbolRef = useRef(initialSymbol);
 
   const handleGenerateSignal = async (overrideSymbol?: string) => {
     const targetSymbol = (overrideSymbol || symbol).toUpperCase();
@@ -41,57 +41,71 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     }
     setLoading(true);
     setSignalData(null);
+    setRealtimePrice(null);
     setIsMockData(false);
+    currentSymbolRef.current = targetSymbol;
+    
+    // Explicitly close any existing WebSocket connection before generating a new signal
+    if (ws.current) {
+        ws.current.close();
+        ws.current = null;
+    }
     
     try {
       const data = await getSignalData(targetSymbol, mode, timeframe);
       setSignalData(data);
-      setRealtimePrice(data.price); // Initialize with fetched price
-      analysisCompletedForSymbol.current = targetSymbol;
+      setRealtimePrice(data.price);
     } catch (error) {
       console.error("Error generating signal:", error);
       toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
-      // Fallback to mock data on error
       setIsMockData(true);
       const mockData = await getSignalData(targetSymbol, mode, timeframe, true);
       setSignalData(mockData);
-      setRealtimePrice(mockData.price); // Initialize with fetched price
-      analysisCompletedForSymbol.current = targetSymbol;
+      setRealtimePrice(mockData.price);
     } finally {
       setLoading(false);
     }
   };
   
   useEffect(() => {
-    // This effect runs when the component mounts or when `initialSymbol` changes.
-    // The key prop in MainApp ensures a remount, so this logic is reliable for new selections.
     setSymbol(initialSymbol);
     handleGenerateSignal(initialSymbol);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSymbol]);
 
   useEffect(() => {
-    // Close previous connection if it exists
+    // Cleanup function to close WebSocket on component unmount
+    return () => {
+      if (ws.current) {
+        ws.current.close();
+        ws.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (ws.current) {
       ws.current.close();
       ws.current = null;
     }
-    
+
     if (isMockData || !signalData) {
       return;
     }
 
-    // Definitive check to prevent connection for forex pairs or invalid symbols
-    if (signalData.symbol.includes('/') || !cryptoAssetsForWebsocket.includes(signalData.symbol.toUpperCase())) {
+    // === ROBUST CHECKS TO PREVENT INVALID CONNECTIONS ===
+    // 1. Check if the signal data is for the symbol we are currently analyzing.
+    // 2. Check if the symbol is a valid, whitelisted crypto asset.
+    if (signalData.symbol.toUpperCase() !== currentSymbolRef.current.toUpperCase() || !cryptoAssetsForWebsocket.includes(signalData.symbol.toUpperCase())) {
       return;
     }
     
-    // Reset price for new symbol
     setRealtimePrice(signalData.price);
     setPriceDirection('neutral');
 
     const wsSymbol = signalData.symbol.toLowerCase() + 'usdt';
     const socket = new WebSocket(`wss://stream.binance.com:9443/ws/${wsSymbol}@trade`);
+    ws.current = socket;
 
     socket.onopen = () => {
       console.log(`WebSocket connected for ${wsSymbol}`);
@@ -120,17 +134,19 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 
     socket.onclose = () => {
       console.log(`WebSocket disconnected for ${wsSymbol}`);
+      if (ws.current === socket) {
+        ws.current = null;
+      }
     };
 
-    ws.current = socket;
-
-    // Cleanup on component unmount or when signalData changes
+    // This cleanup function is crucial. It runs when the dependencies [signalData, isMockData, toast] change.
     return () => {
-      if (ws.current) {
-        ws.current.close();
+      if (socket) {
+        socket.close();
       }
     };
   }, [signalData, isMockData, toast]);
+
 
   const handleDownload = () => {
     const cardElement = document.getElementById('signal-card-content');
