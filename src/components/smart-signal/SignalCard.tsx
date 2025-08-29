@@ -130,6 +130,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     volatility: data.trendStrength.score,
   }), [data.symbol, data.price, data.isBullish, data.trendStrength.score]);
 
+
   if (data.sidewaysMarket) {
     return (
         <div id="signal-card-content" className="mt-5 p-5 bg-black/70 border-2 rounded-xl text-sm leading-relaxed shadow-lg space-y-4 border-yellow-500 shadow-yellow-500/20">
@@ -188,7 +189,12 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                         ${displayPrice.toFixed(4)}
                     </span>
                 </div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Entry:</span><span className="font-mono">${data.entry}</span></div>
+
+                <div className="flex justify-between items-center text-lg my-2 p-2 rounded-md border border-primary/50 bg-primary/10 shadow-[0_0_15px_hsl(var(--primary)_/_0.3)]">
+                    <span className="text-foreground/80 text-sm">Entry:</span>
+                    <span className="font-mono font-bold text-primary">${data.entry}</span>
+                </div>
+
                 <div className="flex justify-between text-sm"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-red-400">${data.sl}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-foreground/70">Take-Profit 1:</span><span className="font-mono text-green-400">${data.tp1}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-foreground/70">Take-Profit 2:</span><span className="font-mono text-green-400">${data.tp2}</span></div>
@@ -321,3 +327,5 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+
+    
