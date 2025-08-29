@@ -29,10 +29,10 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const { toast } = useToast();
 
   const ws = useRef<WebSocket | null>(null);
-  const isInitialMount = useRef(true);
+  const analysisCompletedForSymbol = useRef<string | null>(null);
 
   const handleGenerateSignal = async (overrideSymbol?: string) => {
-    const targetSymbol = overrideSymbol || symbol;
+    const targetSymbol = (overrideSymbol || symbol).toUpperCase();
     if (!targetSymbol) {
       toast({ title: "Input Error", description: "Please enter a symbol.", variant: "destructive" });
       return;
@@ -45,6 +45,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       const data = await getSignalData(targetSymbol, mode, timeframe);
       setSignalData(data);
       setRealtimePrice(data.price); // Initialize with fetched price
+      analysisCompletedForSymbol.current = targetSymbol;
     } catch (error) {
       console.error("Error generating signal:", error);
       toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
@@ -53,6 +54,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       const mockData = await getSignalData(targetSymbol, mode, timeframe, true);
       setSignalData(mockData);
       setRealtimePrice(mockData.price); // Initialize with fetched price
+      analysisCompletedForSymbol.current = targetSymbol;
     } finally {
       setLoading(false);
     }
@@ -61,13 +63,9 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   useEffect(() => {
     // This effect runs when the component mounts or when `initialSymbol` changes.
     // The key prop in MainApp ensures a remount, so this logic is reliable for new selections.
-    if (isInitialMount.current) {
-        isInitialMount.current = false;
-        // On first load, we might want to auto-load BTC or the initial symbol.
-        // Let's analyze if the initialSymbol is not the default 'BTC' to avoid double-loading.
-        if (initialSymbol !== 'BTC' || !signalData) {
-             handleGenerateSignal(initialSymbol);
-        }
+    setSymbol(initialSymbol);
+    if (analysisCompletedForSymbol.current !== initialSymbol.toUpperCase()) {
+        handleGenerateSignal(initialSymbol);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSymbol]);
