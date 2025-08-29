@@ -10,6 +10,8 @@ import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, Bo
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
+import ConfidenceBreakdown from './ConfidenceBreakdown';
+import WhaleAlert from './WhaleAlert';
 
 interface SignalCardProps {
   data: SignalData;
@@ -77,7 +79,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
         <LevelItem label="Take-Profit 1" value={`${data.tp1}`} />
         <LevelItem label="Take-Profit 2" value={`${data.tp2}`} />
         <LevelItem label="Risk/Reward" value={`1 : ${data.riskReward.toFixed(1)}`} />
-        <LevelItem label="Confidence" value={data.confidence} />
+        <LevelItem label="Confidence" value={`${data.confidenceBreakdown.overall}% (${data.confidence})`} />
       </div>
 
       {data.goldenPullbackZone && (
@@ -91,6 +93,10 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
           </AlertDescription>
         </Alert>
       )}
+
+      {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
+
+      <ConfidenceBreakdown breakdown={data.confidenceBreakdown} />
 
       <SectionHeader icon={<Scaling />}>Quantum Data Stream</SectionHeader>
       <QuantumChart data={data.chartData} />

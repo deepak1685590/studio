@@ -29,7 +29,6 @@ export interface MultiTimeframeAnalysis {
   [key: string]: Trend | undefined;
 }
 
-
 export interface ChartPattern {
     name: string;
     description: string;
@@ -38,6 +37,7 @@ export interface ChartPattern {
 export interface TradersChecklist {
     riskRewardPass: boolean;
     mtfAlignmentPass: boolean;
+
     volumeConfirmationPass: boolean;
     entryInZonePass: boolean;
     structureAligmentPass: boolean;
@@ -53,6 +53,22 @@ export interface FibonacciLevels {
 export interface GoldenPullbackZone {
     min: string;
     max: string;
+}
+
+export interface ConfidenceBreakdown {
+  overall: number;
+  technical: number;
+  volume: number;
+  structure: number;
+  sentiment: number;
+}
+
+export interface WhaleAlert {
+  amount: number;
+  symbol: string;
+  destination: 'Exchanges' | 'Cold Wallet';
+  impactProbability: 'HIGH' | 'MEDIUM' | 'LOW';
+  historicalPattern: string;
 }
 
 export interface SignalData {
@@ -89,6 +105,7 @@ export interface SignalData {
   chartPattern: ChartPattern;
   tradersChecklist: TradersChecklist;
   fibonacciLevels: FibonacciLevels;
-  whaleVolumeAlert?: string;
+  whaleAlert?: WhaleAlert;
   goldenPullbackZone?: GoldenPullbackZone;
+  confidenceBreakdown: ConfidenceBreakdown;
 }
