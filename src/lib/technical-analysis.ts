@@ -48,13 +48,32 @@ const getMockKlines = (price: number, interval: Timeframe) => {
   return klines;
 };
 
-const generateVolumeAnalysis = (): VolumeAnalysis => {
+// Deterministic pseudo-random number generator based on a seed string (e.g., the symbol)
+const pseudoRandom = (seedStr: string): number => {
+    let h1 = 1779033703, h2 = 3144134277,
+        h3 = 1013904242, h4 = 2773480762;
+    for (let i = 0, k; i < seedStr.length; i++) {
+        k = seedStr.charCodeAt(i);
+        h1 = h2 ^ Math.imul(h1, k);
+        h2 = h3 ^ Math.imul(h2, k);
+        h3 = h4 ^ Math.imul(h3, k);
+        h4 = h1 ^ Math.imul(h4, k);
+    }
+    h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+    h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+    h3 = Math.imul(h1 ^ (h3 >>> 17), 597399067);
+    h4 = Math.imul(h2 ^ (h4 >>> 19), 2869860233);
+    return ((h1^h2^h3^h4)>>>0) / 4294967296;
+}
+
+const generateVolumeAnalysis = (symbol: string): VolumeAnalysis => {
     const timeframes: (keyof VolumeAnalysis)[] = ['5m', '15m', '1H', '4H', '1D'];
     const analysis: Partial<VolumeAnalysis> = {};
 
     timeframes.forEach(tf => {
-        const totalVolume = Math.random() * 10000 + 5000; // 5k to 15k
-        const buyRatio = Math.random();
+        const seed = `${symbol}-${tf}`;
+        const totalVolume = pseudoRandom(seed + 'total') * 10000 + 5000;
+        const buyRatio = pseudoRandom(seed + 'ratio');
         const buyVolume = Math.round(totalVolume * buyRatio);
         const sellVolume = Math.round(totalVolume * (1 - buyRatio));
         
@@ -78,6 +97,7 @@ const generateVolumeAnalysis = (): VolumeAnalysis => {
 
 export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, forceMock = false): Promise<SignalData> => {
     let price, klines: any[], symbolWithUSDT = symbol.toUpperCase() + "USDT";
+    const seed = `${symbol}-${timeframe}-${mode}`;
     
     const timeframeToInterval = {
       '5m': '5m',
@@ -89,7 +109,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const apiInterval = timeframeToInterval[timeframe] || '15m';
 
     if (forceMock) {
-        price = parseFloat((Math.random() * 70000 + 1000).toFixed(2));
+        price = parseFloat((pseudoRandom(seed + 'price') * 70000 + 1000).toFixed(2));
         klines = getMockKlines(price, timeframe);
     } else {
         try {
@@ -132,8 +152,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     }
     const atr = trSum / atrPeriod;
 
-    // Simulate ADX
-    const adx = Math.floor(Math.random() * 50 + 10); // 10-60
+    // Simulate ADX deterministically
+    const adx = Math.floor(pseudoRandom(seed + 'adx') * 50 + 10);
     let sidewaysMarket: SidewaysMarket | undefined = undefined;
     if (adx < 25) {
         sidewaysMarket = {
@@ -142,11 +162,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         };
     }
 
-    // Volatility for Oracle
     const volatility = Math.min(100, Math.round((atr / lastClose) * 20000));
 
-
-    // Fibonacci Retracement Levels
     const fibRange = swingHigh - swingLow;
     const fibonacciLevels: FibonacciLevels = {
         level_382: (swingHigh - fibRange * 0.382).toFixed(2),
@@ -161,10 +178,9 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         '4h': { atr: 3, tp1: 3, tp2: 6 },
         '1d': { atr: 3.5, tp1: 3.5, tp2: 7 },
     };
-    const multipliers = timeframeMultipliers[timeframe as keyof typeof timeframeMultipliers] || timeframeMultipliers['15m'];
+    const multipliers = timeframeMultipliers[timeframe] || timeframeMultipliers['15m'];
     const { atr: atrMultiplier, tp1: tpMultiplier1, tp2: tpMultiplier2 } = multipliers;
 
-    // A simple SuperTrend logic
     const superTrendMultiplier = 2.5;
     const upperBand = (swingHigh + swingLow) / 2 + (superTrendMultiplier * atr);
     const lowerBand = (swingHigh + swingLow) / 2 - (superTrendMultiplier * atr);
@@ -177,13 +193,13 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const recentVolumes = klines.slice(-20).map(k => parseFloat(k[5]));
     const avgVolume = recentVolumes.reduce((a, b) => a + b, 0) / recentVolumes.length;
     
-    const buyVolume = avgVolume * (isBullish ? 1.2 : 0.8) * (1 + (Math.random() - 0.5) * 0.2);
-    const sellVolume = avgVolume * (isBullish ? 0.8 : 1.2) * (1 + (Math.random() - 0.5) * 0.2);
+    const buyVolume = avgVolume * (isBullish ? 1.2 : 0.8) * (1 + (pseudoRandom(seed+'buy') - 0.5) * 0.2);
+    const sellVolume = avgVolume * (isBullish ? 0.8 : 1.2) * (1 + (pseudoRandom(seed+'sell') - 0.5) * 0.2);
     const netFlow = buyVolume - sellVolume;
 
     const volumeImbalance = netFlow > 0 ? `🟢 Buyers in Control (+${Math.round(netFlow)} units)` : `🔴 Sellers in Control (${Math.round(netFlow)} units)`;
       
-    const reversalConfirmed = Math.random() > 0.6;
+    const reversalConfirmed = pseudoRandom(seed + 'reversal') > 0.6;
 
     const confluenceFactors = [
         `Trend: ${isBullish ? 'Bullish' : 'Bearish'} (Price vs SuperTrend)`,
@@ -196,20 +212,26 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         confluenceFactors.push(`✅ Reversal Confirmed`);
     }
 
-    const isBullishWhale = Math.random() > 0.5;
-    const whaleAlert: WhaleAlert = {
-        amount: parseFloat((Math.random() * 2000 + 500).toFixed(0)), // 500 - 2500
-        symbol: symbol.toUpperCase(),
-        destination: isBullishWhale ? 'Cold Wallet' : 'Exchanges',
-        impactProbability: 'HIGH',
-        historicalPattern: isBullishWhale ? '78% chance of short-term rally' : '73% chance of price drop within 4h',
-    };
-    confluenceFactors.unshift(`🚨 WHALE SIGHTING: Large volume detected!`);
+    // Deterministic Whale Alert: Only show for major coins
+    let whaleAlert: WhaleAlert | undefined = undefined;
+    const majorCoins = ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE'];
+    if (majorCoins.includes(symbol.toUpperCase())) {
+        const isBullishWhale = pseudoRandom(seed + 'whale_bull') > 0.5;
+        whaleAlert = {
+            amount: parseFloat((pseudoRandom(seed + 'whale_amount') * 2000 + 500).toFixed(0)),
+            symbol: symbol.toUpperCase(),
+            destination: isBullishWhale ? 'Cold Wallet' : 'Exchanges',
+            impactProbability: 'HIGH',
+            historicalPattern: isBullishWhale ? '78% chance of short-term rally' : '73% chance of price drop within 4h',
+        };
+        confluenceFactors.unshift(`🚨 WHALE SIGHTING: Large volume detected!`);
+    }
+
 
     const entryPrice = isBullish ? (price * 0.998) : (price * 1.002);
     const fibValues = Object.values(fibonacciLevels).map(parseFloat);
     const closestFib = fibValues.reduce((prev, curr) => Math.abs(curr - entryPrice) < Math.abs(prev - entryPrice) ? curr : prev);
-    if (Math.abs(closestFib - entryPrice) / entryPrice < 0.005) { // within 0.5% of a fib level
+    if (Math.abs(closestFib - entryPrice) / entryPrice < 0.005) {
         const fibKey = Object.keys(fibonacciLevels).find(key => parseFloat(fibonacciLevels[key as keyof FibonacciLevels]) === closestFib);
         if (fibKey) {
             const fibPercent = fibKey.split('_')[1];
@@ -235,7 +257,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     analysisTimeframes.forEach(tf => {
         if (!multiTimeframeAnalysis[tf]) {
-            multiTimeframeAnalysis[tf] = trends[Math.floor(Math.random() * 3)];
+            multiTimeframeAnalysis[tf] = trends[Math.floor(pseudoRandom(seed + tf) * 3)];
         }
     });
     
@@ -247,15 +269,15 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     });
 
     if (parseInt(mode) >= 2) {
-        const waveConvergence = (Math.random() * 40 + 60).toFixed(1);
+        const waveConvergence = (pseudoRandom(seed + 'wave') * 40 + 60).toFixed(1);
         confluenceFactors.push(`Quantum Wave Convergence: ${waveConvergence}%`);
     }
     if (parseInt(mode) >= 3) {
         const anomalyType = isBullish ? 'Expansion' : 'Contraction';
-        const anomalySeverity = (Math.random() * 0.5 + 1.2).toFixed(2);
+        const anomalySeverity = (pseudoRandom(seed + 'anomaly') * 0.5 + 1.2).toFixed(2);
         confluenceFactors.push(`Chrono-Distortion Anomaly: ${anomalyType} (${anomalySeverity}σ)`);
         
-        const liquidityPulse = (Math.random() * 150 + 50).toFixed(0);
+        const liquidityPulse = (pseudoRandom(seed + 'pulse') * 150 + 50).toFixed(0);
         confluenceFactors.push(`Subspace Liquidity Pulse: ${liquidityPulse}M units detected`);
     }
 
@@ -283,8 +305,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         { name: 'Head & Shoulders', description: 'A classic reversal pattern indicating a shift from an uptrend to a downtrend.' },
     ];
     const chartPattern: ChartPattern = isBullish 
-        ? bullishPatterns[Math.floor(Math.random() * bullishPatterns.length)] 
-        : bearishPatterns[Math.floor(Math.random() * bearishPatterns.length)];
+        ? bullishPatterns[Math.floor(pseudoRandom(seed+'pattern') * bullishPatterns.length)] 
+        : bearishPatterns[Math.floor(pseudoRandom(seed+'pattern') * bearishPatterns.length)];
     
     const marketStructure = isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL';
 
@@ -298,8 +320,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         entryInZonePass: isBullish 
             ? parseFloat(entry) >= parseFloat(demandZone[0]) && parseFloat(entry) <= parseFloat(demandZone[1])
             : parseFloat(entry) >= parseFloat(supplyZone[0]) && parseFloat(entry) <= parseFloat(supplyZone[1]),
-        structureAligmentPass: Math.random() > 0.3,
-        liquiditySweepPass: Math.random() > 0.4,
+        structureAligmentPass: pseudoRandom(seed + 'structure') > 0.3,
+        liquiditySweepPass: pseudoRandom(seed + 'liquidity') > 0.4,
     };
     
     let goldenPullbackZone: GoldenPullbackZone | undefined = undefined;
@@ -317,15 +339,15 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     }
 
     const confidenceBreakdown: ConfidenceBreakdown = {
-        patternStrength: Math.floor(Math.random() * 15 + 80), // 80-95
-        volumeConfirmation: Math.floor(Math.random() * 20 + 70), // 70-90
-        htfAlignment: tradersChecklist.mtfAlignmentPass ? Math.floor(Math.random() * 15 + 85) : Math.floor(Math.random() * 20 + 50), // 85-100 if pass, 50-70 if fail
-        smartMoneyFlow: Math.floor(Math.random() * 25 + 75), // 75-100
+        patternStrength: Math.floor(pseudoRandom(seed + 'cs1') * 15 + 80),
+        volumeConfirmation: Math.floor(pseudoRandom(seed + 'cs2') * 20 + 70),
+        htfAlignment: tradersChecklist.mtfAlignmentPass ? Math.floor(pseudoRandom(seed + 'cs3') * 15 + 85) : Math.floor(pseudoRandom(seed + 'cs3') * 20 + 50),
+        smartMoneyFlow: Math.floor(pseudoRandom(seed + 'cs4') * 25 + 75),
         overall: 0,
     };
     confidenceBreakdown.overall = Math.round((confidenceBreakdown.patternStrength + confidenceBreakdown.volumeConfirmation + confidenceBreakdown.htfAlignment + confidenceBreakdown.smartMoneyFlow) / 4);
     
-    const volumeAnalysis = generateVolumeAnalysis();
+    const volumeAnalysis = generateVolumeAnalysis(symbol);
 
     return {
         symbol: symbol.toUpperCase(),
