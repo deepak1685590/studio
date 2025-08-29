@@ -63,13 +63,16 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 font-mono">
-        <div className="flex justify-between text-sm">
-            <span className="text-foreground/70">Price:</span>
-            <span className="font-mono flex items-center gap-2">
+        <div className="flex justify-between text-lg items-center py-1">
+            <span className="text-foreground/70 text-sm">Live Price:</span>
+            <span className={cn("font-mono flex items-center gap-2 transition-colors duration-300",
+                priceDirection === 'up' && 'text-green-400',
+                priceDirection === 'down' && 'text-red-400',
+            )}>
                  <span className={cn(
-                    "w-2 h-2 rounded-full",
-                    priceDirection === 'up' && 'bg-green-500 animate-pulse',
-                    priceDirection === 'down' && 'bg-red-500 animate-pulse',
+                    "w-3 h-3 rounded-full transition-all",
+                    priceDirection === 'up' && 'bg-green-500 shadow-[0_0_8px_theme(colors.green.500)] animate-pulse',
+                    priceDirection === 'down' && 'bg-red-500 shadow-[0_0_8px_theme(colors.red.500)] animate-pulse',
                     priceDirection === 'neutral' && 'bg-gray-500'
                  )}></span>
                 ${displayPrice.toFixed(4)}
