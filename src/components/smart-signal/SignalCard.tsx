@@ -6,7 +6,7 @@ import EliteAiInsight from './EliteAiInsight';
 import QuantumChart from './QuantumChart';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Waves } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -125,8 +125,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
         </div>
       </div>
 
-      <SectionHeader>Signals Detected</SectionHeader>
-      <ul className="list-disc list-inside space-y-1">
+      <SectionHeader>Signals Detected ({data.confluenceCount})</SectionHeader>
+      <ul className="list-disc list-inside space-y-1 text-xs pl-2">
         {data.confluenceFactors.map((factor, i) => <li key={i}>{factor}</li>)}
       </ul>
       
@@ -148,7 +148,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
             </div>
         </div>
       </div>
-
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
         <div>
@@ -180,7 +179,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
           </div>
         </div>
       </div>
-
 
       {data.mode === '3' && (
         <EliteAiInsight data={{

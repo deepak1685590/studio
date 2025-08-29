@@ -21,7 +21,6 @@ const getMockKlines = (price: number, interval: Timeframe) => {
   let currentPrice = price;
   
   const intervalMap: {[key in Timeframe]: number} = {
-    '1m': 1,
     '5m': 5,
     '15m': 15,
     '1H': 60,
@@ -156,22 +155,16 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         confluenceFactors.push(`✅ Reversal Confirmed`);
     }
 
-    let whaleAlert: WhaleAlert | undefined = undefined;
-    const lastVolume = parseFloat(lastCandle[5]);
-    const whaleThreshold = 4; // 4x average volume
-    if (lastVolume > avgVolume * whaleThreshold || Math.random() < 0.2) { // also trigger randomly sometimes
-        const isBullishWhale = lastClose > parseFloat(lastCandle[1]);
-        const amount = parseFloat((lastVolume / 1000 * price).toFixed(0)); // Example calculation for BTC value
-        whaleAlert = {
-            amount: Math.max(500, amount), // Ensure a minimum amount
-            symbol: symbol.toUpperCase(),
-            destination: isBullishWhale ? 'Cold Wallet' : 'Exchanges',
-            impactProbability: 'HIGH',
-            historicalPattern: isBullishWhale ? '78% chance of short-term rally' : '73% chance of price drop within 4h',
-        };
-        confluenceFactors.unshift(`🚨 WHALE SIGHTING: Large volume detected!`);
-    }
-
+    // Always generate a whale alert for demonstration
+    const isBullishWhale = Math.random() > 0.5;
+    const whaleAlert: WhaleAlert = {
+        amount: parseFloat((Math.random() * 2000 + 500).toFixed(0)), // 500 - 2500
+        symbol: symbol.toUpperCase(),
+        destination: isBullishWhale ? 'Cold Wallet' : 'Exchanges',
+        impactProbability: 'HIGH',
+        historicalPattern: isBullishWhale ? '78% chance of short-term rally' : '73% chance of price drop within 4h',
+    };
+    confluenceFactors.unshift(`🚨 WHALE SIGHTING: Large volume detected!`);
 
     const entryPrice = isBullish ? (price * 0.998) : (price * 1.002);
     const fibValues = Object.values(fibonacciLevels).map(parseFloat);

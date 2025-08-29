@@ -37,7 +37,6 @@ export interface ChartPattern {
 export interface TradersChecklist {
     riskRewardPass: boolean;
     mtfAlignmentPass: boolean;
-
     volumeConfirmationPass: boolean;
     entryInZonePass: boolean;
     structureAligmentPass: boolean;
