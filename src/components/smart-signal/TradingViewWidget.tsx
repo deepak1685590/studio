@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useRef } from 'react';
@@ -49,9 +50,9 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, timeframe
   const getThemeColors = () => {
     if (typeof window === 'undefined') {
       return {
-        background: '#000000',
-        textColor: '#FFFFFF',
-        gridColor: 'rgba(255, 255, 255, 0.1)',
+        background: '#0A0A0A',
+        textColor: '#00E6E6',
+        gridColor: 'rgba(0, 230, 230, 0.2)',
         upColor: '#26a69a',
         downColor: '#ef5350',
         borderUpColor: '#26a69a',
@@ -63,7 +64,14 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, timeframe
     const computedStyle = getComputedStyle(document.documentElement);
     
     // Helper function to format HSL values correctly for the library
-    const formatHsl = (value: string) => `hsl(${value.trim().replace(/ /g, ', ')})`;
+    const formatHsl = (value: string) => {
+        // Input: "222 47% 11%" -> Output: "hsl(222, 47%, 11%)"
+        const parts = value.trim().split(' ');
+        if (parts.length === 3) {
+            return `hsl(${parts[0]}, ${parts[1]}, ${parts[2]})`;
+        }
+        return value; // Fallback
+    };
     
     const primaryHsl = computedStyle.getPropertyValue('--primary').trim();
 
