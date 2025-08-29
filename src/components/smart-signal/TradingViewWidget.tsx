@@ -61,11 +61,16 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, timeframe
       };
     }
     const computedStyle = getComputedStyle(document.documentElement);
-    const primaryColor = `hsl(${computedStyle.getPropertyValue('--primary')})`;
+    
+    // Helper function to format HSL values correctly for the library
+    const formatHsl = (value: string) => `hsl(${value.trim().replace(/ /g, ', ')})`;
+    
+    const primaryHsl = computedStyle.getPropertyValue('--primary').trim();
+
     return {
-      background: `hsl(${computedStyle.getPropertyValue('--background')})`,
-      textColor: `hsl(${computedStyle.getPropertyValue('--foreground')})`,
-      gridColor: `${primaryColor.replace(')', ', 0.2)')}`,
+      background: formatHsl(computedStyle.getPropertyValue('--background')),
+      textColor: formatHsl(computedStyle.getPropertyValue('--foreground')),
+      gridColor: `hsla(${primaryHsl.replace(/ /g, ', ')}, 0.2)`,
       upColor: '#26a69a',
       downColor: '#ef5350',
       borderUpColor: '#26a69a',
@@ -117,7 +122,7 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, timeframe
         });
     }
 
-    const timeframeMap = {
+    const timeframeMap: Record<Timeframe, string> = {
       '5m': '5m',
       '15m': '15m',
       '1H': '1h',
