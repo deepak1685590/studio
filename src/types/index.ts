@@ -8,13 +8,6 @@ export interface User {
   revokedAt?: string;
 }
 
-export interface ChartDataPoint {
-  name: string;
-  price: number;
-  momentum: number;
-  volatility: number;
-}
-
 export type Trend = 'Bullish' | 'Bearish' | 'Neutral';
 export type Timeframe = '5m' | '15m' | '1H' | '4H' | '1d';
 
@@ -98,7 +91,6 @@ export interface SignalData {
   fvg: [string, string];
   liquidityPool: string;
   marketStructure: string;
-  chartData: ChartDataPoint[];
   multiTimeframeAnalysis: MultiTimeframeAnalysis;
   reversalConfirmed: boolean;
   chartPattern: ChartPattern;

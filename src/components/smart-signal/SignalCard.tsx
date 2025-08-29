@@ -3,7 +3,7 @@
 import React from 'react';
 import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
-import QuantumChart from './QuantumChart';
+import TradingViewWidget from './TradingViewWidget';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
 import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target } from 'lucide-react';
@@ -103,7 +103,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
       <ConfidenceBreakdown breakdown={data.confidenceBreakdown} />
 
       <SectionHeader icon={<Scaling />}>Quantum Data Stream</SectionHeader>
-      <QuantumChart data={data.chartData} />
+      <TradingViewWidget symbol={data.symbol} timeframe={data.timeframe} />
 
       <SectionHeader icon={<BarChart />}>Multi-Timeframe Analysis</SectionHeader>
       <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
@@ -189,7 +189,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
             symbol: data.symbol,
             price: displayPrice,
             isBullish: data.isBullish,
-            volatility: data.chartData[data.chartData.length - 1]?.volatility || 50,
+            volatility: 78,
         }} />
       ) : data.mode === '3' ? (
         <EliteAiInsight data={{
