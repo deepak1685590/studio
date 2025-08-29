@@ -64,12 +64,6 @@ export interface WhaleAlert {
   historicalPattern: string;
 }
 
-export interface SidewaysMarket {
-  isSideways: boolean;
-  range: [string, string];
-  adx: number;
-}
-
 export interface VolumeTimeframeData {
   buyVolume: number;
   sellVolume: number;
@@ -121,6 +115,5 @@ export interface SignalData {
   whaleAlert?: WhaleAlert;
   goldenPullbackZone?: GoldenPullbackZone;
   confidenceBreakdown: ConfidenceBreakdown;
-  sidewaysMarket?: SidewaysMarket;
   volumeAnalysis: VolumeAnalysis;
 }

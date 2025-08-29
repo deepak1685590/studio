@@ -12,9 +12,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import ConfidenceBreakdown from './ConfidenceBreakdown';
 import WhaleAlert from './WhaleAlert';
-import OracleInsight from './OracleInsight';
-import TradingViewMiniChart from './TradingViewMiniChart';
-import SidewaysMarketAlert from './SidewaysMarketAlert';
 import VolumeAnalysisTable from './VolumeAnalysisTable';
 
 interface SignalCardProps {
@@ -47,8 +44,6 @@ const ChecklistItem = ({ label, passed }: { label: string; passed: boolean }) =>
 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice, priceDirection }) => {
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
-  
-  const showOracle = data.mode === '3' && data.confidenceBreakdown.overall > 92;
 
   return (
     <div id="signal-card-content" className="mt-5 p-5 bg-black/70 border-2 border-primary rounded-xl text-sm leading-relaxed shadow-lg">
@@ -88,8 +83,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
         <LevelItem label="Confidence" value={`${data.confidenceBreakdown.overall}% (${data.confidence})`} />
       </div>
 
-      {data.sidewaysMarket?.isSideways && <SidewaysMarketAlert alert={data.sidewaysMarket} />}
-
       {data.goldenPullbackZone && (
         <Alert className="mt-4 border-primary/50 bg-primary/10 text-primary">
           <Target className="h-4 w-4 text-primary" />
@@ -107,9 +100,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
       <ConfidenceBreakdown breakdown={data.confidenceBreakdown} />
 
       <SectionHeader icon={<Scaling />}>Quantum Data Stream</SectionHeader>
-      <div className="h-96 w-full bg-black/30 rounded-lg border border-primary/20">
-        <TradingViewMiniChart symbol={data.symbol} />
-      </div>
+      {/* TradingView Chart can go here if needed */}
 
       <SectionHeader icon={<BarChart />}>Multi-Timeframe Analysis</SectionHeader>
       <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
@@ -193,35 +184,26 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
         </div>
       </div>
 
-      {showOracle ? (
-        <OracleInsight data={{
-            symbol: data.symbol,
-            price: displayPrice,
-            isBullish: data.isBullish,
-            volatility: 78,
-        }} />
-      ) : data.mode === '3' ? (
-        <EliteAiInsight data={{
-          symbol: data.symbol,
-          price: displayPrice,
-          isBullish: data.isBullish,
-          action: data.action,
-          entry: parseFloat(data.entry),
-          sl: parseFloat(data.sl),
-          tp1: parseFloat(data.tp1),
-          confluenceCount: data.confluenceCount,
-          demandZone: `$${data.demandZone[0]} - $${data.demandZone[1]}`,
-          fvg: `$${data.fvg[0]} - $${data.fvg[1]}`,
-          volumeImbalance: data.volumeImbalance,
-          multiTimeframeAnalysis: {
-            '15m': data.multiTimeframeAnalysis['15m'] || 'Neutral',
-            '1H': data.multiTimeframeAnalysis['1H'] || 'Neutral',
-            '4H': data.multiTimeframeAnalysis['4H'] || 'Neutral',
-            'Daily': data.multiTimeframeAnalysis['Daily'] || 'Neutral',
-          },
-          chartPatternName: data.chartPattern.name,
-        }} />
-      ) : null}
+      {data.mode === '3' && <EliteAiInsight data={{
+        symbol: data.symbol,
+        price: displayPrice,
+        isBullish: data.isBullish,
+        action: data.action,
+        entry: parseFloat(data.entry),
+        sl: parseFloat(data.sl),
+        tp1: parseFloat(data.tp1),
+        confluenceCount: data.confluenceCount,
+        demandZone: `$${data.demandZone[0]} - $${data.demandZone[1]}`,
+        fvg: `$${data.fvg[0]} - $${data.fvg[1]}`,
+        volumeImbalance: data.volumeImbalance,
+        multiTimeframeAnalysis: {
+          '15m': data.multiTimeframeAnalysis['15m'] || 'Neutral',
+          '1H': data.multiTimeframeAnalysis['1H'] || 'Neutral',
+          '4H': data.multiTimeframeAnalysis['4H'] || 'Neutral',
+          'Daily': data.multiTimeframeAnalysis['Daily'] || 'Neutral',
+        },
+        chartPatternName: data.chartPattern.name,
+      }} />}
 
       <div className="flex justify-between items-center mt-6">
         <small className="text-foreground/50">Generated: {new Date().toLocaleString()}</small>

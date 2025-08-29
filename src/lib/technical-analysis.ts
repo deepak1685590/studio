@@ -1,5 +1,5 @@
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, SidewaysMarket, VolumeAnalysis } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, VolumeAnalysis, VolumeTimeframeData } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -46,59 +46,6 @@ const getMockKlines = (price: number, interval: Timeframe) => {
     ]);
   }
   return klines;
-};
-
-// Helper function to calculate ADX
-const calculateADX = (klines: any[], period: number) => {
-    if (klines.length < period * 2) return 0;
-
-    let trueRanges = [];
-    let directionalMovementsUp = [];
-    let directionalMovementsDown = [];
-
-    for (let i = 1; i < klines.length; i++) {
-        const high = parseFloat(klines[i][2]);
-        const low = parseFloat(klines[i][3]);
-        const close = parseFloat(klines[i][4]);
-        const prevHigh = parseFloat(klines[i - 1][2]);
-        const prevLow = parseFloat(klines[i - 1][3]);
-        const prevClose = parseFloat(klines[i - 1][4]);
-
-        const tr = Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
-        trueRanges.push(tr);
-
-        const upMove = high - prevHigh;
-        const downMove = prevLow - low;
-
-        directionalMovementsUp.push(upMove > downMove && upMove > 0 ? upMove : 0);
-        directionalMovementsDown.push(downMove > upMove && downMove > 0 ? downMove : 0);
-    }
-    
-    const ema = (data: number[], length: number) => {
-        let result = [];
-        let sum = 0;
-        for (let i = 0; i < length; i++) sum += data[i];
-        result.push(sum / length);
-        for (let i = length; i < data.length; i++) {
-            result.push((data[i] * (2 / (length + 1))) + result[result.length - 1] * (1 - (2 / (length + 1))));
-        }
-        return result;
-    };
-
-    const smoothedTR = ema(trueRanges, period);
-    const smoothedDMUp = ema(directionalMovementsUp, period);
-    const smoothedDMDown = ema(directionalMovementsDown, period);
-
-    let diPlus = smoothedDMUp.map((val, i) => (smoothedTR[i] === 0 ? 0 : (val / smoothedTR[i]) * 100));
-    let diMinus = smoothedDMDown.map((val, i) => (smoothedTR[i] === 0 ? 0 : (val / smoothedTR[i]) * 100));
-
-    let dx = diPlus.map((val, i) => {
-        const sum = val + diMinus[i];
-        return sum === 0 ? 0 : (Math.abs(val - diMinus[i]) / sum) * 100;
-    });
-
-    const adx = ema(dx, period);
-    return adx[adx.length - 1];
 };
 
 const generateVolumeAnalysis = (): VolumeAnalysis => {
@@ -185,21 +132,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     }
     const atr = trSum / atrPeriod;
 
-    // Sideways Market Detection using ADX
-    let sidewaysMarket: SidewaysMarket | undefined;
-    const adxPeriod = 14;
-    const adxValue = calculateADX(klines, adxPeriod);
-    if (adxValue < 20) {
-        const rangePeriod = 25;
-        const rangeHighs = highPrices.slice(-rangePeriod);
-        const rangeLows = lowPrices.slice(-rangePeriod);
-        sidewaysMarket = {
-            isSideways: true,
-            range: [Math.max(...rangeHighs).toFixed(2), Math.min(...rangeLows).toFixed(2)],
-            adx: parseFloat(adxValue.toFixed(2))
-        };
-    }
-
     // Fibonacci Retracement Levels
     const fibRange = swingHigh - swingLow;
     const fibonacciLevels: FibonacciLevels = {
@@ -276,9 +208,9 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
     const mtfMap: {[key in Timeframe]?: (keyof MultiTimeframeAnalysis)[]} = {
         '5m': ['15m', '1h'],
-        '15m': ['1h', '4h', '1d'],
-        '1h': ['4h', '1d'],
-        '4h': ['1d', 'Weekly'],
+        '15m': ['1H', '4H', 'Daily'],
+        '1h': ['4H', 'Daily'],
+        '4h': ['Daily', 'Weekly'],
         '1d': ['Weekly'],
     };
     
@@ -417,9 +349,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         whaleAlert,
         goldenPullbackZone,
         confidenceBreakdown,
-        sidewaysMarket,
         volumeAnalysis,
     };
 };
-
-    

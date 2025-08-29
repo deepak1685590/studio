@@ -60,13 +60,6 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
       ) : (
         <p className="text-sm text-foreground/90 whitespace-pre-wrap">{insight}</p>
       )}
-
-      <div className="mt-3">
-        <div className="text-xs text-primary/80">Confidence: Ultra-High (95%)</div>
-        <div className="w-full bg-primary/20 h-1.5 rounded-full mt-1">
-          <div className="bg-primary h-full rounded-full" style={{ width: '95%' }}></div>
-        </div>
-      </div>
       
       <Button onClick={copyToClipboard} variant="outline" size="sm" className="mt-4 gap-2 border-primary/50 hover:bg-primary/20">
         <Copy size={14} /> Copy Insight
