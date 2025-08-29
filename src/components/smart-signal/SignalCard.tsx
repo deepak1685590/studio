@@ -6,7 +6,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -42,25 +42,55 @@ const ChecklistItem = ({ label, passed }: { label: string; passed: boolean }) =>
   </div>
 );
 
+const SignalStrengthIndicator = ({ level }: { level: number }) => {
+    const totalBars = 8;
+    const activeBars = Math.max(1, Math.min(totalBars, Math.round(level / 1.5)));
+    return (
+        <div className="flex items-center gap-1">
+            <span className="text-xs font-mono text-foreground/70">STR</span>
+            {Array.from({ length: totalBars }).map((_, i) => (
+                <div 
+                    key={i} 
+                    className={cn(
+                        "w-1 h-3 rounded-full transition-all",
+                        i < activeBars ? 'bg-primary shadow-[0_0_4px_theme(colors.primary)]' : 'bg-primary/20'
+                    )}
+                />
+            ))}
+        </div>
+    );
+};
+
+
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice, priceDirection }) => {
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
 
   return (
     <div id="signal-card-content" className="mt-5 p-5 bg-black/70 border-2 border-primary rounded-xl text-sm leading-relaxed shadow-lg">
-      <div className="flex justify-between items-start">
-        <h3 className={`font-headline text-xl mb-3 flex items-center gap-2 ${data.isBullish ? 'text-green-400' : 'text-red-400'}`}>
-          {data.isBullish ? <TrendingUp /> : <TrendingDown />}
-          Elite Signal: {data.symbol} ({data.isBullish ? 'Bullish' : 'Bearish'})
-        </h3>
-        <div className="flex flex-col items-end gap-2">
-            <Badge variant="outline" className={`font-bold ${data.isBullish ? 'border-green-500/50 text-green-400' : 'border-red-500/50 text-red-400'}`}>
+      <header className="mb-4 pb-4 border-b border-primary/20 bg-gradient-to-b from-primary/10 to-transparent -m-5 p-5 rounded-t-xl">
+        <div className="flex justify-between items-center">
+          <div className='flex items-center gap-3'>
+            <div className={cn("flex items-center justify-center w-10 h-10 rounded-full", data.isBullish ? 'bg-green-500/20' : 'bg-red-500/20')}>
+              {data.isBullish ? <TrendingUp className="w-6 h-6 text-green-400" /> : <TrendingDown className="w-6 h-6 text-red-400" />}
+            </div>
+            <div>
+              <h3 className="font-headline text-2xl text-foreground">{data.symbol}</h3>
+              <Badge variant="outline" className={cn("text-xs", data.isBullish ? "text-green-400 border-green-500/50" : "text-red-400 border-red-500/50")}>
+                {data.isBullish ? 'Bullish Setup' : 'Bearish Setup'}
+              </Badge>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2 text-right">
+             <Badge variant="secondary" className="font-bold bg-accent/80 text-accent-foreground">
               {data.action}
             </Badge>
-            <Badge variant="secondary" className="flex items-center gap-1">
-                <Timer size={14} /> {data.timeframe.toUpperCase()}
-            </Badge>
+             <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                <Timer size={12} /> {data.timeframe.toUpperCase()}
+             </Badge>
+             <SignalStrengthIndicator level={data.confluenceCount} />
+          </div>
         </div>
-      </div>
+      </header>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 font-mono">
         <div className="flex justify-between text-lg items-center py-1">
@@ -132,8 +162,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
         </div>
       </div>
 
-      <SectionHeader>Signals Detected ({data.confluenceCount})</SectionHeader>
-      <ul className="list-disc list-inside space-y-1 text-xs pl-2">
+      <SectionHeader icon={<Zap />}>Signals Detected ({data.confluenceCount})</SectionHeader>
+      <ul className="list-disc list-inside space-y-1 text-xs pl-2 columns-2">
         {data.confluenceFactors.map((factor, i) => <li key={i}>{factor}</li>)}
       </ul>
       
