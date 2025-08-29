@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,7 +23,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const [symbol, setSymbol] = useState(initialSymbol);
   const [mode, setMode] = useState('3');
   const [timeframe, setTimeframe] = useState<Timeframe>('15m');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [signalData, setSignalData] = useState<SignalData | null>(null);
   const [realtimePrice, setRealtimePrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
@@ -31,24 +31,22 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const { toast } = useToast();
 
   const ws = useRef<WebSocket | null>(null);
+  const currentSymbolRef = useRef(initialSymbol);
 
-  // This effect updates the symbol in the input when a new opportunity is selected.
-  useEffect(() => {
-    setSymbol(initialSymbol);
-  }, [initialSymbol]);
-
-  const handleGenerateSignal = async () => {
-    const targetSymbol = symbol.toUpperCase();
+  const handleGenerateSignal = useCallback(async (isInitialLoad = false) => {
+    const targetSymbol = isInitialLoad ? initialSymbol : symbol.toUpperCase();
     if (!targetSymbol) {
-      toast({ title: "Input Error", description: "Please enter a symbol.", variant: "destructive" });
+      if (!isInitialLoad) {
+        toast({ title: "Input Error", description: "Please enter a symbol.", variant: "destructive" });
+      }
       return;
     }
     setLoading(true);
     setSignalData(null);
     setRealtimePrice(null);
     setIsMockData(false);
+    currentSymbolRef.current = targetSymbol;
 
-    // Always close any existing WebSocket connection at the start.
     if (ws.current) {
       ws.current.close();
       ws.current = null;
@@ -56,10 +54,14 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 
     try {
       const data = await getSignalData(targetSymbol, mode, timeframe);
+      
+      if (currentSymbolRef.current !== targetSymbol) {
+        return; 
+      }
+
       setSignalData(data);
       setRealtimePrice(data.price);
-      
-      // This check ensures WebSocket logic only runs on the client side.
+
       if (typeof window !== 'undefined') {
         const isCrypto = cryptoAssetsForWebsocket.includes(data.symbol.toUpperCase());
         const isForex = data.symbol.includes('/');
@@ -70,36 +72,25 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
           const socket = new WebSocket(`wss://stream.binance.com:9443/ws/${wsSymbol}@trade`);
           ws.current = socket;
 
-          socket.onopen = () => {
-            console.log(`WebSocket connected for ${wsSymbol}`);
-          };
-
+          socket.onopen = () => console.log(`WebSocket connected for ${wsSymbol}`);
           socket.onmessage = (event) => {
             const messageData = JSON.parse(event.data);
             const newPrice = parseFloat(messageData.p);
-            
             setRealtimePrice(prevPrice => {
-              if(prevPrice !== null) {
-                  if (newPrice > prevPrice) {
-                      setPriceDirection('up');
-                  } else if (newPrice < prevPrice) {
-                      setPriceDirection('down');
-                  }
+              if (prevPrice !== null) {
+                if (newPrice > prevPrice) setPriceDirection('up');
+                else if (newPrice < prevPrice) setPriceDirection('down');
               }
               return newPrice;
             });
           };
-
           socket.onerror = (error) => {
             console.error('WebSocket Error:', error);
             toast({ title: "WebSocket Error", description: "Could not connect to live price feed.", variant: "destructive" });
           };
-
           socket.onclose = () => {
             console.log(`WebSocket disconnected for ${wsSymbol}`);
-            if (ws.current === socket) {
-              ws.current = null;
-            }
+            if (ws.current === socket) ws.current = null;
           };
         }
       }
@@ -114,14 +105,17 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     } finally {
       setLoading(false);
     }
-  };
+  }, [symbol, mode, timeframe, toast, initialSymbol]);
+  
+  useEffect(() => {
+    handleGenerateSignal(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
-    // Cleanup function to close WebSocket on component unmount
     return () => {
       if (ws.current) {
         ws.current.close();
-        ws.current = null;
       }
     };
   }, []);
@@ -196,7 +190,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             </div>
         </div>
 
-        <Button onClick={handleGenerateSignal} disabled={loading} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">
+        <Button onClick={() => handleGenerateSignal(false)} disabled={loading} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">
           {loading ? (
             <>
               <BrainCircuit className="mr-2 h-4 w-4 animate-spin" />
