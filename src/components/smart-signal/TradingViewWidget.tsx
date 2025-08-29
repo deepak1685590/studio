@@ -129,7 +129,7 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, timeframe
       '4H': '4h',
       '1d': '1d',
     };
-    const interval = timeframeMap[timeframe] || '15m';
+    const interval = timeframeMap[timeframe as keyof typeof timeframeMap] || '15m';
     const fetchUrl = `https://api.binance.com/api/v3/klines?symbol=${symbol.toUpperCase()}USDT&interval=${interval}&limit=200`;
 
     fetch(fetchUrl)
