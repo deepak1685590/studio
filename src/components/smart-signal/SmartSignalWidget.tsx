@@ -66,9 +66,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     // This effect runs when the component mounts or when `initialSymbol` changes.
     // The key prop in MainApp ensures a remount, so this logic is reliable for new selections.
     setSymbol(initialSymbol);
-    if (analysisCompletedForSymbol.current !== initialSymbol.toUpperCase()) {
-        handleGenerateSignal(initialSymbol);
-    }
+    handleGenerateSignal(initialSymbol);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSymbol]);
 
@@ -76,6 +74,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     // Close previous connection if it exists
     if (ws.current) {
       ws.current.close();
+      ws.current = null;
     }
     
     if (isMockData || !signalData) {
