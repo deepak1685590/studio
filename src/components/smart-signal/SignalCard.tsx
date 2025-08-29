@@ -140,10 +140,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
 
       <SectionHeader icon={<BarChart />}>Multi-Timeframe Analysis</SectionHeader>
       <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
-
-      <SectionHeader icon={<Magnet />}>Institutional Volume Flow</SectionHeader>
-      <VolumeAnalysisTable data={data.volumeAnalysis} />
-
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
         <div>
           <SectionHeader icon={<BookOpen />}>Pattern Recognition</SectionHeader>
@@ -188,25 +185,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
             </div>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-        <div>
-          <SectionHeader icon={<Magnet />}>Volume Analysis</SectionHeader>
-           <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
-            <LevelItem label="Buyer Volume" value={`${data.buyVolume} units`} />
-            <LevelItem label="Seller Volume" value={`${data.sellVolume} units`} />
-            <LevelItem label="Net Flow" value={data.volumeImbalance} />
-          </div>
-        </div>
-        <div>
-            <SectionHeader icon={<Building />}>Supply & Demand</SectionHeader>
-            <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
-                <LevelItem label="Demand Zone" value={`$${data.demandZone[0]} - $${data.demandZone[1]}`} />
-                <LevelItem label="Supply Zone" value={`$${data.supplyZone[0]} - $${data.supplyZone[1]}`} />
-                <LevelItem label="Fair Value Gap" value={`$${data.fvg[0]} - $${data.fvg[1]}`} />
-            </div>
-        </div>
-      </div>
       
        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
         <div>
@@ -218,7 +196,21 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
             <LevelItem label="Swing Low" value={data.swingLow} />
           </div>
         </div>
+        <div>
+          <SectionHeader icon={<Magnet />}>Volume Analysis (Compact)</SectionHeader>
+           <div className="space-y-1 p-4 bg-black/30 rounded-lg border border-primary/20">
+            <LevelItem label="Buyer Volume" value={`${data.buyVolume} units`} />
+            <LevelItem label="Seller Volume" value={`${data.sellVolume} units`} />
+            <LevelItem label="Net Flow" value={data.volumeImbalance} />
+            <LevelItem label="Demand Zone" value={`$${data.demandZone[0]} - $${data.demandZone[1]}`} />
+            <LevelItem label="Supply Zone" value={`$${data.supplyZone[0]} - $${data.supplyZone[1]}`} />
+            <LevelItem label="Fair Value Gap" value={`$${data.fvg[0]} - $${data.fvg[1]}`} />
+          </div>
+        </div>
       </div>
+
+      <SectionHeader icon={<Magnet />}>Institutional Volume Flow</SectionHeader>
+      <VolumeAnalysisTable data={data.volumeAnalysis} />
 
       {data.mode === '3' && <EliteAiInsight data={{
         symbol: data.symbol,
