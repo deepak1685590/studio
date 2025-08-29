@@ -1,12 +1,12 @@
 
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, CandlestickChart } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, CandlestickChart, CircleDot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -44,14 +44,6 @@ const SectionWrapper = ({ children, className, borderColor = 'primary' }: { chil
         </div>
     );
 };
-
-
-const LevelItem = ({ label, value, valueClass }: { label: string; value: string | number; valueClass?: string }) => (
-  <div className="flex justify-between text-sm">
-    <span className="text-foreground/70">{label}:</span>
-    <span className={cn("font-mono", valueClass)}>{typeof value === 'number' && !label.includes('%') ? `$${value.toFixed(2)}` : value}</span>
-  </div>
-);
 
 const ChecklistItem = ({ label, passed }: { label: string; passed: boolean }) => (
   <div className="flex items-center gap-2">
@@ -138,6 +130,49 @@ const QuantumConfidenceMeter = ({ score, label }: { score: number, label: string
     );
 };
 
+const LevelItem: React.FC<{
+  label: string;
+  value: number;
+  status: 'near' | 'hit' | 'none';
+  isBullish: boolean;
+}> = ({ label, value, status, isBullish }) => {
+  const isEntry = label.toLowerCase().includes('entry');
+  const isStop = label.toLowerCase().includes('stop');
+  const isTakeProfit = label.toLowerCase().includes('take-profit');
+
+  const getStatusBadge = () => {
+    if (status === 'hit') {
+      return <Badge className="bg-green-500/80 text-white text-xs py-0.5 px-1.5 h-auto">✅ Target Hit</Badge>;
+    }
+    if (status === 'near' && isEntry) {
+      return <Badge variant="outline" className="text-yellow-400 border-yellow-400/50 text-xs py-0.5 px-1.5 h-auto">🎯 Entry Zone</Badge>;
+    }
+    return null;
+  };
+
+  const getLabelColor = () => {
+    if (isStop) return 'text-red-400';
+    if (isTakeProfit) return 'text-green-400';
+    if (isEntry) return 'text-yellow-400';
+    return 'text-foreground/70';
+  };
+
+  return (
+    <div className={cn(
+        "flex justify-between items-center text-sm transition-all duration-300 p-1 -m-1 rounded-md",
+        status === 'near' && 'bg-primary/20 animate-pulse'
+      )}>
+      <div className="flex items-center gap-2">
+        <span className={getLabelColor()}>{label}:</span>
+        {getStatusBadge()}
+      </div>
+      <span className={cn("font-mono", getLabelColor())}>
+        ${value.toFixed(2)}
+      </span>
+    </div>
+  );
+};
+
 
 interface SignalCardProps {
     data: SignalData;
@@ -148,6 +183,38 @@ interface SignalCardProps {
 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice, priceDirection }) => {
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
+
+  const levelStatus = useMemo(() => {
+    if (realtimePrice === null) {
+      return { entry: 'none', tp1: 'none', tp2: 'none' };
+    }
+
+    const entry = parseFloat(data.entry);
+    const tp1 = parseFloat(data.tp1);
+    const tp2 = parseFloat(data.tp2);
+    
+    // Proximity check (e.g., 0.5% of the price range)
+    const proximityThreshold = Math.abs(tp1 - entry) * 0.1; // 10% of the range to TP1
+
+    const checkStatus = (level: number) => {
+      if (data.isBullish) {
+        if (realtimePrice >= level) return 'hit';
+        if (Math.abs(realtimePrice - level) <= proximityThreshold) return 'near';
+      } else { // Bearish
+        if (realtimePrice <= level) return 'hit';
+        if (Math.abs(realtimePrice - level) <= proximityThreshold) return 'near';
+      }
+      return 'none';
+    };
+    
+    return {
+      entry: checkStatus(entry),
+      tp1: checkStatus(tp1),
+      tp2: checkStatus(tp2),
+    };
+
+  }, [realtimePrice, data.entry, data.tp1, data.tp2, data.isBullish]);
+
 
   return (
     <div id="signal-card-content" className="mt-5 p-5 bg-black/70 border-2 border-primary rounded-xl text-sm leading-relaxed shadow-lg space-y-4">
@@ -178,7 +245,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
       
       <SectionWrapper borderColor="primary">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 font-mono">
-            <div className="md:col-span-2 space-y-1">
+            <div className="md:col-span-2 space-y-2">
                 <div className="flex justify-between text-lg items-center py-1">
                     <span className="text-foreground/70 text-sm">Live Price:</span>
                     <span className={cn("font-mono flex items-center gap-2 transition-colors duration-300",
@@ -194,11 +261,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
                         ${displayPrice.toFixed(4)}
                     </span>
                 </div>
-                <LevelItem label="Entry (Single)" value={`≈ ${data.entry}`} />
-                <LevelItem label="Stop-Loss" value={`${data.sl}`} />
-                <LevelItem label="Take-Profit 1" value={`${data.tp1}`} />
-                <LevelItem label="Take-Profit 2" value={`${data.tp2}`} />
-                <LevelItem label="Risk/Reward" value={`1 : ${data.riskReward.toFixed(1)}`} />
+                <LevelItem label="Entry" value={parseFloat(data.entry)} status={levelStatus.entry} isBullish={data.isBullish} />
+                <LevelItem label="Stop-Loss" value={parseFloat(data.sl)} status="none" isBullish={data.isBullish} />
+                <LevelItem label="Take-Profit 1" value={parseFloat(data.tp1)} status={levelStatus.tp1} isBullish={data.isBullish} />
+                <LevelItem label="Take-Profit 2" value={parseFloat(data.tp2)} status={levelStatus.tp2} isBullish={data.isBullish} />
+                <div className="flex justify-between text-sm pt-1">
+                  <span className="text-foreground/70">Risk/Reward:</span>
+                  <span className="font-mono">1 : {data.riskReward.toFixed(1)}</span>
+                </div>
             </div>
             <div className="flex justify-center items-center md:col-span-1 pt-4 md:pt-0">
                 <QuantumConfidenceMeter score={data.confidenceBreakdown.overall} label={data.confidence} />
@@ -281,27 +351,27 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
         </SectionWrapper>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <SectionHeader icon={<GitCommitHorizontal />}>Fibonacci Re-Entry Levels</SectionHeader>
-            <SectionWrapper borderColor="accent">
-                <div className="space-y-1">
-                    <LevelItem label="Aggressive Entry (38.2%)" value={data.fibonacciLevels.level_382} />
-                    <LevelItem label="Standard Entry (50.0%)" value={data.fibonacciLevels.level_500} />
-                    <LevelItem label="Conservative Entry (61.8%)" value={data.fibonacciLevels.level_618} />
-                </div>
-            </SectionWrapper>
-          </div>
-          <div>
-            <SectionHeader icon={<GitCommitHorizontal />}>Key Levels</SectionHeader>
-            <SectionWrapper borderColor="primary">
-                <div className="space-y-1">
-                    <LevelItem label="Daily Pivot" value={data.pivot} />
-                    <LevelItem label="Support 1" value={data.s1} />
-                    <LevelItem label="Resistance 1" value={data.r1} />
-                </div>
-            </SectionWrapper>
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <SectionHeader icon={<GitCommitHorizontal />}>Fibonacci Re-Entry Levels</SectionHeader>
+          <SectionWrapper borderColor="accent">
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Aggressive (38.2%):</span><span className="font-mono">${data.fibonacciLevels.level_382}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Standard (50.0%):</span><span className="font-mono">${data.fibonacciLevels.level_500}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Conservative (61.8%):</span><span className="font-mono">${data.fibonacciLevels.level_618}</span></div>
+              </div>
+          </SectionWrapper>
         </div>
+        <div>
+          <SectionHeader icon={<GitCommitHorizontal />}>Key Pivot Levels</SectionHeader>
+          <SectionWrapper borderColor="primary">
+              <div className="space-y-1">
+                  <div className="flex justify-between text-sm"><span className="text-foreground/70">Daily Pivot:</span><span className="font-mono">${data.pivot}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-foreground/70">Support 1:</span><span className="font-mono">${data.s1}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-foreground/70">Resistance 1:</span><span className="font-mono">${data.r1}</span></div>
+              </div>
+          </SectionWrapper>
+      </div>
       </div>
       
        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -309,10 +379,10 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
           <SectionHeader icon={<GitCommitHorizontal />}>Liquidity & Structure</SectionHeader>
            <SectionWrapper borderColor="accent">
                <div className="space-y-1">
-                <LevelItem label="Liquidity Pool" value={data.liquidityPool} />
-                <LevelItem label="Market Structure" value={data.marketStructure} />
-                <LevelItem label="Swing High" value={data.swingHigh} />
-                <LevelItem label="Swing Low" value={data.swingLow} />
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Liquidity Pool:</span><span className="font-mono">{data.liquidityPool}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Market Structure:</span><span className="font-mono">{data.marketStructure}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Swing High:</span><span className="font-mono">${data.swingHigh}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Swing Low:</span><span className="font-mono">${data.swingLow}</span></div>
               </div>
            </SectionWrapper>
         </div>
@@ -320,12 +390,12 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
           <SectionHeader icon={<Magnet />}>Volume Analysis (Compact)</SectionHeader>
            <SectionWrapper borderColor="primary">
                <div className="space-y-1">
-                <LevelItem label="Buyer Volume" value={`${data.buyVolume} units`} />
-                <LevelItem label="Seller Volume" value={`${data.sellVolume} units`} />
-                <LevelItem label="Net Flow" value={data.volumeImbalance} />
-                <LevelItem label="Demand Zone" value={`$${data.demandZone[0]} - $${data.demandZone[1]}`} />
-                <LevelItem label="Supply Zone" value={`$${data.supplyZone[0]} - $${data.supplyZone[1]}`} />
-                <LevelItem label="Fair Value Gap" value={`$${data.fvg[0]} - $${data.fvg[1]}`} />
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Buyer Volume:</span><span className="font-mono">{data.buyVolume} units</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Seller Volume:</span><span className="font-mono">{data.sellVolume} units</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Net Flow:</span><span className="font-mono">{data.volumeImbalance}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Demand Zone:</span><span className="font-mono">${data.demandZone[0]} - ${data.demandZone[1]}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Supply Zone:</span><span className="font-mono">${data.supplyZone[0]} - ${data.supplyZone[1]}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Fair Value Gap:</span><span className="font-mono">${data.fvg[0]} - ${data.fvg[1]}</span></div>
               </div>
            </SectionWrapper>
         </div>
@@ -349,8 +419,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownload, realtimePrice
                 sl: parseFloat(data.sl),
                 tp1: parseFloat(data.tp1),
                 confluenceCount: data.confluenceCount,
-                demandZone: `$${data.demandZone[0]} - $${data.demandZone[1]}`,
-                fvg: `$${data.fvg[0]} - $${data.fvg[1]}`,
+                demandZone: `$${data.demandZone[0]} - ${data.demandZone[1]}`,
+                fvg: `$${data.fvg[0]} - ${data.fvg[1]}`,
                 volumeImbalance: data.volumeImbalance,
                 multiTimeframeAnalysis: {
                 '15m': data.multiTimeframeAnalysis['15m'] || 'Neutral',
