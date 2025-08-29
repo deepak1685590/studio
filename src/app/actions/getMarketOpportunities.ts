@@ -18,7 +18,7 @@ const cryptoAssets = ['BTC/USD', 'ETH/USD', 'SOL/USD', 'BNB/USD', 'XRP/USD', 'DO
 // Curated list of major and high-volume forex pairs
 const forexAssets = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'USD/CHF'];
 const opportunityTypes: Opportunity['type'][] = ['Bullish Breakout', 'Bearish Reversal', 'Range Expansion', 'Volume Spike'];
-const timeframes: Opportunity['timeframe'][] = ['5m', '15m', '1H', '4H'];
+const timeframes: Opportunity['timeframe'][] = ['5m', '15m', '1H', '4H', '1D'];
 
 // Simple pseudo-random generator to make the mock data deterministic for a short period.
 const pseudoRandom = (seed: number) => {
