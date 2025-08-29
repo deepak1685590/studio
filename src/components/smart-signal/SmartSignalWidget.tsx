@@ -29,6 +29,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const { toast } = useToast();
 
   const ws = useRef<WebSocket | null>(null);
+  const isInitialMount = useRef(true);
 
   const handleGenerateSignal = async (overrideSymbol?: string) => {
     const targetSymbol = overrideSymbol || symbol;
@@ -58,11 +59,15 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   };
   
   useEffect(() => {
-    // If a new symbol is passed via props (from the opportunities widget), update the state
-    // and automatically trigger a new analysis.
-    if (initialSymbol && initialSymbol !== symbol) {
-      setSymbol(initialSymbol);
-      handleGenerateSignal(initialSymbol);
+    // This effect runs when the component mounts or when `initialSymbol` changes.
+    // The key prop in MainApp ensures a remount, so this logic is reliable for new selections.
+    if (isInitialMount.current) {
+        isInitialMount.current = false;
+        // On first load, we might want to auto-load BTC or the initial symbol.
+        // Let's analyze if the initialSymbol is not the default 'BTC' to avoid double-loading.
+        if (initialSymbol !== 'BTC' || !signalData) {
+             handleGenerateSignal(initialSymbol);
+        }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSymbol]);
