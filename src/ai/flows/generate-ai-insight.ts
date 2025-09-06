@@ -74,7 +74,7 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateAiInsightInputSchema},
   output: {schema: GenerateAiInsightOutputSchema},
   tools: [getMarketNews],
-  model: 'googleai/gemini-pro',
+  model: 'googleai/gemini-2.0-flash',
   prompt: `You are ELITE-AI, a world-class trading strategist with 20 years of institutional experience.
 Your task is to analyze a trading setup for {{symbol}} and provide a detailed, multi-faceted analysis for a professional trader.
 
