@@ -1,9 +1,10 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import { generateAiInsight, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import { Button } from '@/components/ui/button';
-import { BrainCircuit, Copy, ShieldAlert, TrendingUp, CheckCircle2, Newspaper, BarChartHorizontal, Gauge, TrendingDownIcon } from 'lucide-react';
+import { BrainCircuit, Copy, ShieldAlert, TrendingUp, CheckCircle2, Newspaper, BarChartHorizontal, Gauge, TrendingDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -140,8 +141,8 @@ ${insight.strategicRecommendation}
             <div className="grid grid-cols-2 gap-2">
                 <SentimentItem label="News" value={insight.sentimentAndBias.newsSentiment} icon={<Newspaper size={14} />} />
                 <SentimentItem label="Volume" value={insight.sentimentAndBias.volumeBias} icon={<BarChartHorizontal size={14} />} />
-                <SentimentItem label="Momentum" value={insight.sentimentAndBias.momentum} icon={<TrendingUpIcon size={14} />} />
-                <SentimentItem label="Trend" value={insight.sentimentAndBias.trendStrength} icon={<TrendingDownIcon size={14} />} />
+                <SentimentItem label="Momentum" value={insight.sentimentAndBias.momentum} icon={<TrendingUp size={14} />} />
+                <SentimentItem label="Trend" value={insight.sentimentAndBias.trendStrength} icon={<TrendingDown size={14} />} />
             </div>
           </InsightSection>
 
