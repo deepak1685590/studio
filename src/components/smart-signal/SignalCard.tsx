@@ -1,12 +1,12 @@
 
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap } from 'lucide-react';
+import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -168,6 +168,36 @@ const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isB
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
 
+  const [hitTargets, setHitTargets] = useState({ entry: false, tp1: false, tp2: false });
+
+  const entryPriceNum = useMemo(() => parseFloat(data.entry), [data.entry]);
+  const tp1PriceNum = useMemo(() => parseFloat(data.tp1), [data.tp1]);
+  const tp2PriceNum = useMemo(() => parseFloat(data.tp2), [data.tp2]);
+
+  useEffect(() => {
+    // Reset hit targets when the signal data changes (e.g., new symbol)
+    setHitTargets({ entry: false, tp1: false, tp2: false });
+  }, [data.symbol, data.entry, data.tp1, data.tp2]);
+
+  useEffect(() => {
+    if (realtimePrice === null) return;
+
+    setHitTargets(prev => {
+      let newHits = { ...prev };
+      if (data.isBullish) {
+        if (!prev.entry && realtimePrice >= entryPriceNum) newHits.entry = true;
+        if (!prev.tp1 && realtimePrice >= tp1PriceNum) newHits.tp1 = true;
+        if (!prev.tp2 && realtimePrice >= tp2PriceNum) newHits.tp2 = true;
+      } else { // Bearish
+        if (!prev.entry && realtimePrice <= entryPriceNum) newHits.entry = true;
+        if (!prev.tp1 && realtimePrice <= tp1PriceNum) newHits.tp1 = true;
+        if (!prev.tp2 && realtimePrice <= tp2PriceNum) newHits.tp2 = true;
+      }
+      return newHits;
+    });
+
+  }, [realtimePrice, data.isBullish, entryPriceNum, tp1PriceNum, tp2PriceNum]);
+
   const eliteAiInsightData: GenerateAiInsightInput = useMemo(() => ({
     symbol: data.symbol,
     price: data.price,
@@ -207,12 +237,26 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     )
   }
 
-  const entryPriceNum = parseFloat(data.entry);
   const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; // 0.1% proximity
   const trendColor = data.isBullish ? 'text-green-400' : 'text-red-400';
   const trendBorder = data.isBullish ? 'border-green-400/50' : 'border-red-400/50';
   const trendBg = data.isBullish ? 'bg-green-500/10' : 'bg-red-500/10';
   const trendShadow = data.isBullish ? 'shadow-[0_0_15px_theme(colors.green.400)]' : 'shadow-[0_0_15px_theme(colors.red.400)]';
+  
+  const achievedClass = data.isBullish
+    ? "bg-green-500/20 text-green-300 shadow-[0_0_15px_theme(colors.green.400)]"
+    : "bg-red-500/20 text-red-300 shadow-[0_0_15px_theme(colors.red.500)]";
+
+  const LevelRow = ({ label, value, isHit }: { label: string; value: string; isHit: boolean }) => (
+    <div className={cn("flex justify-between items-center text-lg my-2 p-2 rounded-md border transition-all duration-300", 
+      isHit ? achievedClass : "border-transparent"
+    )}>
+      <span className="text-foreground/80 text-base flex items-center gap-2">
+        {isHit && <Check size={16} />} {label}:
+      </span>
+      <span className={cn("font-mono font-bold text-xl", trendColor)}>${value}</span>
+    </div>
+  );
 
   return (
     <div id="signal-card-content" className={cn(
@@ -246,7 +290,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </header>
       
-      {isNearEntry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
+      {isNearEntry && !hitTargets.entry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
 
       <SectionWrapper>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2">
@@ -267,14 +311,13 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                     </span>
                 </div>
 
-                <div className={cn("flex justify-between items-center text-lg my-2 p-2 rounded-md border", trendBorder, trendBg, trendShadow)}>
-                    <span className="text-foreground/80 text-base">{data.isBullish ? 'Long Entry' : 'Short Entry'}:</span>
-                    <span className={cn("font-mono font-bold text-xl", trendColor)}>${data.entry}</span>
-                </div>
-
+                <LevelRow label={data.isBullish ? 'Long Entry' : 'Short Entry'} value={data.entry} isHit={hitTargets.entry} />
+                
                 <div className="flex justify-between text-base"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-yellow-400">${data.sl}</span></div>
-                <div className="flex justify-between text-base"><span className="text-foreground/70">Take-Profit 1:</span><span className={cn("font-mono", trendColor)}>${data.tp1}</span></div>
-                <div className="flex justify-between text-base"><span className="text-foreground/70">Take-Profit 2:</span><span className={cn("font-mono", trendColor)}>${data.tp2}</span></div>
+
+                <LevelRow label="Take-Profit 1" value={data.tp1} isHit={hitTargets.tp1} />
+                <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} />
+                
                 <div className="flex justify-between text-base pt-1"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono">1 : {data.riskReward.toFixed(1)}</span></div>
             </div>
             <div className="flex justify-center items-center md:col-span-1 pt-4 md:pt-0">
