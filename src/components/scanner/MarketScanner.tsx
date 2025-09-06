@@ -67,7 +67,8 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
             const symbol = assetsToScan[i];
             try {
                 const data = await getSignalData(symbol, '2', '15m'); // Use Pro Signal for scanning
-                if (!data.sidewaysMarket && data.confidenceBreakdown.overall > 60) {
+                // Show all non-sideways opportunities, letting the user decide based on confidence.
+                if (!data.sidewaysMarket) {
                     foundOpportunities.push({
                         symbol: data.symbol,
                         isBullish: data.isBullish,
@@ -90,7 +91,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
         if (isMounted.current) {
              toast({
                 title: "Scan Complete",
-                description: `Found ${foundOpportunities.length} high-probability setups.`,
+                description: `Found ${foundOpportunities.length} potential setups.`,
             });
             setIsScanning(false);
         }
@@ -108,7 +109,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                     <Search className="mr-2" />
                     {isScanning ? 'Scanning...' : 'Scan Markets for Opportunities'}
                 </Button>
-                <p className="text-xs text-foreground/60 mt-2">Scans top Crypto & Forex pairs for high-confidence setups on the 15m timeframe.</p>
+                <p className="text-xs text-foreground/60 mt-2">Scans top Crypto & Forex pairs for setups on the 15m timeframe.</p>
             </div>
 
             {isScanning && (
