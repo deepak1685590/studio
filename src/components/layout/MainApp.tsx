@@ -10,9 +10,11 @@ import Chatbot from '@/components/chatbot/Chatbot';
 import ProfileBar from './ProfileBar';
 import LiveNewsWidget from '../news/LiveNewsWidget';
 import { Button } from '../ui/button';
-import { AreaChart } from 'lucide-react';
+import { AreaChart, BrainCircuit, Bug } from 'lucide-react';
 import LiveClock from './LiveClock';
 import MarketSessions from '../info/MarketSessions';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ErrorLogTool from '../tools/ErrorLogTool';
 
 interface MainAppProps {
   initialSymbol?: string;
@@ -33,20 +35,31 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
       <ProfileBar />
       {user?.isAdmin && <AdminDashboard />}
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between bg-black/50 border-2 border-primary/50 rounded-lg p-3 px-4 mb-6">
-            <div className="flex items-center gap-2">
-                <h3 className="font-headline text-xl text-primary">Quantum Analysis Engine</h3>
-            </div>
+        <Tabs defaultValue="quantum-engine" className="w-full">
+          <div className="flex items-center justify-between bg-black/50 border-2 border-primary/50 rounded-lg p-3 px-4 mb-6">
+            <TabsList>
+              <TabsTrigger value="quantum-engine" className="font-headline"><BrainCircuit size={16} className="mr-2"/>Quantum Engine</TabsTrigger>
+              <TabsTrigger value="error-log-tool" className="font-headline"><Bug size={16} className="mr-2"/>Error Log Tool</TabsTrigger>
+            </TabsList>
             <Button variant="ghost" size="sm" onClick={() => router.push('/scanner')}>
                 <AreaChart size={16} className="mr-2"/>
                 Open Market Scanner
             </Button>
-        </div>
-        <SmartSignalWidget 
-          key={selectedSymbol} // Use key to force re-mount when symbol changes
-          initialSymbol={selectedSymbol} 
-          setSelectedSymbol={setSelectedSymbol} 
-        />
+          </div>
+          
+          <TabsContent value="quantum-engine">
+            <SmartSignalWidget 
+              key={selectedSymbol} // Use key to force re-mount when symbol changes
+              initialSymbol={selectedSymbol} 
+              setSelectedSymbol={setSelectedSymbol} 
+            />
+          </TabsContent>
+          
+          <TabsContent value="error-log-tool">
+            <ErrorLogTool />
+          </TabsContent>
+        </Tabs>
+
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1">
                 <LiveClock />
