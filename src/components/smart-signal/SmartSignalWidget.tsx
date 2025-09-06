@@ -11,7 +11,7 @@ import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
 import { Rocket, BrainCircuit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Timeframe } from '@/types';
+import { Timeframe, LiveTradeData } from '@/types';
 import jsPDF from 'jspdf';
 import { cn } from '@/lib/utils';
 import TradingViewWidget from './TradingViewWidget';
@@ -32,6 +32,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const [signalData, setSignalData] = useState<SignalData | null>(null);
   const [realtimePrice, setRealtimePrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
+  const [liveTradeData, setLiveTradeData] = useState<LiveTradeData | null>(null);
   const { toast } = useToast();
 
   const ws = useRef<WebSocket | null>(null);
@@ -45,6 +46,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     setLoading(true);
     setSignalData(null);
     setRealtimePrice(null);
+    setLiveTradeData(null);
     previousPriceRef.current = null;
 
     if (ws.current) {
@@ -71,16 +73,25 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
           socket.onmessage = (event) => {
             const messageData = JSON.parse(event.data);
             const newPrice = parseFloat(messageData.p);
+            const newQuantity = parseFloat(messageData.q);
             
             setRealtimePrice(newPrice);
             
+            let direction: 'up' | 'down' | 'neutral' = 'neutral';
             if (previousPriceRef.current !== null) {
               if (newPrice > previousPriceRef.current) {
-                setPriceDirection('up');
+                direction = 'up';
               } else if (newPrice < previousPriceRef.current) {
-                setPriceDirection('down');
+                direction = 'down';
               }
             }
+            setPriceDirection(direction);
+            
+            setLiveTradeData({
+                volume: newQuantity,
+                side: direction === 'up' ? 'Buy' : direction === 'down' ? 'Sell' : 'Neutral'
+            });
+
             previousPriceRef.current = newPrice;
           };
           socket.onerror = (error) => {
@@ -254,7 +265,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
               <TradingViewWidget symbol={signalData?.symbol || initialSymbol} />
             </div>
-            {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} />}
+            {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} />}
           </div>
         )}
         
@@ -274,3 +285,5 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 };
 
 export default SmartSignalWidget;
+
+    

@@ -1,4 +1,5 @@
 
+
 export interface User {
   username: string;
   password?: string;
@@ -11,6 +12,11 @@ export interface User {
 
 export type Trend = 'Bullish' | 'Bearish' | 'Neutral';
 export type Timeframe = '5m' | '15m' | '1h' | '4h' | '1d';
+
+export interface LiveTradeData {
+  volume: number;
+  side: 'Buy' | 'Sell' | 'Neutral';
+}
 
 export interface MultiTimeframeAnalysis {
   '1m'?: Trend;
@@ -154,3 +160,5 @@ export interface SignalData {
   sidewaysMarket?: SidewaysMarket;
   volumeAnalysis: VolumeAnalysis;
 }
+
+    
