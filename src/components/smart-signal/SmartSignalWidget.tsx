@@ -81,6 +81,12 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
           socket.onopen = () => console.log(`WebSocket connected for ${wsSymbol}`);
           socket.onmessage = (event) => {
             const messageData = JSON.parse(event.data);
+            
+            // Guard clause to prevent stale updates from a closed socket
+            if (signalData && messageData.s !== signalData.symbol + 'USDT') {
+              return;
+            }
+            
             const newPrice = parseFloat(messageData.p);
             const newQuantity = parseFloat(messageData.q);
             
@@ -108,6 +114,9 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
           };
           socket.onclose = () => {
             console.log(`WebSocket disconnected for ${wsSymbol}`);
+            if (ws.current === socket) {
+              ws.current = null;
+            }
           };
         }
       }
@@ -121,7 +130,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     } finally {
       setLoading(false);
     }
-  }, [symbol, mode, timeframe, toast]);
+  }, [symbol, mode, timeframe, toast, signalData]);
   
   useEffect(() => {
     handleGenerateSignal();
@@ -330,3 +339,5 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 };
 
 export default SmartSignalWidget;
+
+    
