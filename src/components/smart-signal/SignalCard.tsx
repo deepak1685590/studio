@@ -6,7 +6,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert } from 'lucide-react';
+import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -75,64 +75,6 @@ const ChecklistItem = ({ label, passed }: { label: string; passed: boolean }) =>
     <span className={cn("text-sm", passed ? "text-green-400/90" : "text-red-400/90")}>{label}</span>
   </div>
 );
-
-const QuantumConfidenceMeter = ({ score, label, isBullish }: { score: number, label: string, isBullish: boolean }) => {
-    const circumference = 2 * Math.PI * 28; // 2 * pi * radius
-    const offset = circumference - (score / 100) * circumference;
-
-    const getColor = () => {
-        if (isBullish) {
-            if (score > 85) return 'stroke-green-400 text-green-400 shadow-[0_0_15px_theme(colors.green.400)]';
-            if (score > 70) return 'stroke-teal-400 text-teal-400 shadow-[0_0_15px_theme(colors.teal.400)]';
-            return 'stroke-yellow-500 text-yellow-500 shadow-[0_0_15px_theme(colors.yellow.500)]';
-        } else { // Bearish
-            if (score > 85) return 'stroke-red-500 text-red-500 shadow-[0_0_15px_theme(colors.red.500)]';
-            if (score > 70) return 'stroke-orange-500 text-orange-500 shadow-[0_0_15px_theme(colors.orange.500)]';
-            return 'stroke-yellow-500 text-yellow-500 shadow-[0_0_15px_theme(colors.yellow.500)]';
-        }
-    };
-    
-    const colorClasses = getColor();
-
-    return (
-        <div className="flex flex-col items-center gap-2">
-            <div className="relative h-20 w-20">
-                <svg className="absolute top-0 left-0 w-full h-full" viewBox="0 0 60 60">
-                    {/* Background Circle */}
-                    <circle
-                        className="stroke-primary/10"
-                        cx="30"
-                        cy="30"
-                        r="28"
-                        strokeWidth="4"
-                        fill="transparent"
-                    />
-                    {/* Meter Circle */}
-                    <circle
-                        className={cn("transition-all duration-700 ease-in-out", colorClasses.split(' ')[0])}
-                        cx="30"
-                        cy="30"
-                        r="28"
-                        strokeWidth="4"
-                        fill="transparent"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={offset}
-                        strokeLinecap="round"
-                        transform="rotate(-90 30 30)"
-                    />
-                </svg>
-                <div className={cn("absolute inset-0 flex items-center justify-center font-headline text-3xl", colorClasses.split(' ')[1])}>
-                    {score}<span className="text-sm">%</span>
-                </div>
-            </div>
-            <div className="text-center">
-                <div className="text-xs font-headline text-primary/80">CONFIDENCE</div>
-                <div className={cn("text-xs font-bold", colorClasses.split(' ')[1])}>{label.toUpperCase()}</div>
-            </div>
-        </div>
-    );
-};
-
 
 interface SignalCardProps {
     data: SignalData;
@@ -243,9 +185,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
   const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; // 0.1% proximity
   const trendColor = data.isBullish ? 'text-green-400' : 'text-red-400';
-  const trendBorder = data.isBullish ? 'border-green-400/50' : 'border-red-400/50';
-  const trendBg = data.isBullish ? 'bg-green-500/10' : 'bg-red-500/10';
-  const trendShadow = data.isBullish ? 'shadow-[0_0_15px_theme(colors.green.400)]' : 'shadow-[0_0_15px_theme(colors.red.400)]';
   
   const achievedClass = data.isBullish
     ? "bg-green-500/20 text-green-300 shadow-[0_0_15px_theme(colors.green.400)]"
@@ -448,8 +387,15 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </SectionWrapper>
       </div>
 
-      {mode === '3' && <OracleInsight data={oracleInsightData} />}
-      {mode === '3' && <EliteAiInsight data={eliteAiInsightData} />}
+      {mode === '3' && (
+        <div>
+            <SectionHeader icon={<BrainCircuit />} title="AI Analysis Suite" />
+            <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
+                <EliteAiInsight data={eliteAiInsightData} />
+                <OracleInsight data={oracleInsightData} />
+            </div>
+        </div>
+      )}
 
       <div className="flex justify-between items-center mt-6">
         <small className="text-foreground/50">Generated: {new Date().toLocaleString()}</small>

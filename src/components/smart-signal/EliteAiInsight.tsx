@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { generateAiInsight, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import { Button } from '@/components/ui/button';
-import { BrainCircuit, Copy, Wand2 } from 'lucide-react';
+import { Copy, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
@@ -29,6 +29,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
     } catch (error) {
       console.error('AI Insight Error:', error);
       setInsight(null); // Clear any partial data
+       toast({ title: "AI Error", description: "The Elite AI failed to generate the report. This might be a network issue or an API quota limit.", variant: "destructive" });
     } finally {
         setLoading(false);
     }
@@ -73,10 +74,9 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
   )
 
   return (
-    <div className="mt-5 p-5 bg-gradient-to-br from-blue-900/30 to-purple-900/30 border-2 border-primary rounded-xl shadow-[0_0_20px_var(--primary)] animate-pulse-glow">
+    <div className="p-5 bg-gradient-to-br from-blue-900/30 to-purple-900/30 border-2 border-primary rounded-xl shadow-[0_0_20px_var(--primary)]">
       <div className="flex items-center justify-between mb-4">
-        <h4 className="font-headline text-lg text-primary flex items-center gap-2">
-          <BrainCircuit />
+        <h4 className="font-headline text-lg text-primary">
           Elite AI Analysis Report
         </h4>
         {insight && (
