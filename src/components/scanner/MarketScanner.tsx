@@ -16,10 +16,10 @@ import './MarketScanner.css';
 
 
 interface MarketScannerProps {
-  onSelectSymbol: (symbol: string) => void;
+  onSelectSymbol: (string) => void;
 }
 
-type Opportunity = Pick<SignalData, 'symbol' | 'isBullish' | 'entry' | 'tp1' | 'confidence' | 'confidenceBreakdown'>;
+type Opportunity = Pick<SignalData, 'symbol' | 'isBullish' | 'entry' | 'tp1' | 'confidence' | 'confidenceBreakdown' | 'sidewaysMarket'>;
 
 const assetsToScan = [
     // Crypto
@@ -67,17 +67,16 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
             const symbol = assetsToScan[i];
             try {
                 const data = await getSignalData(symbol, '2', '15m'); // Use Pro Signal for scanning
-                // Show all non-sideways opportunities, letting the user decide based on confidence.
-                if (!data.sidewaysMarket) {
-                    foundOpportunities.push({
-                        symbol: data.symbol,
-                        isBullish: data.isBullish,
-                        entry: data.entry,
-                        tp1: data.tp1,
-                        confidence: data.confidence,
-                        confidenceBreakdown: data.confidenceBreakdown
-                    });
-                }
+                // Always show a result for every scanned asset.
+                foundOpportunities.push({
+                    symbol: data.symbol,
+                    isBullish: data.isBullish,
+                    entry: data.entry,
+                    tp1: data.tp1,
+                    confidence: data.confidence,
+                    confidenceBreakdown: data.confidenceBreakdown,
+                    sidewaysMarket: data.sidewaysMarket,
+                });
             } catch (error) {
                 console.warn(`Could not scan ${symbol}:`, error);
             }
@@ -101,6 +100,24 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
         onSelectSymbol(symbol);
         toast({ title: "Loading Asset", description: `Loading ${symbol} into the Quantum Analysis Engine.` });
     };
+
+    const TrendBadge: React.FC<{ opportunity: Opportunity }> = ({ opportunity }) => {
+        if (opportunity.sidewaysMarket) {
+            return (
+                 <Badge variant="outline" className="text-yellow-400 border-yellow-400/50">
+                    Sideways
+                </Badge>
+            )
+        }
+        return (
+             <Badge variant="outline" className={cn(
+                opportunity.isBullish ? "text-green-400 border-green-400/50" : "text-red-400 border-red-400/50"
+            )}>
+                {opportunity.isBullish ? <TrendingUp size={14} className="mr-1"/> : <TrendingDown size={14} className="mr-1"/>}
+                {opportunity.isBullish ? 'Bullish' : 'Bearish'}
+            </Badge>
+        )
+    }
 
     return (
         <div className="mt-4 p-4 border-2 border-primary/30 rounded-lg bg-black/30">
@@ -145,14 +162,9 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                                             <TableRow>
                                                 <TableCell className="font-bold">{op.symbol}</TableCell>
                                                 <TableCell>
-                                                    <Badge variant="outline" className={cn(
-                                                        op.isBullish ? "text-green-400 border-green-400/50" : "text-red-400 border-red-400/50"
-                                                    )}>
-                                                        {op.isBullish ? <TrendingUp size={14} className="mr-1"/> : <TrendingDown size={14} className="mr-1"/>}
-                                                        {op.isBullish ? 'Bullish' : 'Bearish'}
-                                                    </Badge>
+                                                    <TrendBadge opportunity={op} />
                                                 </TableCell>
-                                                <TableCell className="font-mono">${op.entry}</TableCell>
+                                                <TableCell className="font-mono">{op.entry !== "N/A" ? `$${op.entry}` : "N/A"}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-mono font-bold text-primary">{op.confidenceBreakdown.overall}%</span>
