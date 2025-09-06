@@ -116,7 +116,6 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateAiInsightInputSchema},
   output: {schema: GenerateAiInsightOutputSchema},
   tools: [getMarketNews],
-  model: 'gemini-pro',
   prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for {{{symbol}}}.
 First, use the getMarketNews tool to fetch the latest headlines for {{{symbol}}}.
 Then, synthesize ALL the provided data into the structured JSON format below. Be extremely detailed, professional, and analytical in every section.
