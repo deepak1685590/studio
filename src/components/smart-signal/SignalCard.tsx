@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -295,8 +296,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       {isNearEntry && !hitTargets.entry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
 
       <SectionWrapper>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2">
-            <div className="md:col-span-2 space-y-1">
+        <div className="grid grid-cols-1">
+            <div className="space-y-1">
                 <div className="flex justify-between text-lg items-center py-1">
                     <span className="text-foreground/70 text-base">Live Price:</span>
                     <span className={cn("font-mono text-2xl font-bold flex items-center gap-2 transition-colors duration-300",
@@ -323,9 +324,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} />
                 
                 <div className="flex justify-between text-base pt-1"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono">1 : {data.riskReward.toFixed(1)}</span></div>
-            </div>
-            <div className="flex justify-center items-center md:col-span-1 pt-4 md:pt-0">
-                 <QuantumConfidenceMeter score={data.confidenceBreakdown.overall} label={data.confidence} isBullish={data.isBullish} />
             </div>
         </div>
       </SectionWrapper>
