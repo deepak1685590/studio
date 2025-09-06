@@ -1,7 +1,3 @@
-
-
-
-
 export interface User {
   username: string;
   password?: string;
@@ -162,5 +158,3 @@ export interface SignalData {
   sidewaysMarket?: SidewaysMarket;
   volumeAnalysis: VolumeAnalysis;
 }
-
-    

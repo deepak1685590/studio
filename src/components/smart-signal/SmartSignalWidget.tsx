@@ -9,7 +9,7 @@ import { getSignalData } from '@/lib/technical-analysis';
 import type { SignalData } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
-import { Rocket, BrainCircuit } from 'lucide-react';
+import { Rocket, BrainCircuit, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timeframe, LiveTradeData } from '@/types';
 import jsPDF from 'jspdf';
@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import TradingViewWidget from './TradingViewWidget';
 import VolumeAnalysisTable from './VolumeAnalysisTable';
 import { Skeleton } from '../ui/skeleton';
+import ChartAnalysisModal from './ChartAnalysisModal';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -33,10 +34,15 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const [realtimePrice, setRealtimePrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
   const [liveTradeData, setLiveTradeData] = useState<LiveTradeData | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [chartImage, setChartImage] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+
   const { toast } = useToast();
 
   const ws = useRef<WebSocket | null>(null);
   const previousPriceRef = useRef<number | null>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
 
   const handleGenerateSignal = useCallback(async () => {
     if (!symbol) {
@@ -126,6 +132,31 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       }
     };
   }, []);
+  
+  const captureChart = async () => {
+    if (!chartContainerRef.current) return;
+    setIsCapturing(true);
+    toast({ title: "Chart Vision", description: "Capturing chart snapshot..." });
+    try {
+        await new Promise(resolve => setTimeout(resolve, 500)); // Allow chart to render fully
+        const canvas = await html2canvas(chartContainerRef.current, {
+            useCORS: true,
+            backgroundColor: '#131722', // Match TradingView dark theme background
+             onclone: (document) => {
+                // TradingView widget might have elements that are hard to capture.
+                // This is a spot for potential tweaks if capture is problematic.
+            }
+        });
+        const image = canvas.toDataURL('image/png');
+        setChartImage(image);
+        setIsModalOpen(true);
+    } catch (error) {
+        console.error("Chart capture error:", error);
+        toast({ title: "Capture Failed", description: "Could not capture the chart image.", variant: "destructive" });
+    } finally {
+        setIsCapturing(false);
+    }
+  };
 
   const handleDownloadPng = () => {
     const cardElement = document.getElementById('signal-card-content');
@@ -178,7 +209,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 
   const LoadingSkeleton = () => (
     <div className="p-6 space-y-4">
-      <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2 flex items-center justify-center">
+      <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2 flex flex-col items-center justify-center">
         <Skeleton className="w-full h-full" />
       </div>
        <div className="bg-black/30 rounded-lg border border-primary/20 p-2">
@@ -262,9 +293,13 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       <div className="widget-body p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {loading ? <LoadingSkeleton /> : (
           <div className="space-y-6">
-            <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
+            <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2" ref={chartContainerRef}>
               <TradingViewWidget symbol={signalData?.symbol || initialSymbol} />
             </div>
+            <Button onClick={captureChart} disabled={isCapturing} className="w-full bg-accent/20 border-accent border hover:bg-accent hover:text-accent-foreground font-headline">
+              <Eye className="mr-2" />
+              {isCapturing ? 'Capturing...' : 'Engage Chart Vision'}
+            </Button>
             {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} />}
           </div>
         )}
@@ -280,6 +315,14 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
           {signalData && <SignalCard data={signalData} onDownloadPng={handleDownloadPng} onDownloadPdf={handleDownloadPdf} realtimePrice={realtimePrice} priceDirection={priceDirection} mode={mode}/>}
         </div>
       </div>
+      {isModalOpen && chartImage && signalData && (
+        <ChartAnalysisModal 
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          chartImage={chartImage}
+          symbol={signalData.symbol}
+        />
+      )}
     </div>
   );
 };
