@@ -1,10 +1,10 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { generateAiInsight, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import { Button } from '@/components/ui/button';
-import { BrainCircuit, Copy } from 'lucide-react';
+import { BrainCircuit, Copy, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
@@ -15,24 +15,25 @@ interface EliteAiInsightProps {
 
 const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
   const [insight, setInsight] = useState<GenerateAiInsightOutput | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [analysisEngaged, setAnalysisEngaged] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchInsight = async () => {
-      setLoading(true);
-      setInsight(null);
-      try {
-        const result = await generateAiInsight(data);
-        setInsight(result);
-      } catch (error) {
-        console.error('AI Insight Error:', error);
-      }
-      setLoading(false);
-    };
+  const fetchInsight = async () => {
+    setLoading(true);
+    setAnalysisEngaged(true);
+    setInsight(null);
+    try {
+      const result = await generateAiInsight(data);
+      setInsight(result);
+    } catch (error) {
+      console.error('AI Insight Error:', error);
+      setInsight(null); // Clear any partial data
+    } finally {
+        setLoading(false);
+    }
+  };
 
-    fetchInsight();
-  }, [data]);
 
   const copyToClipboard = () => {
     if (!insight) return;
@@ -78,12 +79,22 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
           <BrainCircuit />
           Elite AI Analysis Report
         </h4>
-        <Button onClick={copyToClipboard} variant="outline" size="sm" className="gap-2 border-primary/50 hover:bg-primary/20" disabled={!insight}>
-          <Copy size={14} /> Copy Report
-        </Button>
+        {insight && (
+            <Button onClick={copyToClipboard} variant="outline" size="sm" className="gap-2 border-primary/50 hover:bg-primary/20" disabled={!insight}>
+            <Copy size={14} /> Copy Report
+            </Button>
+        )}
       </div>
-      
-      {loading ? (
+
+      {!analysisEngaged ? (
+        <div className="text-center p-4">
+            <p className="text-sm text-foreground/80 mb-4">Engage the Elite AI to generate a comprehensive, institutional-grade analysis report for this setup.</p>
+            <Button onClick={fetchInsight} disabled={loading} className="font-headline bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">
+                <Wand2 className="mr-2" />
+                Engage Elite AI Analysis
+            </Button>
+        </div>
+      ) : loading ? (
         <LoadingState />
       ) : insight ? (
         <Accordion type="single" collapsible defaultValue="Executive Summary">
