@@ -285,5 +285,3 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 };
 
 export default SmartSignalWidget;
-
-    
