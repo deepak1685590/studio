@@ -43,9 +43,13 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const ws = useRef<WebSocket | null>(null);
   const previousPriceRef = useRef<number | null>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const currentSymbolRef = useRef(symbol);
+
+  useEffect(() => {
+    currentSymbolRef.current = symbol;
+  }, [symbol]);
 
   const handleGenerateSignal = useCallback(async () => {
-    // Immediately clear state and close any existing websocket connection
     setLoading(true);
     setSignalData(null);
     setRealtimePrice(null);
@@ -82,8 +86,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
           socket.onmessage = (event) => {
             const messageData = JSON.parse(event.data);
             
-            // Guard clause to prevent stale updates from a closed socket
-            if (signalData && messageData.s !== signalData.symbol + 'USDT') {
+            if (messageData.s !== currentSymbolRef.current.toUpperCase() + 'USDT') {
               return;
             }
             
@@ -130,7 +133,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     } finally {
       setLoading(false);
     }
-  }, [symbol, mode, timeframe, toast, signalData]);
+  }, [symbol, mode, timeframe, toast]);
   
   const handleGenerateSignalRef = useRef(handleGenerateSignal);
   handleGenerateSignalRef.current = handleGenerateSignal;
