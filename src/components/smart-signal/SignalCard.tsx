@@ -6,7 +6,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, TrendingDown, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap } from 'lucide-react';
+import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,47 @@ import type { GenerateAiInsightInput } from '@/ai/flows/generate-ai-insight';
 import SidewaysMarketAlert from './SidewaysMarketAlert';
 import OracleInsight from './OracleInsight';
 import type { OracleInsightInput } from '@/ai/flows/oracle-insight';
+
+const NeonBullIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        {...props}
+        style={{ filter: 'drop-shadow(0 0 5px currentColor)' }}
+    >
+        <path d="M16 8a4 4 0 1 1-8 0"/>
+        <path d="M4 12c0-2.66 4-4 8-4s8 1.34 8 4"/>
+        <path d="M12 12v4"/>
+        <path d="M18.5 16a2.5 2.5 0 1 0-5 0"/>
+        <path d="M5.5 16a2.5 2.5 0 1 1 5 0"/>
+    </svg>
+);
+
+const NeonBearIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        {...props}
+        style={{ filter: 'drop-shadow(0 0 5px currentColor)' }}
+    >
+        <path d="M16 12a4 4 0 1 0-8 0"/>
+        <path d="M4 12c0 2.66 4 4 8 4s8-1.34 8-4"/>
+        <path d="M12 12V8"/>
+        <path d="M18.5 8a2.5 2.5 0 1 1-5 0"/>
+        <path d="M5.5 8a2.5 2.5 0 1 0 5 0"/>
+    </svg>
+);
+
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -184,8 +225,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       )}>
         <div className="flex justify-between items-center">
           <div className='flex items-center gap-3'>
-            <div className={cn("flex items-center justify-center w-10 h-10 rounded-full", data.isBullish ? 'bg-green-500/20' : 'bg-red-500/20')}>
-              {data.isBullish ? <TrendingUp className="w-6 h-6 text-green-400" /> : <TrendingDown className="w-6 h-6 text-red-500" />}
+            <div className={cn("flex items-center justify-center w-12 h-12 rounded-full", data.isBullish ? 'bg-green-500/20' : 'bg-red-500/20')}>
+              {data.isBullish ? <NeonBullIcon className="w-8 h-8 text-green-400" /> : <NeonBearIcon className="w-8 h-8 text-red-500" />}
             </div>
             <div>
               <h3 className="font-headline text-2xl text-foreground">{data.symbol}</h3>
