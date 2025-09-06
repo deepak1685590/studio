@@ -230,7 +230,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                     <span className={cn("font-mono font-bold", trendColor)}>${data.entry}</span>
                 </div>
 
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-red-400">${data.sl}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-yellow-400">${data.sl}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-foreground/70">Take-Profit 1:</span><span className={cn("font-mono", trendColor)}>${data.tp1}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-foreground/70">Take-Profit 2:</span><span className={cn("font-mono", trendColor)}>${data.tp2}</span></div>
                 <div className="flex justify-between text-sm pt-1"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono">1 : {data.riskReward.toFixed(1)}</span></div>
