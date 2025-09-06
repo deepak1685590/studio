@@ -226,7 +226,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <div className="flex justify-between items-center">
           <div className='flex items-center gap-3'>
             <div className={cn("flex items-center justify-center w-12 h-12 rounded-full", data.isBullish ? 'bg-green-500/20' : 'bg-red-500/20')}>
-              {data.isBullish ? <NeonBullIcon className="w-8 h-8 text-green-400" /> : <NeonBearIcon className="w-8 h-8 text-red-500" />}
+              {data.isBullish ? <NeonBullIcon className="w-8 h-8 text-green-400" /> : <NeonBearIcon className="w-8 h-8 text-red-400" />}
             </div>
             <div>
               <h3 className="font-headline text-2xl text-foreground">{data.symbol}</h3>
@@ -354,6 +354,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
            <SectionWrapper>
                <div className="space-y-1 font-mono">
                 <div className="flex justify-between text-sm"><span className="text-foreground/70">Demand Zone:</span><span>${data.demandZone[0]} - ${data.demandZone[1]}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Supply Zone:</span><span>${data.supplyZone[0]} - ${data.supplyZone[1]}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-foreground/70">Fair Value Gap:</span><span>${data.fvg[0]} - ${data.fvg[1]}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-foreground/70">Volume Imbalance:</span><span className="font-sans">{data.volumeImbalance}</span></div>
               </div>
