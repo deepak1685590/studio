@@ -242,14 +242,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       </SectionWrapper>
 
       {data.goldenPullbackZone && (
-        <Alert className="border-primary/50 bg-primary/10 text-primary">
-          <Target className="h-5 w-5 text-primary" />
-          <AlertTitle className="font-headline text-lg text-primary">
-            High-Probability Pullback Zone Detected
-          </AlertTitle>
-          <AlertDescription className="font-mono text-xl mt-1">
-            ${data.goldenPullbackZone.min} - ${data.goldenPullbackZone.max}
-          </AlertDescription>
+        <Alert className="border-amber-400 bg-gradient-to-br from-yellow-900/40 to-black text-amber-300 shadow-[0_0_15px_hsl(38_92%_50%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(38_92%_50%_/_0.8)]">
+            <Target className="h-5 w-5 text-amber-300" />
+            <AlertTitle className="font-headline text-lg text-amber-300">
+                Golden Re-Entry Zone
+            </AlertTitle>
+            <AlertDescription className="font-mono text-xl mt-1 text-white/90">
+                ${data.goldenPullbackZone.min} - ${data.goldenPullbackZone.max}
+            </AlertDescription>
         </Alert>
       )}
       
