@@ -6,7 +6,6 @@ import MatrixBackground from '@/components/MatrixBackground';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/contexts/ThemeContext';
-import { SoundProvider } from '@/contexts/SoundContext';
 
 export const metadata: Metadata = {
   title: 'NexusAI',
@@ -28,11 +27,9 @@ export default function RootLayout({
       <body className={cn("font-body antialiased min-h-screen")}>
         <ThemeProvider>
           <AuthProvider>
-            <SoundProvider>
               <MatrixBackground />
               <div className="relative z-10">{children}</div>
               <Toaster />
-            </SoundProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
