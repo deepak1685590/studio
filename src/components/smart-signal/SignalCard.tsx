@@ -105,6 +105,7 @@ interface SignalCardProps {
 const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isBullish: boolean; }> = ({ livePrice, entryPrice, isBullish }) => {
     const alertColor = isBullish ? 'border-green-400 text-green-300' : 'border-red-500 text-red-300';
     const alertShadow = isBullish ? 'shadow-[0_0_20px_theme(colors.green.500)]' : 'shadow-[0_0_20px_theme(colors.red.500)]';
+    const entryLabel = isBullish ? 'Long Entry' : 'Short Entry';
 
     return (
         <div className={cn(
@@ -116,7 +117,7 @@ const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isB
             <div className="flex-1">
                 <h5 className="font-headline text-lg">ENTRY ZONE IMMINENT</h5>
                 <p className="text-sm font-mono">
-                    Live: ${livePrice.toFixed(4)} → Entry: ${entryPrice.toFixed(4)}
+                    Live: ${livePrice.toFixed(4)} → {entryLabel}: ${entryPrice.toFixed(4)}
                 </p>
             </div>
         </div>
@@ -226,7 +227,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 </div>
 
                 <div className={cn("flex justify-between items-center text-lg my-2 p-2 rounded-md border", trendBorder, trendBg, trendShadow)}>
-                    <span className="text-foreground/80 text-base">Entry:</span>
+                    <span className="text-foreground/80 text-base">{data.isBullish ? 'Long Entry' : 'Short Entry'}:</span>
                     <span className={cn("font-mono font-bold text-xl", trendColor)}>${data.entry}</span>
                 </div>
 
