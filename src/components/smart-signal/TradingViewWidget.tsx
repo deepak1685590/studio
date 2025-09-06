@@ -38,7 +38,8 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol }) => {
         "studies": [
           "TrendLines@tv-basicstudies",
           "PivotPointsHighLow@tv-basicstudies"
-        ]
+        ],
+        "chart_type": "heikin_ashi"
       });
     
     containerNode.appendChild(script);
