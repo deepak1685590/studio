@@ -74,6 +74,7 @@ Generate your riddle now for ${input.symbol}.`;
     }
 
     const {output} = await ai.generate({
+      model: 'googleai/gemini-pro',
       prompt: promptText,
       output: {
         format: 'json',
