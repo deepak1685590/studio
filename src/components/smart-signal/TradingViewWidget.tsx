@@ -2,20 +2,33 @@
 "use client";
 
 import React, { useEffect, useRef, memo } from 'react';
+import { Timeframe } from '@/types';
 
 interface TradingViewWidgetProps {
   symbol: string;
+  timeframe: Timeframe;
 }
 
-const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol }) => {
+const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, timeframe }) => {
   const container = useRef<HTMLDivElement>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
+
+  const mapTimeframeToInterval = (tf: Timeframe): string => {
+    switch (tf) {
+      case '5m': return '5';
+      case '15m': return '15';
+      case '1h': return '60';
+      case '4h': return '240';
+      case '1d': return 'D';
+      default: return '15';
+    }
+  };
 
   useEffect(() => {
     const containerNode = container.current;
     if (!containerNode) return;
 
-    // Clear the container on symbol change
+    // Clear the container on symbol or timeframe change
     containerNode.innerHTML = '';
 
     const script = document.createElement("script");
@@ -25,7 +38,7 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol }) => {
     script.innerHTML = JSON.stringify({
         "autosize": true,
         "symbol": `BINANCE:${symbol.toUpperCase()}USDT`,
-        "interval": "D",
+        "interval": mapTimeframeToInterval(timeframe),
         "timezone": "Etc/UTC",
         "theme": "dark",
         "style": "1",
@@ -49,7 +62,7 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol }) => {
     containerNode.appendChild(script);
     scriptRef.current = script;
 
-    // Cleanup function to remove the script when the component unmounts or symbol changes
+    // Cleanup function to remove the script when the component unmounts or props change
     return () => {
       if (scriptRef.current && containerNode) {
         try {
@@ -60,7 +73,7 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol }) => {
         }
       }
     };
-  }, [symbol]);
+  }, [symbol, timeframe]);
 
   return (
     <div className="tradingview-widget-container" ref={container} style={{ height: "100%", width: "100%" }}>

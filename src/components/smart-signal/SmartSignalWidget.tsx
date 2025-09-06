@@ -293,7 +293,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
         {loading ? <LoadingSkeleton /> : (
           <div className="space-y-6">
             <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2" ref={chartContainerRef}>
-              <TradingViewWidget symbol={signalData?.symbol || initialSymbol} />
+              <TradingViewWidget symbol={signalData?.symbol || initialSymbol} timeframe={timeframe} />
             </div>
             <Button onClick={captureChart} disabled={isCapturing} className="w-full bg-accent/20 border-accent border hover:bg-accent hover:text-accent-foreground font-headline">
               <Eye className="mr-2" />
