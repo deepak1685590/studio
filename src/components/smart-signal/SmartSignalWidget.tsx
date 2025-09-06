@@ -23,15 +23,16 @@ import TrendRibbon from './TrendRibbon';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
+  setSelectedSymbol: (symbol: string) => void;
 }
 
 const cryptoAssetsForWebsocket = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'DOGE'];
 
-const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = 'BTC' }) => {
+const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = 'BTC', setSelectedSymbol }) => {
   const [symbol, setSymbol] = useState(initialSymbol);
   const [mode, setMode] = useState('3');
   const [timeframe, setTimeframe] = useState<Timeframe>('15m');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [signalData, setSignalData] = useState<SignalData | null>(null);
   const [realtimePrice, setRealtimePrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
@@ -51,7 +52,12 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     currentSymbolRef.current = symbol;
   }, [symbol]);
 
-  const handleGenerateSignal = useCallback(async () => {
+  useEffect(() => {
+    // Sync internal state if the initialSymbol prop changes (e.g., from scanner)
+    setSymbol(initialSymbol);
+  }, [initialSymbol]);
+
+  const handleGenerateSignal = useCallback(async (currentSymbol: string) => {
     setSignalData(null);
     setRealtimePrice(null);
     setLiveTradeData(null);
@@ -65,14 +71,14 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 
     setLoading(true);
 
-    if (!symbol) {
+    if (!currentSymbol) {
       toast({ title: "Input Error", description: "Please enter a symbol.", variant: "destructive" });
       setLoading(false);
       return;
     }
 
     try {
-      const data = await getSignalData(symbol.toUpperCase(), mode, timeframe);
+      const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe);
       setSignalData(data);
       setRealtimePrice(data.price);
       previousPriceRef.current = data.price;
@@ -130,21 +136,18 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     } catch (error) {
       console.error("Error generating signal:", error);
       toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
-      const mockData = await getSignalData(symbol.toUpperCase(), mode, timeframe, true);
+      const mockData = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, true);
       setSignalData(mockData);
       setRealtimePrice(mockData.price);
     } finally {
       setLoading(false);
     }
-  }, [symbol, mode, timeframe, toast]);
+  }, [mode, timeframe, toast]);
   
-  const handleGenerateSignalRef = useRef(handleGenerateSignal);
-  handleGenerateSignalRef.current = handleGenerateSignal;
-
   useEffect(() => {
-    handleGenerateSignalRef.current();
-    // eslint-disable-next-line react-hooks-exhaustive-deps
-  }, []);
+    handleGenerateSignal(symbol);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [symbol, handleGenerateSignal]);
 
   useEffect(() => {
     return () => {
@@ -222,6 +225,10 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     }
   };
 
+  const handleSymbolInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedSymbol(e.target.value);
+  }
+
   const isBullish = signalData?.isBullish;
   const borderColor = isBullish === true ? 'border-green-400/80 shadow-green-400/30' : isBullish === false ? 'border-red-500/80 shadow-red-500/30' : 'border-primary shadow-primary/30';
   const buttonColor = isBullish === true ? 'border-green-400/80 bg-green-500/20 hover:bg-green-400 hover:text-background' : isBullish === false ? 'border-red-500/80 bg-red-500/20 hover:bg-red-500 hover:text-white' : 'border-primary bg-primary/20 hover:bg-primary hover:text-background';
@@ -258,7 +265,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
           <Input 
             id="symbolInput"
             value={symbol}
-            onChange={(e) => setSymbol(e.target.value)}
+            onChange={handleSymbolInputChange}
             placeholder="e.g. BTC, EUR/USD, NIFTY"
             className={cn("bg-input text-foreground", inputColor)}
           />
@@ -295,7 +302,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             </div>
         </div>
 
-        <Button onClick={() => handleGenerateSignal()} disabled={loading} className={cn("w-full font-headline uppercase border-2 transition-all duration-300", buttonColor)}>
+        <Button onClick={() => handleGenerateSignal(symbol)} disabled={loading} className={cn("w-full font-headline uppercase border-2 transition-all duration-300", buttonColor)}>
           {loading ? (
             <>
               <BrainCircuit className="mr-2 h-4 w-4 animate-spin" />
