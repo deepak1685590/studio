@@ -22,17 +22,8 @@ const AnalyzeCodeOutputSchema = z.object({
 });
 export type AnalyzeCodeOutput = z.infer<typeof AnalyzeCodeOutputSchema>;
 
-const codeAnalysisCache = new Map<string, AnalyzeCodeOutput>();
-
 export async function analyzeCodeAndSuggestFixes(input: AnalyzeCodeInput): Promise<AnalyzeCodeOutput> {
-  const cacheKey = JSON.stringify(input);
-  if (codeAnalysisCache.has(cacheKey)) {
-    return codeAnalysisCache.get(cacheKey)!;
-  }
-  
-  const result = await analyzeCodeFlow(input);
-  codeAnalysisCache.set(cacheKey, result);
-  return result;
+  return await analyzeCodeFlow(input);
 }
 
 const analyzeCodeFlow = ai.defineFlow(
@@ -43,7 +34,7 @@ const analyzeCodeFlow = ai.defineFlow(
   },
   async ({ codeOrError }) => {
     const { output } = await ai.generate({
-      model: 'googleai/gemini-2.0-flash',
+      model: 'googleai/gemini-pro',
       output: {
         format: 'json',
         schema: AnalyzeCodeOutputSchema,

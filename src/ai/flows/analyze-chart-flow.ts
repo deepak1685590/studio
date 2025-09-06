@@ -34,17 +34,8 @@ const AnalyzeChartOutputSchema = z.object({
 });
 export type AnalyzeChartOutput = z.infer<typeof AnalyzeChartOutputSchema>;
 
-const analysisCache = new Map<string, AnalyzeChartOutput>();
-
 export async function analyzeChart(input: AnalyzeChartInput): Promise<AnalyzeChartOutput> {
-  const cacheKey = JSON.stringify(input);
-  if (analysisCache.has(cacheKey)) {
-    return analysisCache.get(cacheKey)!;
-  }
-  
-  const result = await analyzeChartFlow(input);
-  analysisCache.set(cacheKey, result);
-  return result;
+  return await analyzeChartFlow(input);
 }
 
 const analyzeChartFlow = ai.defineFlow(
@@ -55,7 +46,7 @@ const analyzeChartFlow = ai.defineFlow(
   },
   async ({ symbol, chartImageUri }) => {
     const { output } = await ai.generate({
-      model: 'googleai/gemini-2.0-flash',
+      model: 'googleai/gemini-pro-vision',
       output: {
         format: 'json',
         schema: AnalyzeChartOutputSchema,

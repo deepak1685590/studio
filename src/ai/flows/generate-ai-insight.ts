@@ -92,17 +92,8 @@ const GenerateAiInsightOutputSchema = z.object({
 });
 export type GenerateAiInsightOutput = z.infer<typeof GenerateAiInsightOutputSchema>;
 
-const insightCache = new Map<string, GenerateAiInsightOutput>();
-
 export async function generateAiInsight(input: GenerateAiInsightInput): Promise<GenerateAiInsightOutput> {
-  const cacheKey = JSON.stringify(input);
-  if (insightCache.has(cacheKey)) {
-    return insightCache.get(cacheKey)!;
-  }
-  
-  const result = await generateAiInsightFlow(input);
-  insightCache.set(cacheKey, result);
-  return result;
+  return await generateAiInsightFlow(input);
 }
 
 const getMarketNews = ai.defineTool(
@@ -124,7 +115,7 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateAiInsightInputSchema},
   output: {schema: GenerateAiInsightOutputSchema},
   tools: [getMarketNews],
-  model: 'googleai/gemini-2.0-flash',
+  model: 'googleai/gemini-pro',
   prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for {{{symbol}}}.
 First, use the getMarketNews tool to fetch the latest headlines for {{{symbol}}}.
 Then, synthesize ALL the provided data into the structured JSON format below. Be extremely detailed, professional, and analytical in every section.

@@ -25,17 +25,8 @@ const OracleInsightOutputSchema = z.object({
 });
 export type OracleInsightOutput = z.infer<typeof OracleInsightOutputSchema>;
 
-const oracleCache = new Map<string, OracleInsightOutput>();
-
 export async function generateOracleInsight(input: OracleInsightInput): Promise<OracleInsightOutput> {
-  const cacheKey = JSON.stringify(input);
-  if (oracleCache.has(cacheKey)) {
-    return oracleCache.get(cacheKey)!;
-  }
-  
-  const result = await oracleInsightFlow(input);
-  oracleCache.set(cacheKey, result);
-  return result;
+  return await oracleInsightFlow(input);
 }
 
 const oracleInsightFlow = ai.defineFlow(
@@ -88,7 +79,7 @@ Generate your riddle now for ${input.symbol}.`;
     }
 
     const {output} = await ai.generate({
-      model: 'googleai/gemini-2.0-flash',
+      model: 'googleai/gemini-pro',
       prompt: promptText,
       output: {
         format: 'json',
