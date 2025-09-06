@@ -37,7 +37,10 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol }) => {
         "support_host": "https://www.tradingview.com",
         "studies": [
           "TrendLines@tv-basicstudies",
-          "PivotPointsHighLow@tv-basicstudies"
+          "PivotPointsHighLow@tv-basicstudies",
+          "RelativeStrengthIndex@tv-basicstudies",
+          "MACD@tv-basicstudies",
+          "VolumeProfileVisibleRange@tv-basicstudies"
         ],
         "chart_type": "heikin_ashi"
       });

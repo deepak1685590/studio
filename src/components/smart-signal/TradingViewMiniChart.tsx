@@ -39,7 +39,10 @@ const TradingViewMiniChart: React.FC<TradingViewMiniChartProps> = ({ symbol }) =
           "calendar": true,
           "studies": [
             "TrendLines@tv-basicstudies",
-            "PivotPointsHighLow@tv-basicstudies"
+            "PivotPointsHighLow@tv-basicstudies",
+            "RelativeStrengthIndex@tv-basicstudies",
+            "MACD@tv-basicstudies",
+            "VolumeProfileVisibleRange@tv-basicstudies"
           ],
           "chart_type": "heikin_ashi",
           "container_id": `tradingview_widget_container_${container.current.id}`
