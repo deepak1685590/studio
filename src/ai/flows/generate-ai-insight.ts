@@ -25,6 +25,7 @@ const GenerateAiInsightInputSchema = z.object({
   fvg: z.string().describe('The fair value gap for the asset.'),
   volumeImbalance: z.string().describe('The volume imbalance in the market.'),
   multiTimeframeAnalysis: z.object({
+    '5m': z.string(),
     '15m': z.string(),
     '1H': z.string(),
     '4H': z.string(),
@@ -109,6 +110,7 @@ Tone: Professional, balanced, elite, and deeply analytical. Use Markdown for lis
 - FVG: {{fvg}}
 - Volume: {{volumeImbalance}}
 - Multi-Timeframe Analysis:
+  - 5m: {{multiTimeframeAnalysis.5m}}
   - 15m: {{multiTimeframeAnalysis.15m}}
   - 1H: {{multiTimeframeAnalysis.1H}}
   - 4H: {{multiTimeframeAnalysis.4H}}

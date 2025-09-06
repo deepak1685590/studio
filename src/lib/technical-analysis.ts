@@ -357,7 +357,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         }
     });
     
-    const requiredTfs: (keyof MultiTimeframeAnalysis)[] = ['15m', '1H', '4H', 'Daily'];
+    const requiredTfs: (keyof MultiTimeframeAnalysis)[] = ['5m', '15m', '1H', '4H', 'Daily'];
     requiredTfs.forEach(tf => {
         if (!multiTimeframeAnalysis[tf]) {
             multiTimeframeAnalysis[tf] = 'Neutral';
@@ -520,4 +520,3 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         volumeAnalysis,
     };
 };
-

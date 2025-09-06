@@ -28,11 +28,11 @@ const TimeframeBadge: React.FC<{ timeframe: string; trend: Trend }> = ({ timefra
 };
 
 const MultiTimeframeAnalysis: React.FC<MultiTimeframeAnalysisProps> = ({ data }) => {
-  const timeframes: (keyof MultiTimeframeAnalysisType)[] = ['15m', '1H', '4H', 'Daily'];
+  const timeframes: (keyof MultiTimeframeAnalysisType)[] = ['5m', '15m', '1H', '4H', 'Daily'];
   const availableTimeframes = timeframes.filter(tf => data[tf]);
 
   return (
-    <div className="grid grid-cols-4 gap-4 p-4 bg-black/30 rounded-lg border border-primary/20">
+    <div className="grid grid-cols-5 gap-4 p-4 bg-black/30 rounded-lg border border-primary/20">
       {availableTimeframes.map(tf => (
         <TimeframeBadge key={tf} timeframe={tf} trend={data[tf]!} />
       ))}

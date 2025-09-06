@@ -211,6 +211,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     fvg: `$${data.fvg[0]} - ${data.fvg[1]}`,
     volumeImbalance: data.volumeImbalance,
     multiTimeframeAnalysis: {
+      '5m': data.multiTimeframeAnalysis['5m'] || 'Neutral',
       '15m': data.multiTimeframeAnalysis['15m'] || 'Neutral',
       '1H': data.multiTimeframeAnalysis['1H'] || 'Neutral',
       '4H': data.multiTimeframeAnalysis['4H'] || 'Neutral',
