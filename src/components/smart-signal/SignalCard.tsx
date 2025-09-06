@@ -207,11 +207,11 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       {isNearEntry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
 
       <SectionWrapper>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 font-mono">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2">
             <div className="md:col-span-2 space-y-1">
                 <div className="flex justify-between text-lg items-center py-1">
                     <span className="text-foreground/70 text-sm">Live Price:</span>
-                    <span className={cn("font-mono flex items-center gap-2 transition-colors duration-300",
+                    <span className={cn("font-mono text-xl flex items-center gap-2 transition-colors duration-300",
                         priceDirection === 'up' && 'text-green-400',
                         priceDirection === 'down' && 'text-red-400',
                     )}>
@@ -226,14 +226,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 </div>
 
                 <div className={cn("flex justify-between items-center text-lg my-2 p-2 rounded-md border", trendBorder, trendBg, trendShadow)}>
-                    <span className="text-foreground/80 text-sm">Entry:</span>
-                    <span className={cn("font-mono font-bold", trendColor)}>${data.entry}</span>
+                    <span className="text-foreground/80 text-base">Entry:</span>
+                    <span className={cn("font-mono font-bold text-xl", trendColor)}>${data.entry}</span>
                 </div>
 
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-yellow-400">${data.sl}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Take-Profit 1:</span><span className={cn("font-mono", trendColor)}>${data.tp1}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Take-Profit 2:</span><span className={cn("font-mono", trendColor)}>${data.tp2}</span></div>
-                <div className="flex justify-between text-sm pt-1"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono">1 : {data.riskReward.toFixed(1)}</span></div>
+                <div className="flex justify-between text-base"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-yellow-400">${data.sl}</span></div>
+                <div className="flex justify-between text-base"><span className="text-foreground/70">Take-Profit 1:</span><span className={cn("font-mono", trendColor)}>${data.tp1}</span></div>
+                <div className="flex justify-between text-base"><span className="text-foreground/70">Take-Profit 2:</span><span className={cn("font-mono", trendColor)}>${data.tp2}</span></div>
+                <div className="flex justify-between text-base pt-1"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono">1 : {data.riskReward.toFixed(1)}</span></div>
             </div>
             <div className="flex justify-center items-center md:col-span-1 pt-4 md:pt-0">
                  <QuantumConfidenceMeter score={data.confidenceBreakdown.overall} label={data.confidence} isBullish={data.isBullish} />
@@ -287,20 +287,20 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <div>
           <SectionHeader icon={<GitCommitHorizontal />} title="Fibonacci Levels" />
           <SectionWrapper>
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Aggressive (38.2%):</span><span className="font-mono">${data.fibonacciLevels.level_382}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Standard (50.0%):</span><span className="font-mono">${data.fibonacciLevels.level_500}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Conservative (61.8%):</span><span className="font-mono">${data.fibonacciLevels.level_618}</span></div>
+              <div className="space-y-1 font-mono">
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Aggressive (38.2%):</span><span>${data.fibonacciLevels.level_382}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Standard (50.0%):</span><span>${data.fibonacciLevels.level_500}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Conservative (61.8%):</span><span>${data.fibonacciLevels.level_618}</span></div>
               </div>
           </SectionWrapper>
         </div>
         <div>
           <SectionHeader icon={<Scaling />} title="Key Levels" />
           <SectionWrapper>
-               <div className="space-y-1">
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Swing High:</span><span className="font-mono">${data.swingHigh}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Swing Low:</span><span className="font-mono">${data.swingLow}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Daily Pivot:</span><span className="font-mono">${data.pivot}</span></div>
+               <div className="space-y-1 font-mono">
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Swing High:</span><span>${data.swingHigh}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Swing Low:</span><span>${data.swingLow}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Daily Pivot:</span><span>${data.pivot}</span></div>
               </div>
            </SectionWrapper>
         </div>
@@ -310,10 +310,10 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <div>
           <SectionHeader icon={<Building />} title="Institutional Interest" />
            <SectionWrapper>
-               <div className="space-y-1">
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Demand Zone:</span><span className="font-mono">${data.demandZone[0]} - ${data.demandZone[1]}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Fair Value Gap:</span><span className="font-mono">${data.fvg[0]} - ${data.fvg[1]}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Volume Imbalance:</span><span className="font-mono">{data.volumeImbalance}</span></div>
+               <div className="space-y-1 font-mono">
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Demand Zone:</span><span>${data.demandZone[0]} - ${data.demandZone[1]}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Fair Value Gap:</span><span>${data.fvg[0]} - ${data.fvg[1]}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Volume Imbalance:</span><span className="font-sans">{data.volumeImbalance}</span></div>
               </div>
            </SectionWrapper>
         </div>
@@ -321,10 +321,10 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
           <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
            <SectionWrapper>
                <div className="space-y-1">
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">{data.liquidity.type}:</span><span className="font-mono">${data.liquidity.level}</span></div>
+                <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">{data.liquidity.type}:</span><span>${data.liquidity.level}</span></div>
                 <p className="text-xs text-foreground/70 pt-1">{data.liquidity.description}</p>
-                <div className="flex justify-between text-sm pt-1"><span className="text-foreground/70">Break of Structure:</span><span className="font-mono">${data.smartMoneyConcepts.bos}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Change of Character:</span><span className="font-mono">${data.smartMoneyConcepts.choch}</span></div>
+                <div className="flex justify-between text-sm pt-1 font-mono"><span className="text-foreground/70 font-sans">Break of Structure:</span><span>${data.smartMoneyConcepts.bos}</span></div>
+                <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">Change of Character:</span><span>${data.smartMoneyConcepts.choch}</span></div>
               </div>
            </SectionWrapper>
         </div>

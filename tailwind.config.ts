@@ -10,9 +10,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['"Courier New"', 'monospace'],
+        body: ['"Space Mono"', 'monospace'],
         headline: ['Orbitron', 'sans-serif'],
-        code: ['monospace'],
+        code: ['"Roboto Mono"', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',

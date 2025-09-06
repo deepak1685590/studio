@@ -63,10 +63,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ initialStatus, revocationReas
     <div className="flex flex-col items-center justify-start min-h-screen p-4 pt-24">
       <QuoteRotator />
       <div className="w-full max-w-md p-8 space-y-4 border-2 border-primary rounded-xl bg-black/70 backdrop-blur-sm text-center shadow-[0_0_25px_rgba(0,230,230,0.5)] z-10 mt-12">
-        <h1 className="font-headline text-5xl text-primary animate-flicker" style={{ textShadow: '0 0 5px var(--primary), 0 0 15px var(--primary)' }}>
+        <h1 className="font-headline text-6xl text-primary animate-flicker" style={{ textShadow: '0 0 5px var(--primary), 0 0 15px var(--primary)' }}>
           NEXUS·AI
         </h1>
-        <h2 className="font-headline text-2xl flex items-center justify-center gap-2 text-primary/80">
+        <h2 className="text-xl flex items-center justify-center gap-2 text-primary/80 font-code">
           <KeyRound /> System Access
         </h2>
         
@@ -106,7 +106,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ initialStatus, revocationReas
           </Message>
         )}
       </div>
-      <div className="fixed bottom-4 right-4 text-xs text-primary font-mono p-2 rounded">
+      <div className="fixed bottom-4 right-4 text-xs text-primary font-code p-2 rounded">
         <p>CREATOR & TRADER : <span className="animate-neon-purple">DG143</span></p>
       </div>
     </div>
