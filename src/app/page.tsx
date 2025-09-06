@@ -4,9 +4,13 @@ import { useAuth } from "@/hooks/useAuth";
 import LoginScreen from "@/components/auth/LoginScreen";
 import MainApp from "@/components/layout/MainApp";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSearchParams } from 'next/navigation';
+import React from 'react';
 
-export default function Home() {
+function HomePageContent() {
   const { user, loading, status, revocationReason } = useAuth();
+  const searchParams = useSearchParams();
+  const symbolFromScanner = searchParams.get('symbol');
 
   if (loading) {
     return (
@@ -26,5 +30,13 @@ export default function Home() {
     return <LoginScreen initialStatus={status} revocationReason={revocationReason} />;
   }
 
-  return <MainApp />;
+  return <MainApp initialSymbol={symbolFromScanner || undefined} />;
+}
+
+export default function Home() {
+  return (
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <HomePageContent />
+    </React.Suspense>
+  );
 }

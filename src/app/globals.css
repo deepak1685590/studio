@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import "../components/scanner/MarketScanner.css";
-
 @layer base {
   :root {
     --background: 0 0% 3.9%;
