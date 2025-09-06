@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -7,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { KeyRound, LogIn, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import QuoteRotator from './QuoteRotator';
+import { NeonBullIcon } from './NeonBullIcon';
+import { NeonBearIcon } from './NeonBearIcon';
 
 interface LoginScreenProps {
   initialStatus?: 'pending' | 'revoked' | null;
@@ -60,52 +63,67 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ initialStatus, revocationReas
   );
 
   return (
-    <div className="flex flex-col items-center justify-start min-h-screen p-4 pt-24">
+    <div className="flex flex-col items-center justify-start min-h-screen p-4 pt-24 overflow-hidden">
       <QuoteRotator />
-      <div className="w-full max-w-md p-8 space-y-4 border-2 border-primary rounded-xl bg-black/70 backdrop-blur-sm text-center shadow-[0_0_25px_rgba(0,230,230,0.5)] z-10 mt-12">
-        <h1 className="font-headline text-6xl text-primary animate-flicker" style={{ textShadow: '0 0 5px var(--primary), 0 0 15px var(--primary)' }}>
-          NEXUS·AI
-        </h1>
-        <h2 className="text-xl flex items-center justify-center gap-2 text-primary/80 font-code">
-          <KeyRound /> System Access
-        </h2>
-        
-        <div className="space-y-4">
-          <Input 
-            type="text" 
-            id="username" 
-            placeholder="Enter Callsign" 
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]" 
-          />
-          <Input 
-            type="password" 
-            id="password" 
-            placeholder="Enter Passcode (optional for new users)" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]"
-          />
+
+      <div className="relative w-full max-w-7xl flex justify-center items-center">
+        {/* Neon Bull */}
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 hidden lg:block animate-float-slow">
+            <NeonBullIcon className="w-64 h-64 text-green-400" />
         </div>
-        
-        <Button onClick={handleAuth} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">
-          <LogIn className="mr-2" /> Authenticate
-        </Button>
-        
-        {status === 'pending' && (
-          <Message>
-            Your access is pending authorization.<br />
-            Awaiting administrator approval.
-          </Message>
-        )}
-        {status === 'revoked' && (
-          <Message>
-            Access has been revoked by administrator.<br />
-            {revocationReason && `Reason: ${revocationReason}`}
-          </Message>
-        )}
+
+        {/* Login Card */}
+        <div className="w-full max-w-md p-8 space-y-4 border-2 border-primary rounded-xl bg-black/70 backdrop-blur-sm text-center shadow-[0_0_25px_rgba(0,230,230,0.5)] z-10 mt-12">
+            <h1 className="font-headline text-6xl text-primary animate-flicker" style={{ textShadow: '0 0 5px var(--primary), 0 0 15px var(--primary)' }}>
+            NEXUS·AI
+            </h1>
+            <h2 className="text-xl flex items-center justify-center gap-2 text-primary/80 font-code">
+            <KeyRound /> System Access
+            </h2>
+            
+            <div className="space-y-4">
+            <Input 
+                type="text" 
+                id="username" 
+                placeholder="Enter Callsign" 
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]" 
+            />
+            <Input 
+                type="password" 
+                id="password" 
+                placeholder="Enter Passcode (optional for new users)" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]"
+            />
+            </div>
+            
+            <Button onClick={handleAuth} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">
+            <LogIn className="mr-2" /> Authenticate
+            </Button>
+            
+            {status === 'pending' && (
+            <Message>
+                Your access is pending authorization.<br />
+                Awaiting administrator approval.
+            </Message>
+            )}
+            {status === 'revoked' && (
+            <Message>
+                Access has been revoked by administrator.<br />
+                {revocationReason && `Reason: ${revocationReason}`}
+            </Message>
+            )}
+        </div>
+
+        {/* Neon Bear */}
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:block animate-float-slow" style={{ animationDelay: '1.5s' }}>
+            <NeonBearIcon className="w-64 h-64 text-red-500" />
+        </div>
       </div>
+
       <div className="fixed bottom-4 right-4 text-xs text-primary font-code p-2 rounded">
         <p>CREATOR & TRADER : <span className="animate-neon-purple">DG143</span></p>
       </div>

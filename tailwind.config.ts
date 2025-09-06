@@ -124,6 +124,14 @@ export default {
           '0%': { transform: 'translateX(0%)' },
           '100%': { transform: 'translateX(-50%)' },
         },
+        'neon-glow': {
+            '0%, 100%': { opacity: '0.7', transform: 'scale(1)' },
+            '50%': { opacity: '1', transform: 'scale(1.02)' },
+        },
+        'float-slow': {
+            '0%, 100%': { transform: 'translateY(0px)' },
+            '50%': { transform: 'translateY(-15px)' },
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -133,6 +141,8 @@ export default {
         'neon-blue': 'neon-blue 2s ease-in-out infinite alternate',
         'neon-purple': 'neon-purple 2.5s ease-in-out infinite alternate',
         'marquee': 'marquee 40s linear infinite',
+        'neon-glow': 'neon-glow 4s ease-in-out infinite alternate',
+        'float-slow': 'float-slow 6s ease-in-out infinite',
       },
       textShadow: {
         DEFAULT: '0 2px 4px var(--tw-shadow-color)',
