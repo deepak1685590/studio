@@ -1,6 +1,5 @@
 
 
-
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
@@ -209,6 +208,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
     // Determine trend based on EMAs
     const isBullish = price > ema50 && ema50 > ema200;
+    const marketStructure = isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL';
 
     const demandZone: [string, string] = [(lastClose * 0.98).toFixed(4), (lastClose * 0.99).toFixed(4)];
     const supplyZone: [string, string] = [(lastClose * 1.01).toFixed(4), (lastClose * 1.02).toFixed(4)];
@@ -226,12 +226,38 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const reversalConfirmed = pseudoRandom(seed + 'reversal') > 0.6;
     
     const volumeAnalysis = generateVolumeAnalysis(seed);
+    
+    // --- Momentum (RSI simulation) ---
+    const rsiValue = Math.floor(pseudoRandom(seed + 'rsi') * 80 + 10); // RSI between 10 and 90
+    let momentum: Momentum;
+    if (rsiValue > 75) momentum = { score: rsiValue, rating: 'Overbought' };
+    else if (rsiValue > 55) momentum = { score: rsiValue, rating: 'Bullish' };
+    else if (rsiValue > 45) momentum = { score: rsiValue, rating: 'Neutral' };
+    else if (rsiValue > 25) momentum = { score: rsiValue, rating: 'Bearish' };
+    else momentum = { score: rsiValue, rating: 'Oversold' };
 
+    // --- ADVANCED CONFLUENCE FACTORS ---
     const confluenceFactors = [
         `MA Trend: ${isBullish ? 'Bullish' : 'Bearish'} (Price vs 50/200 EMA)`,
         price > pivot ? `Price above Pivot ($${pivot.toFixed(4)})` : `Price below Pivot ($${pivot.toFixed(4)})`,
         volumeImbalance,
+        `Market Structure: ${marketStructure}`,
     ];
+
+    if (isBullish && (momentum.rating === 'Bullish' || momentum.rating === 'Neutral')) {
+        confluenceFactors.push(`Momentum aligned with trend (RSI: ${rsiValue})`);
+    } else if (!isBullish && (momentum.rating === 'Bearish' || momentum.rating === 'Neutral')) {
+        confluenceFactors.push(`Momentum aligned with trend (RSI: ${rsiValue})`);
+    }
+    
+    const bosLevel = isBullish ? (swingHigh * 1.002).toFixed(4) : (swingLow * 0.998).toFixed(4);
+    confluenceFactors.push(`Break of Structure (BOS) at $${bosLevel}`);
+    
+    if(isBullish) {
+        confluenceFactors.push(`Price reacting to Demand Zone`);
+    } else {
+        confluenceFactors.push(`Price reacting to Supply Zone`);
+    }
 
     if (reversalConfirmed) {
         confluenceFactors.push(`✅ Reversal Confirmed`);
@@ -413,8 +439,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
     const riskReward = risk > 0 ? reward / risk : 0;
     
-    const marketStructure = isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL';
-
     const mtfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '5m' ? '15m' : '4H';
     const htfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '1h' ? '4H' : 'Daily';
     
@@ -461,15 +485,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const liquidityLevel = isBullish ? swingHigh * 1.005 : swingLow * 0.995;
 
 
-    // --- Momentum (RSI simulation) ---
-    const rsiValue = Math.floor(pseudoRandom(seed + 'rsi') * 80 + 10); // RSI between 10 and 90
-    let momentum: Momentum;
-    if (rsiValue > 75) momentum = { score: rsiValue, rating: 'Overbought' };
-    else if (rsiValue > 55) momentum = { score: rsiValue, rating: 'Bullish' };
-    else if (rsiValue > 45) momentum = { score: rsiValue, rating: 'Neutral' };
-    else if (rsiValue > 25) momentum = { score: rsiValue, rating: 'Bearish' };
-    else momentum = { score: rsiValue, rating: 'Oversold' };
-
     return {
         symbol: symbol.toUpperCase(),
         price,
@@ -502,7 +517,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             description: `A significant pool of liquidity is resting ${isBullish ? 'above' : 'below'} this level, acting as a price magnet.`
         },
         smartMoneyConcepts: {
-            bos: isBullish ? (swingHigh * 1.002).toFixed(4) : (swingLow * 0.998).toFixed(4),
+            bos: bosLevel,
             choch: isBullish ? (swingLow * 0.998).toFixed(4) : (swingHigh * 1.002).toFixed(4),
         },
         marketStructure,
