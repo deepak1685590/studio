@@ -255,7 +255,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       borderColor
     )}>
       <header className="widget-header p-4 text-center font-headline text-2xl bg-black/50">
-        <h3 className="text-primary animate-flicker" style={{textShadow: '0 0 5px hsl(var(--primary)), 0 0 15px hsl(var(--primary))'}}>
+         <h3 className="animate-neon-color-cycle text-primary">
             🚀 SmartSignal Pro - Quantum Analysis Engine
         </h3>
         <div className="text-sm font-code mt-1">

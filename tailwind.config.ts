@@ -121,6 +121,13 @@ export default {
             color: '#fae8ff',
           },
         },
+        'neon-color-cycle': {
+            '0%': { color: 'hsl(180, 100%, 50%)', textShadow: '0 0 5px hsl(180, 100%, 50%), 0 0 10px hsl(180, 100%, 50%)' },
+            '25%': { color: 'hsl(270, 100%, 60%)', textShadow: '0 0 5px hsl(270, 100%, 60%), 0 0 10px hsl(270, 100%, 60%)' },
+            '50%': { color: 'hsl(340, 100%, 55%)', textShadow: '0 0 5px hsl(340, 100%, 55%), 0 0 10px hsl(340, 100%, 55%)' },
+            '75%': { color: 'hsl(38, 92%, 50%)', textShadow: '0 0 5px hsl(38, 92%, 50%), 0 0 10px hsl(38, 92%, 50%)' },
+            '100%': { color: 'hsl(180, 100%, 50%)', textShadow: '0 0 5px hsl(180, 100%, 50%), 0 0 10px hsl(180, 100%, 50%)' },
+        },
         marquee: {
           '0%': { transform: 'translateX(0%)' },
           '100%': { transform: 'translateX(-50%)' },
@@ -141,6 +148,7 @@ export default {
         'pulse-glow': 'pulse-glow 2.5s infinite alternate',
         'neon-blue': 'neon-blue 2s ease-in-out infinite alternate',
         'neon-purple': 'neon-purple 2.5s ease-in-out infinite alternate',
+        'neon-color-cycle': 'neon-color-cycle 5s linear infinite',
         marquee: 'marquee 40s linear infinite',
         'neon-glow': 'neon-glow 4s ease-in-out infinite alternate',
         'float-slow': 'float-slow 6s ease-in-out infinite',
