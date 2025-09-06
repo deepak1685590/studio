@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -35,7 +36,7 @@ function HomePageContent() {
 
 export default function Home() {
   return (
-    <React.Suspense fallback={<div>Loading...</div>}>
+    <React.Suspense fallback={<div className="flex justify-center items-center min-h-screen">Loading...</div>}>
       <HomePageContent />
     </React.Suspense>
   );

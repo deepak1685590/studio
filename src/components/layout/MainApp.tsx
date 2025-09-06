@@ -27,7 +27,9 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
 
   useEffect(() => {
     // If the initialSymbol from props changes, update the state
-    setSelectedSymbol(initialSymbol);
+    if (initialSymbol) {
+      setSelectedSymbol(initialSymbol);
+    }
   }, [initialSymbol]);
 
   return (

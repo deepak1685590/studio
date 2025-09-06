@@ -159,7 +159,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                                 {opportunities.map(op => (
                                     <Collapsible asChild key={op.symbol}>
                                         <>
-                                            <TableRow>
+                                            <TableRow className="align-middle">
                                                 <TableCell className="font-bold">{op.symbol}</TableCell>
                                                 <TableCell>
                                                     <TrendBadge opportunity={op} />
@@ -169,7 +169,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-mono font-bold text-primary">{op.confidenceBreakdown.overall}%</span>
                                                         <CollapsibleTrigger asChild>
-                                                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 data-[state=open]:rotate-180 transition-transform">
                                                                 <ChevronDown className="h-4 w-4" />
                                                             </Button>
                                                         </CollapsibleTrigger>
@@ -182,7 +182,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                                                 </TableCell>
                                             </TableRow>
                                             <CollapsibleContent asChild>
-                                                <TableRow>
+                                                <tr>
                                                     <TableCell colSpan={5} className="p-0">
                                                         <div className="p-2 px-4 bg-black/40">
                                                             <h5 className="text-xs font-bold mb-1">Confidence Factors:</h5>
@@ -194,7 +194,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                                                             </div>
                                                         </div>
                                                     </TableCell>
-                                                </TableRow>
+                                                </tr>
                                             </CollapsibleContent>
                                         </>
                                     </Collapsible>

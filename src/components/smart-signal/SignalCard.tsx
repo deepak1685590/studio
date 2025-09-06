@@ -223,16 +223,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     momentum: data.momentum.score,
     marketSession: "New York", // This is a placeholder
     volatilityRegime: "Medium", // This is a placeholder
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [data.symbol, data.entry, data.sl, data.tp1]); // Only re-run when the core signal parameters change.
+  }), [data]); 
 
   const oracleInsightData: OracleInsightInput = useMemo(() => ({
     symbol: data.symbol,
     price: data.price,
     isBullish: data.isBullish,
     volatility: data.trendStrength.score,
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [data.symbol, data.isBullish, data.trendStrength.score]);
+  }), [data.symbol, data.price, data.isBullish, data.trendStrength.score]);
 
 
   if (data.sidewaysMarket) {
