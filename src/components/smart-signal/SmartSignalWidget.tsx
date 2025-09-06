@@ -9,9 +9,9 @@ import { getSignalData } from '@/lib/technical-analysis';
 import type { SignalData } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
-import { Rocket, BrainCircuit, Eye } from 'lucide-react';
+import { Rocket, BrainCircuit, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Timeframe, LiveTradeData, Position } from '@/types';
+import { Timeframe, LiveTradeData } from '@/types';
 import jsPDF from 'jspdf';
 import { cn } from '@/lib/utils';
 import TradingViewWidget from './TradingViewWidget';
@@ -39,13 +39,14 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const [liveTradeData, setLiveTradeData] = useState<LiveTradeData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [chartImage, setChartImage] = useState<string | null>(null);
-  const [isCapturing, setIsCapturing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+
 
   const { toast } = useToast();
 
   const ws = useRef<WebSocket | null>(null);
   const previousPriceRef = useRef<number | null>(null);
-  const chartContainerRef = useRef<HTMLDivElement>(null);
   const currentSymbolRef = useRef(symbol);
 
   useEffect(() => {
@@ -157,28 +158,43 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     };
   }, []);
   
-  const captureChart = async () => {
-    if (!chartContainerRef.current) return;
-    setIsCapturing(true);
-    toast({ title: "Chart Vision", description: "Capturing chart snapshot for AI analysis..." });
-    try {
-        await new Promise(resolve => setTimeout(resolve, 500)); // Allow chart to render fully
-        const canvas = await html2canvas(chartContainerRef.current, {
-            useCORS: true,
-            backgroundColor: '#131722', // Match TradingView dark theme background
-             onclone: (document) => {
-                // This is a spot for potential tweaks if capture is problematic.
-            }
-        });
-        const image = canvas.toDataURL('image/png');
-        setChartImage(image);
-        setIsModalOpen(true);
-    } catch (error) {
-        console.error("Chart capture error:", error);
-        toast({ title: "Capture Failed", description: "Could not capture the chart image.", variant: "destructive" });
-    } finally {
-        setIsCapturing(false);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
     }
+  };
+
+  const handleAnalyzeChart = () => {
+    if (!uploadedFile) {
+      toast({
+        title: "No File Selected",
+        description: "Please choose a chart image to analyze.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
+    toast({ title: "Chart Vision", description: "Processing uploaded chart for AI analysis..." });
+
+    const reader = new FileReader();
+    reader.readAsDataURL(uploadedFile);
+    reader.onload = () => {
+      const base64Image = reader.result as string;
+      setChartImage(base64Image);
+      setIsModalOpen(true);
+      setIsAnalyzing(false);
+    };
+    reader.onerror = (error) => {
+      console.error("File reading error:", error);
+      toast({
+        title: "File Error",
+        description: "Could not read the selected image file.",
+        variant: "destructive",
+      });
+      setIsAnalyzing(false);
+    };
   };
 
   const handleDownloadPng = () => {
@@ -255,8 +271,8 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       borderColor
     )}>
       <header className="widget-header p-4 text-center font-headline text-2xl bg-black/50">
-         <h3 className="animate-neon-color-cycle text-primary">
-            🚀 SmartSignal Pro - Quantum Analysis Engine
+         <h3 className="animate-flicker text-primary" style={{ textShadow: '0 0 5px var(--primary), 0 0 15px var(--primary)' }}>
+            SmartSignal Pro - Quantum Analysis Engine
         </h3>
         <div className="text-sm font-code mt-1">
             CREATOR: <span className="animate-neon-purple">DG143</span>
@@ -325,14 +341,26 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       <div className="widget-body p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {loading ? <LoadingSkeleton /> : (
           <div className="space-y-6">
-            <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2" ref={chartContainerRef}>
+            <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
               <TradingViewWidget symbol={signalData?.symbol || initialSymbol} timeframe={timeframe} />
             </div>
-            <Button onClick={captureChart} disabled={isCapturing} className="w-full bg-accent/20 border-accent border hover:bg-accent hover:text-accent-foreground font-headline">
-              <Eye className="mr-2" />
-              {isCapturing ? 'Capturing...' : 'Engage Chart Vision'}
-            </Button>
-             {signalData && <TradingSimulator signalData={signalData} livePrice={realtimePrice} />}
+            
+            <div className="bg-black/30 rounded-lg border border-accent/50 p-4 space-y-3">
+                 <h4 className="font-headline text-lg text-accent text-center">AI Chart Vision</h4>
+                 <p className="text-xs text-center text-foreground/70">Upload a chart screenshot for an instant AI-powered technical analysis.</p>
+                <Input
+                    type="file"
+                    accept="image/png, image/jpeg, image/gif"
+                    onChange={handleFileChange}
+                    className="bg-input text-foreground border-accent/50 file:text-accent file:font-bold"
+                />
+                <Button onClick={handleAnalyzeChart} disabled={isAnalyzing || !uploadedFile} className="w-full bg-accent/20 border-accent border hover:bg-accent hover:text-accent-foreground font-headline">
+                    <Upload className="mr-2" />
+                    {isAnalyzing ? 'Analyzing...' : 'Analyze Chart Image'}
+                </Button>
+            </div>
+
+            {signalData && <TradingSimulator signalData={signalData} livePrice={realtimePrice} />}
             {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} />}
           </div>
         )}
@@ -361,5 +389,3 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 };
 
 export default SmartSignalWidget;
-
-    
