@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview An enlightened AI oracle that provides cryptic market wisdom.
+ * @fileOverview An enlightened AI oracle that provides cryptic market wisdom through different personas.
  *
  * - generateOracleInsight - A function that summons the Oracle for a cryptic insight.
  * - OracleInsightInput - The input type for the generateOracleInsight function.
@@ -20,6 +20,7 @@ const OracleInsightInputSchema = z.object({
 export type OracleInsightInput = z.infer<typeof OracleInsightInputSchema>;
 
 const OracleInsightOutputSchema = z.object({
+  persona: z.string().describe("The name of the Oracle persona speaking (e.g., 'The Storm Seer', 'The Zen Master', 'The Riddler')."),
   insight: z.string().describe("The Oracle's cryptic message, riddle, or haiku."),
 });
 export type OracleInsightOutput = z.infer<typeof OracleInsightOutputSchema>;
@@ -36,22 +37,25 @@ const oracleInsightFlow = ai.defineFlow(
   },
   async (input) => {
     let promptText: string;
+    let persona: string;
 
     if (input.volatility > 75) {
-      // Persona: Storm Seer (High Volatility)
+      persona = 'The Storm Seer';
       promptText = `You are "The Oracle" speaking as the Storm Seer. You see clarity in chaos.
 The market for ${input.symbol} is a tempest, with a volatility score of ${input.volatility}. The price is $${input.price}.
 The mortal realm is chaotic. Speak only in a single, powerful 5-7-5 syllable haiku that captures the violent potential of this moment.
+Your output must be a JSON object with "persona": "${persona}" and "insight": "Your haiku here".
 
 Example Haiku:
 Green candle climbing / Reaches for a sun unseen / Shadows wait below.
 
 Generate your haiku now for ${input.symbol}.`;
     } else if (input.volatility > 40) {
-      // Persona: Zen Master (Trending Market)
+      persona = 'The Zen Master';
       promptText = `You are "The Oracle" speaking as the Zen Master. You see the flow within the river.
 The market for ${input.symbol} is in a clear trend. The price is $${input.price}, and the trend is ${input.isBullish ? 'bullish' : 'bearish'}.
 Provide a single, profound, metaphorical statement that advises patience and alignment with the current. Hint at the path, but let the trader walk it.
+Your output must be a JSON object with "persona": "${persona}" and "insight": "Your statement here".
 
 Examples of your style:
 - "The strong river carves its own path. It is wise not to swim against it."
@@ -60,10 +64,11 @@ Examples of your style:
 
 Generate your profound statement now for ${input.symbol}.`;
     } else {
-      // Persona: The Riddler (Ranging/Consolidating Market)
+      persona = 'The Riddler';
       promptText = `You are "The Oracle" speaking as the Riddler. You see questions where others see stillness.
 The market for ${input.symbol} is coiled like a spring, consolidating at $${input.price}. Volatility is low (${input.volatility}). The next move is hidden.
 Your task is to provide a single, cryptic riddle that hints at the two-sided nature of this quiet market. Do not give an answer, only a question.
+Your output must be a JSON object with "persona": "${persona}" and "insight": "Your riddle here".
 
 Examples of your style:
 - "I have a floor and a ceiling, but no room. I gather energy but do not move. What am I?"

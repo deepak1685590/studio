@@ -2,8 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { generateOracleInsight, OracleInsightInput } from '@/ai/flows/oracle-insight';
-import { Skeleton } from '../ui/skeleton';
+import { generateOracleInsight, OracleInsightInput, OracleInsightOutput } from '@/ai/flows/oracle-insight';
 import { Sparkles } from 'lucide-react';
 
 interface OracleInsightProps {
@@ -11,18 +10,22 @@ interface OracleInsightProps {
 }
 
 const OracleInsight: React.FC<OracleInsightProps> = ({ data }) => {
-  const [insight, setInsight] = useState('');
+  const [insight, setInsight] = useState<OracleInsightOutput | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchInsight = async () => {
       setLoading(true);
+      setInsight(null);
       try {
         const result = await generateOracleInsight(data);
-        setInsight(result.insight);
+        setInsight(result);
       } catch (error) {
         console.error('Oracle Insight Error:', error);
-        setInsight("The stream is unclear... A powerful signal has blinded me. Trust your analysis.");
+        setInsight({
+            persona: "The Oracle",
+            insight: "The stream is unclear... A powerful signal has blinded me. Trust your analysis."
+        });
       }
       setLoading(false);
     };
@@ -41,13 +44,15 @@ const OracleInsight: React.FC<OracleInsightProps> = ({ data }) => {
       </div>
       
       {loading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-full bg-amber-400/20" />
-          <Skeleton className="h-4 w-3/4 bg-amber-400/20" />
+        <div className="text-center italic text-amber-200/70 p-4">
+          Consulting the digital ether...
         </div>
-      ) : (
-        <p className="text-center text-lg italic text-amber-200/90 whitespace-pre-wrap font-serif">"{insight}"</p>
-      )}
+      ) : insight ? (
+        <div className="text-center">
+            <p className="text-sm font-bold text-amber-300/80 mb-2">{insight.persona} says:</p>
+            <p className="text-lg italic text-amber-200/90 whitespace-pre-wrap font-serif">"{insight.insight}"</p>
+        </div>
+      ) : null}
     </div>
   );
 };

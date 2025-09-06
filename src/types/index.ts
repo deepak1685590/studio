@@ -37,7 +37,6 @@ export interface Trade {
 }
 
 export interface MultiTimeframeAnalysis {
-  '1m'?: Trend;
   '5m'?: Trend;
   '15m'?: Trend;
   '1H'?: Trend;
