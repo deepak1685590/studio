@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 
 interface ConfidenceBreakdownProps {
   breakdown: ConfidenceBreakdownType;
+  confidence: string;
   isBullish: boolean;
 }
 
@@ -83,7 +84,7 @@ const ConfidenceFactor: React.FC<{ label: string; score: number }> = ({ label, s
 };
 
 
-const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ breakdown, isBullish }) => {
+const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ breakdown, confidence, isBullish }) => {
   const glowColor = isBullish 
     ? (breakdown.overall > 75 ? 'shadow-green-400/50' : 'shadow-yellow-400/50')
     : (breakdown.overall > 75 ? 'shadow-red-400/50' : 'shadow-orange-400/50');
@@ -95,7 +96,7 @@ const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ breakdown, is
       </h4>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
         <div className="flex justify-center">
-             <QuantumConfidenceMeter score={breakdown.overall} label={breakdown.confidence} isBullish={isBullish} />
+             <QuantumConfidenceMeter score={breakdown.overall} label={confidence} isBullish={isBullish} />
         </div>
         <div className="space-y-3">
             <ConfidenceFactor label="Pattern Strength" score={breakdown.patternStrength} />

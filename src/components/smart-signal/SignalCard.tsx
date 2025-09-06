@@ -354,7 +354,11 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
       
-      <ConfidenceBreakdown breakdown={data.confidenceBreakdown} isBullish={data.isBullish} />
+      <ConfidenceBreakdown 
+        breakdown={data.confidenceBreakdown} 
+        confidence={data.confidence}
+        isBullish={data.isBullish} 
+      />
         
       <div>
         <SectionHeader icon={<BarChart />} title="Multi-Timeframe Analysis" />
