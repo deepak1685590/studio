@@ -20,6 +20,7 @@ import { Skeleton } from '../ui/skeleton';
 import ChartAnalysisModal from './ChartAnalysisModal';
 import TradingSimulator from './TradingSimulator';
 import TrendRibbon from './TrendRibbon';
+import { useSound } from '@/hooks/useSound';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -40,6 +41,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [chartImage, setChartImage] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const { playSound } = useSound();
 
   const { toast } = useToast();
 
@@ -82,6 +84,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       setSignalData(data);
       setRealtimePrice(data.price);
       previousPriceRef.current = data.price;
+      playSound('signalDetected');
 
       if (typeof window !== 'undefined') {
         const isSupportedCrypto = cryptoAssetsForWebsocket.includes(data.symbol.toUpperCase());
@@ -139,10 +142,11 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       const mockData = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, true);
       setSignalData(mockData);
       setRealtimePrice(mockData.price);
+      playSound('signalDetected');
     } finally {
       setLoading(false);
     }
-  }, [mode, timeframe, toast]);
+  }, [mode, timeframe, toast, playSound]);
   
   useEffect(() => {
     handleGenerateSignal(symbol);

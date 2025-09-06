@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { User, LogOut } from 'lucide-react';
 import { ThemeSwitcher } from './ThemeSwitcher';
+import { MuteButton } from './MuteButton';
 
 const ProfileBar = () => {
   const { user, logout } = useAuth();
@@ -15,6 +16,7 @@ const ProfileBar = () => {
         <span>{user?.username}</span>
       </div>
       <div className="flex items-center gap-4">
+        <MuteButton />
         <ThemeSwitcher />
         <Button variant="ghost" onClick={logout} className="text-red-500 hover:bg-red-500/10 hover:text-red-400">
           <LogOut className="mr-2 h-4 w-4" /> Logout
