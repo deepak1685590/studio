@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -43,7 +44,7 @@ const quotes = [
 const NEON_COLORS = ['#00E6E6', '#8A2BE2', '#007BFF', '#FF00FF'];
 
 const QuoteRotator = () => {
-  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
+  const [currentQuoteIndex, setCurrentQuoteIndex]  = useState(0);
   const [currentColorIndex, setCurrentColorIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
 

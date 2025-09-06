@@ -1,8 +1,10 @@
+
 "use client";
 
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useContext } from 'react';
 import { User } from '@/types';
 import * as UserStore from '@/lib/users';
+import { SoundContext } from './SoundContext';
 
 interface AuthContextType {
   user: User | null;
@@ -28,6 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<'pending' | 'revoked' | null>(null);
   const [revocationReason, setRevocationReason] = useState<string | null>(null);
+  const soundContext = useContext(SoundContext);
 
   useEffect(() => {
     // This effect runs only on the client side
@@ -70,6 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setStatus(null);
       setRevocationReason(null);
       UserStore.setSessionUser(result.user);
+      soundContext?.playSound('loginWelcome');
     } else {
       setUser(null);
       setStatus(result.status);
