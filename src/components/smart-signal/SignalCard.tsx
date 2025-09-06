@@ -167,6 +167,10 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
   const entryPriceNum = parseFloat(data.entry);
   const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; // 0.1% proximity
+  const trendColor = data.isBullish ? 'text-green-400' : 'text-red-400';
+  const trendBorder = data.isBullish ? 'border-green-400/50' : 'border-red-400/50';
+  const trendBg = data.isBullish ? 'bg-green-500/10' : 'bg-red-500/10';
+  const trendShadow = data.isBullish ? 'shadow-[0_0_15px_theme(colors.green.400)]' : 'shadow-[0_0_15px_theme(colors.red.400)]';
 
   return (
     <div id="signal-card-content" className={cn(
@@ -221,14 +225,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                     </span>
                 </div>
 
-                <div className="flex justify-between items-center text-lg my-2 p-2 rounded-md border border-primary/50 bg-primary/10 shadow-[0_0_15px_hsl(var(--primary)_/_0.3)]">
+                <div className={cn("flex justify-between items-center text-lg my-2 p-2 rounded-md border", trendBorder, trendBg, trendShadow)}>
                     <span className="text-foreground/80 text-sm">Entry:</span>
-                    <span className="font-mono font-bold text-primary">${data.entry}</span>
+                    <span className={cn("font-mono font-bold", trendColor)}>${data.entry}</span>
                 </div>
 
                 <div className="flex justify-between text-sm"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-red-400">${data.sl}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Take-Profit 1:</span><span className="font-mono text-green-400">${data.tp1}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Take-Profit 2:</span><span className="font-mono text-green-400">${data.tp2}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Take-Profit 1:</span><span className={cn("font-mono", trendColor)}>${data.tp1}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">Take-Profit 2:</span><span className={cn("font-mono", trendColor)}>${data.tp2}</span></div>
                 <div className="flex justify-between text-sm pt-1"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono">1 : {data.riskReward.toFixed(1)}</span></div>
             </div>
             <div className="flex justify-center items-center md:col-span-1 pt-4 md:pt-0">
