@@ -1,4 +1,5 @@
 
+
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
@@ -437,16 +438,12 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         confluenceFactors.push(`✅ Entry within Golden Zone`);
     }
 
-    let goldenReverseZone: GoldenPullbackZone | undefined = undefined;
-    const shouldShowReverseZone = pseudoRandom(seed + 'reverse_zone_chance') > 0.5; // 50% chance to show reverse zone
-    if (shouldShowReverseZone) {
-        const reverseMin = isBullish ? swingLow * 0.99 : swingHigh * 1.01;
-        const reverseMax = isBullish ? swingLow * 0.98 : swingHigh * 1.02;
-        goldenReverseZone = {
-            min: Math.min(reverseMin, reverseMax).toFixed(4),
-            max: Math.max(reverseMin, reverseMax).toFixed(4),
-        };
-    }
+    const reverseMin = isBullish ? swingLow * 0.99 : swingHigh * 1.01;
+    const reverseMax = isBullish ? swingLow * 0.98 : swingHigh * 1.02;
+    const goldenReverseZone: GoldenPullbackZone = {
+        min: Math.min(reverseMin, reverseMax).toFixed(4),
+        max: Math.max(reverseMin, reverseMax).toFixed(4),
+    };
 
     const confidenceBreakdown: ConfidenceBreakdown = {
         patternStrength: Math.floor(pseudoRandom(seed + 'cs1') * 15 + 80),
@@ -523,3 +520,4 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         volumeAnalysis,
     };
 };
+
