@@ -132,8 +132,11 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     }
   }, [symbol, mode, timeframe, toast, signalData]);
   
+  const handleGenerateSignalRef = useRef(handleGenerateSignal);
+  handleGenerateSignalRef.current = handleGenerateSignal;
+
   useEffect(() => {
-    handleGenerateSignal();
+    handleGenerateSignalRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -339,5 +342,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 };
 
 export default SmartSignalWidget;
+
+    
 
     
