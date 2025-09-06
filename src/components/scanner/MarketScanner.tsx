@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -47,8 +47,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
     const [filterHighConfidence, setFilterHighConfidence] = useState(true);
     const [filterGoldenZone, setFilterGoldenZone] = useState(false);
     const [filterWhaleAlerts, setFilterWhaleAlerts] = useState(false);
-    const [isPending, startTransition] = useTransition();
-
+    
     const isMounted = useIsMounted();
     const { toast } = useToast();
 
@@ -64,10 +63,12 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
             description: `Scanning ${assetList.length} assets for high-probability setups...`,
         });
 
-        const promises = assetList.map(async (symbol, index) => {
+        const allResults: Opportunity[] = [];
+
+        const promises = assetList.map(async (symbol) => {
             try {
                 const data = await getSignalData(symbol, '2', '15m');
-                return {
+                const opportunityData = {
                     symbol: data.symbol,
                     isBullish: data.isBullish,
                     entry: data.entry,
@@ -79,23 +80,20 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                     goldenPullbackZone: data.goldenPullbackZone,
                     whaleAlert: data.whaleAlert,
                 };
+                allResults.push(opportunityData);
             } catch (error) {
                 console.warn(`Could not scan ${symbol}:`, error);
-                return null;
             } finally {
                 if (isMounted.current) {
-                    startTransition(() => {
-                        setProgress(prev => prev + (100 / assetList.length));
-                    });
+                    setProgress(prev => prev + (100 / assetList.length));
                 }
             }
         });
         
-        const results = await Promise.all(promises);
-        const foundOpportunities = results.filter((op): op is Opportunity => op !== null);
+        await Promise.all(promises);
 
         if (isMounted.current) {
-            let finalOpportunities = [...foundOpportunities].sort((a,b) => b.confidenceBreakdown.overall - a.confidenceBreakdown.overall);
+            let finalOpportunities = [...allResults].sort((a,b) => b.confidenceBreakdown.overall - a.confidenceBreakdown.overall);
 
             if (filterHighConfidence) {
                 finalOpportunities = finalOpportunities.filter(op => op.confidenceBreakdown.overall >= 75);
@@ -161,7 +159,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                 <h4 className="font-headline text-lg text-primary mb-3 text-center">Scan Presets</h4>
                 <div className="flex flex-wrap justify-center gap-3">
                     {Object.entries(assetLists).map(([name, list]) => (
-                        <Button key={name} onClick={() => handleScan(list)} disabled={isScanning || isPending} className="font-headline scanner-glow">
+                        <Button key={name} onClick={() => handleScan(list)} disabled={isScanning} className="font-headline scanner-glow">
                             <Search className="mr-2" />
                             {isScanning ? 'Scanning...' : `Scan ${name}`}
                         </Button>
@@ -187,7 +185,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                  </div>
             </div>
 
-            {(isScanning || isPending) && (
+            {isScanning && (
                 <div className="mt-4">
                     <div className="progress-bar" />
                     <p className="text-center text-xs text-primary/80 mt-1">{Math.round(progress)}% Complete</p>
@@ -274,5 +272,3 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
 };
 
 export default MarketScanner;
-
-    
