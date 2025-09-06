@@ -9,7 +9,7 @@ import LiveNewsWidget from '@/components/news/LiveNewsWidget';
 import { useAuth } from '@/hooks/useAuth';
 import LoginScreen from '@/components/auth/LoginScreen';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AreaChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function ScannerPage() {
