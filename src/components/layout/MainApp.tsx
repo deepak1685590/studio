@@ -11,6 +11,8 @@ import ProfileBar from './ProfileBar';
 import LiveNewsWidget from '../news/LiveNewsWidget';
 import { Button } from '../ui/button';
 import { AreaChart } from 'lucide-react';
+import LiveClock from './LiveClock';
+import MarketSessions from '../info/MarketSessions';
 
 interface MainAppProps {
   initialSymbol?: string;
@@ -45,6 +47,14 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
           initialSymbol={selectedSymbol} 
           setSelectedSymbol={setSelectedSymbol} 
         />
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+                <LiveClock />
+            </div>
+            <div className="lg:col-span-2">
+                <MarketSessions />
+            </div>
+        </div>
       </div>
       <Chatbot />
       <LiveNewsWidget />
