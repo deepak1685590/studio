@@ -28,6 +28,9 @@ export const SoundProvider = ({ children }: { children: ReactNode }) => {
   const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    // Background music is disabled by default to prevent errors if file is missing.
+    // To enable, uncomment the following lines and ensure matrix-loop.mp3 is in public/sounds
+    /*
     if (typeof Audio !== "undefined") {
       if (!backgroundMusicRef.current) {
         const audio = new Audio(backgroundMusicSrc);
@@ -42,6 +45,7 @@ export const SoundProvider = ({ children }: { children: ReactNode }) => {
         backgroundMusicRef.current.pause();
       }
     }
+    */
   }, [isMuted]);
 
 
