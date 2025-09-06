@@ -1,3 +1,4 @@
+
 export interface User {
   username: string;
   password?: string;
@@ -14,6 +15,24 @@ export type Timeframe = '5m' | '15m' | '1h' | '4h' | '1d';
 export interface LiveTradeData {
   volume: number;
   side: 'Buy' | 'Sell' | 'Neutral';
+}
+
+export interface Position {
+  symbol: string;
+  entryPrice: number;
+  size: number;
+  quantity: number;
+  type: 'long' | 'short';
+}
+
+export interface Trade {
+  id: string;
+  symbol: string;
+  type: 'long' | 'short';
+  entryPrice: number;
+  exitPrice: number;
+  size: number;
+  pnl: number;
 }
 
 export interface MultiTimeframeAnalysis {

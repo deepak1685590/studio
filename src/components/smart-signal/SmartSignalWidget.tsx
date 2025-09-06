@@ -11,13 +11,14 @@ import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
 import { Rocket, BrainCircuit, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Timeframe, LiveTradeData } from '@/types';
+import { Timeframe, LiveTradeData, Position } from '@/types';
 import jsPDF from 'jspdf';
 import { cn } from '@/lib/utils';
 import TradingViewWidget from './TradingViewWidget';
 import VolumeAnalysisTable from './VolumeAnalysisTable';
 import { Skeleton } from '../ui/skeleton';
 import ChartAnalysisModal from './ChartAnalysisModal';
+import TradingSimulator from './TradingSimulator';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -317,6 +318,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
               <Eye className="mr-2" />
               {isCapturing ? 'Capturing...' : 'Engage Chart Vision'}
             </Button>
+             {signalData && <TradingSimulator signalData={signalData} livePrice={realtimePrice} />}
             {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} />}
           </div>
         )}
@@ -345,8 +347,3 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 };
 
 export default SmartSignalWidget;
-
-    
-
-    
-
