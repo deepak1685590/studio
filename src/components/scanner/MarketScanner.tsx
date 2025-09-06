@@ -1,32 +1,33 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { getSignalData } from '@/lib/technical-analysis';
 import type { SignalData } from '@/types';
-import { AreaChart, Search, Sparkles, TrendingDown, TrendingUp, Check, Activity, ChevronDown } from 'lucide-react';
+import { AreaChart, Search, Sparkles, TrendingDown, TrendingUp, Check, Activity, ChevronDown, Award, Gem, Fish } from 'lucide-react';
 import { useIsMounted } from '@/hooks/useIsMounted';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import './MarketScanner.css';
-
+import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
+import { Progress } from '../ui/progress';
 
 interface MarketScannerProps {
-  onSelectSymbol: (string) => void;
+  onSelectSymbol: (symbol: string) => void;
 }
 
-type Opportunity = Pick<SignalData, 'symbol' | 'isBullish' | 'entry' | 'tp1' | 'confidence' | 'confidenceBreakdown' | 'sidewaysMarket'>;
+type Opportunity = Pick<SignalData, 'symbol' | 'isBullish' | 'entry' | 'tp1' | 'confidence' | 'confidenceBreakdown' | 'sidewaysMarket' | 'chartPattern' | 'goldenPullbackZone' | 'whaleAlert'>;
 
-const assetsToScan = [
-    // Crypto
-    'BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC', 'BNB',
-    // Forex
-    'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD',
-];
+const assetLists = {
+    'Top 10 Crypto': ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC', 'BNB'],
+    'Major Forex Pairs': ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'USD/CHF', 'NZD/USD'],
+    'All Assets': ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC', 'BNB', 'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD'],
+};
 
 const ConfidenceFactor: React.FC<{ label: string; score: number }> = ({ label, score }) => {
   let scoreColor = "text-yellow-400";
@@ -44,10 +45,15 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
     const [isScanning, setIsScanning] = useState(false);
     const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
     const [progress, setProgress] = useState(0);
+    const [filterHighConfidence, setFilterHighConfidence] = useState(true);
+    const [filterGoldenZone, setFilterGoldenZone] = useState(false);
+    const [filterWhaleAlerts, setFilterWhaleAlerts] = useState(false);
+    const [isPending, startTransition] = useTransition();
+
     const isMounted = useIsMounted();
     const { toast } = useToast();
 
-    const handleScan = async () => {
+    const handleScan = async (assetList: string[]) => {
         if (isScanning) return;
 
         setIsScanning(true);
@@ -56,19 +62,13 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
         
         toast({
             title: "Market Scan Initiated",
-            description: "Scanning top assets for high-probability setups...",
+            description: `Scanning ${assetList.length} assets for high-probability setups...`,
         });
 
-        const foundOpportunities: Opportunity[] = [];
-
-        for (let i = 0; i < assetsToScan.length; i++) {
-            if (!isMounted.current) return;
-
-            const symbol = assetsToScan[i];
+        const promises = assetList.map(async (symbol, index) => {
             try {
-                const data = await getSignalData(symbol, '2', '15m'); // Use Pro Signal for scanning
-                // Always show a result for every scanned asset.
-                foundOpportunities.push({
+                const data = await getSignalData(symbol, '2', '15m');
+                return {
                     symbol: data.symbol,
                     isBullish: data.isBullish,
                     entry: data.entry,
@@ -76,23 +76,46 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                     confidence: data.confidence,
                     confidenceBreakdown: data.confidenceBreakdown,
                     sidewaysMarket: data.sidewaysMarket,
-                });
+                    chartPattern: data.chartPattern,
+                    goldenPullbackZone: data.goldenPullbackZone,
+                    whaleAlert: data.whaleAlert,
+                };
             } catch (error) {
                 console.warn(`Could not scan ${symbol}:`, error);
+                return null;
+            } finally {
+                if (isMounted.current) {
+                    startTransition(() => {
+                        setProgress(prev => prev + (100 / assetList.length));
+                    });
+                }
             }
-
-            if (isMounted.current) {
-                setProgress(((i + 1) / assetsToScan.length) * 100);
-                setOpportunities([...foundOpportunities].sort((a,b) => b.confidenceBreakdown.overall - a.confidenceBreakdown.overall));
-            }
-        }
+        });
         
+        const results = await Promise.all(promises);
+        const foundOpportunities = results.filter((op): op is Opportunity => op !== null);
+
         if (isMounted.current) {
-             toast({
+            let finalOpportunities = [...foundOpportunities].sort((a,b) => b.confidenceBreakdown.overall - a.confidenceBreakdown.overall);
+
+            if (filterHighConfidence) {
+                finalOpportunities = finalOpportunities.filter(op => op.confidenceBreakdown.overall >= 75);
+            }
+            if (filterGoldenZone) {
+                finalOpportunities = finalOpportunities.filter(op => !!op.goldenPullbackZone);
+            }
+            if (filterWhaleAlerts) {
+                finalOpportunities = finalOpportunities.filter(op => !!op.whaleAlert);
+            }
+            
+            setOpportunities(finalOpportunities);
+
+            toast({
                 title: "Scan Complete",
-                description: `Found ${foundOpportunities.length} potential setups.`,
+                description: `Found ${finalOpportunities.length} setups matching your criteria.`,
             });
             setIsScanning(false);
+            setProgress(100);
         }
     };
 
@@ -119,39 +142,70 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
         )
     }
 
+    const AlertIcons: React.FC<{ op: Opportunity }> = ({ op }) => (
+        <div className="flex items-center gap-2">
+            {op.confidenceBreakdown.overall >= 85 && (
+                <Award size={16} className="text-amber-400" title="Very High Confidence"/>
+            )}
+            {op.goldenPullbackZone && (
+                <Gem size={16} className="text-cyan-400" title="Golden Zone Setup"/>
+            )}
+            {op.whaleAlert && (
+                <Fish size={16} className="text-blue-400" title="Whale Activity Detected"/>
+            )}
+        </div>
+    );
+
     return (
-        <div className="mt-4 p-4 border-2 border-primary/30 rounded-lg bg-black/30">
-            <div className="text-center">
-                 <Button onClick={handleScan} disabled={isScanning} className="font-headline text-lg scanner-glow">
-                    <Search className="mr-2" />
-                    {isScanning ? 'Scanning...' : 'Scan Markets for Opportunities'}
-                </Button>
-                <p className="text-xs text-foreground/60 mt-2">Scans top Crypto & Forex pairs for setups on the 15m timeframe.</p>
+        <div className="mt-4 p-4 border-2 border-primary/30 rounded-lg bg-black/30 space-y-6">
+            <div>
+                <h4 className="font-headline text-lg text-primary mb-3 text-center">Scan Presets</h4>
+                <div className="flex flex-wrap justify-center gap-3">
+                    {Object.entries(assetLists).map(([name, list]) => (
+                        <Button key={name} onClick={() => handleScan(list)} disabled={isScanning || isPending} className="font-headline scanner-glow">
+                            <Search className="mr-2" />
+                            {isScanning ? 'Scanning...' : `Scan ${name}`}
+                        </Button>
+                    ))}
+                </div>
             </div>
 
-            {isScanning && (
-                <div className="mt-4">
-                    <div className="relative h-2 w-full bg-primary/20 rounded-full overflow-hidden">
-                        <div 
-                            className="absolute top-0 left-0 h-full bg-primary rounded-full transition-all duration-300"
-                            style={{ width: `${progress}%`}}
-                        ></div>
+            <div>
+                 <h4 className="font-headline text-lg text-primary mb-3 text-center">Advanced Filters</h4>
+                 <div className="flex flex-wrap justify-center items-center gap-4 p-3 bg-black/40 rounded-md">
+                    <div className="flex items-center space-x-2">
+                        <Switch id="high-confidence" checked={filterHighConfidence} onCheckedChange={setFilterHighConfidence} />
+                        <Label htmlFor="high-confidence" className="flex items-center gap-1"><Award size={14}/> High Confidence (&gt;75%)</Label>
                     </div>
-                   <div className="progress-bar mt-2"></div>
+                    <div className="flex items-center space-x-2">
+                        <Switch id="golden-zone" checked={filterGoldenZone} onCheckedChange={setFilterGoldenZone} />
+                        <Label htmlFor="golden-zone" className="flex items-center gap-1"><Gem size={14} /> Golden Zone</Label>
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <Switch id="whale-alerts" checked={filterWhaleAlerts} onCheckedChange={setFilterWhaleAlerts} />
+                        <Label htmlFor="whale-alerts" className="flex items-center gap-1"><Fish size={14} /> Whale Alerts</Label>
+                    </div>
+                 </div>
+            </div>
+
+            {(isScanning || isPending) && (
+                <div className="mt-4">
+                    <Progress value={progress} className="w-full h-2 bg-primary/20 [&>div]:bg-primary"/>
+                    <p className="text-center text-xs text-primary/80 mt-1">{Math.round(progress)}% Complete</p>
                 </div>
             )}
             
             {opportunities.length > 0 && (
                  <div className="mt-6">
-                    <h4 className="font-headline text-lg text-primary flex items-center gap-2 mb-2"><Sparkles size={18}/> Scan Results</h4>
+                    <h4 className="font-headline text-lg text-primary flex items-center gap-2 mb-2"><Sparkles size={18}/> Scan Results ({opportunities.length})</h4>
                     <div className="max-h-[60vh] overflow-y-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Asset</TableHead>
                                     <TableHead>Trend</TableHead>
-                                    <TableHead>Entry</TableHead>
                                     <TableHead>Confidence</TableHead>
+                                    <TableHead>Alerts</TableHead>
                                     <TableHead>Action</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -159,12 +213,11 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                                 {opportunities.map(op => (
                                     <Collapsible asChild key={op.symbol}>
                                         <>
-                                            <TableRow className="align-middle">
+                                            <TableRow className="align-middle" data-state={op.confidenceBreakdown.overall >= 85 ? 'selected' : ''}>
                                                 <TableCell className="font-bold">{op.symbol}</TableCell>
                                                 <TableCell>
                                                     <TrendBadge opportunity={op} />
                                                 </TableCell>
-                                                <TableCell className="font-mono">{op.entry !== "N/A" ? `$${op.entry}` : "N/A"}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-mono font-bold text-primary">{op.confidenceBreakdown.overall}%</span>
@@ -175,6 +228,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                                                         </CollapsibleTrigger>
                                                     </div>
                                                 </TableCell>
+                                                <TableCell><AlertIcons op={op} /></TableCell>
                                                 <TableCell>
                                                     <Button size="sm" onClick={() => handleAnalyze(op.symbol)} className="bg-accent/80 hover:bg-accent text-xs">
                                                         <Activity size={14} className="mr-1"/> Analyze
@@ -184,13 +238,19 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                                             <CollapsibleContent asChild>
                                                 <tr>
                                                     <TableCell colSpan={5} className="p-0">
-                                                        <div className="p-2 px-4 bg-black/40">
-                                                            <h5 className="text-xs font-bold mb-1">Confidence Factors:</h5>
-                                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
-                                                                <ConfidenceFactor label="Pattern" score={op.confidenceBreakdown.patternStrength} />
-                                                                <ConfidenceFactor label="Volume" score={op.confidenceBreakdown.volumeConfirmation} />
-                                                                <ConfidenceFactor label="HTF Align" score={op.confidenceBreakdown.htfAlignment} />
-                                                                <ConfidenceFactor label="Smart Money" score={op.confidenceBreakdown.smartMoneyFlow} />
+                                                        <div className="p-2 px-4 bg-black/40 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                                                            <div>
+                                                                <h5 className="text-xs font-bold mb-1">Pattern: <span className="text-primary/80">{op.chartPattern.name}</span></h5>
+                                                                <p className="text-xs text-foreground/70">{op.chartPattern.description}</p>
+                                                            </div>
+                                                            <div>
+                                                                <h5 className="text-xs font-bold mb-1">Confidence Factors:</h5>
+                                                                <div className="grid grid-cols-2 gap-1">
+                                                                    <ConfidenceFactor label="Pattern" score={op.confidenceBreakdown.patternStrength} />
+                                                                    <ConfidenceFactor label="Volume" score={op.confidenceBreakdown.volumeConfirmation} />
+                                                                    <ConfidenceFactor label="HTF Align" score={op.confidenceBreakdown.htfAlignment} />
+                                                                    <ConfidenceFactor label="Smart Money" score={op.confidenceBreakdown.smartMoneyFlow} />
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </TableCell>
@@ -204,8 +264,16 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                     </div>
                  </div>
             )}
+             {!isScanning && opportunities.length === 0 && progress === 100 && (
+                <div className="text-center p-6 bg-black/20 rounded-lg">
+                    <p className="font-headline text-primary">No setups found matching your criteria.</p>
+                    <p className="text-sm text-foreground/70 mt-1">Try adjusting the filters or scanning a different asset list.</p>
+                </div>
+            )}
         </div>
     );
 };
 
 export default MarketScanner;
+
+    
