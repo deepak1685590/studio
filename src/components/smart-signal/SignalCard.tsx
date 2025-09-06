@@ -6,7 +6,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check } from 'lucide-react';
+import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -336,6 +336,18 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             </AlertTitle>
             <AlertDescription className="font-mono text-xl mt-1 text-white/90">
                 ${data.goldenPullbackZone.min} - ${data.goldenPullbackZone.max}
+            </AlertDescription>
+        </Alert>
+      )}
+
+      {data.goldenReverseZone && (
+        <Alert className="border-purple-400 bg-gradient-to-br from-purple-900/40 to-black text-purple-300 shadow-[0_0_15px_hsl(271_76%_53%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(271_76%_53%_/_0.8)]">
+            <ShieldAlert className="h-5 w-5 text-purple-300" />
+            <AlertTitle className="font-headline text-lg text-purple-300">
+                Golden Reverse Zone
+            </AlertTitle>
+            <AlertDescription className="font-mono text-xl mt-1 text-white/90">
+                ${data.goldenReverseZone.min} - ${data.goldenReverseZone.max}
             </AlertDescription>
         </Alert>
       )}

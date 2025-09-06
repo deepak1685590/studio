@@ -170,6 +170,7 @@ export interface SignalData {
   fibonacciLevels: FibonacciLevels;
   whaleAlert?: WhaleAlert;
   goldenPullbackZone?: GoldenPullbackZone;
+  goldenReverseZone?: GoldenPullbackZone;
   confidenceBreakdown: ConfidenceBreakdown;
   movingAverageAnalysis: MovingAverageAnalysis;
   trendStrength: TrendStrength;
