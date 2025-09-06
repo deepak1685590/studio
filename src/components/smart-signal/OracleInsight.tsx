@@ -32,7 +32,7 @@ const OracleInsight: React.FC<OracleInsightProps> = ({ data }) => {
 
     fetchInsight();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.symbol, data.isBullish, data.volatility]); // Only re-run when fundamental signal data changes, not on price ticks.
+  }, [data.symbol]); // Only re-run when the symbol changes to conserve API calls.
 
   return (
     <div className="mt-5 p-5 bg-gradient-to-tr from-yellow-900/40 via-black to-purple-900/40 border-2 border-amber-400 rounded-xl shadow-[0_0_25px_hsl(38_92%_50%_/_0.6)] animate-pulse-glow">
