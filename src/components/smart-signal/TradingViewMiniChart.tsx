@@ -42,7 +42,8 @@ const TradingViewMiniChart: React.FC<TradingViewMiniChartProps> = ({ symbol }) =
             "PivotPointsHighLow@tv-basicstudies",
             "RelativeStrengthIndex@tv-basicstudies",
             "MACD@tv-basicstudies",
-            "VolumeProfileVisibleRange@tv-basicstudies"
+            "VolumeProfileVisibleRange@tv-basicstudies",
+            "AutoFibRetracement@tv-basicstudies"
           ],
           "chart_type": "heikin_ashi",
           "container_id": `tradingview_widget_container_${container.current.id}`

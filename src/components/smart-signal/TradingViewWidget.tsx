@@ -40,7 +40,8 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol }) => {
           "PivotPointsHighLow@tv-basicstudies",
           "RelativeStrengthIndex@tv-basicstudies",
           "MACD@tv-basicstudies",
-          "VolumeProfileVisibleRange@tv-basicstudies"
+          "VolumeProfileVisibleRange@tv-basicstudies",
+          "AutoFibRetracement@tv-basicstudies"
         ],
         "chart_type": "heikin_ashi"
       });
