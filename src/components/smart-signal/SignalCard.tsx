@@ -333,9 +333,13 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       <div>
         <SectionHeader icon={<Zap />} title={`Signals Detected (${data.confluenceCount})`} />
         <SectionWrapper>
-            <ul className="list-disc list-inside space-y-1 text-xs pl-2 columns-2">
-                {data.confluenceFactors.map((factor, i) => <li key={i}>{factor}</li>)}
-            </ul>
+            <div className="flex flex-wrap gap-2">
+                {data.confluenceFactors.map((factor, i) => (
+                    <Badge key={i} variant="outline" className="text-xs bg-primary/10 border-primary/30 text-primary/90 shadow-sm">
+                        {factor}
+                    </Badge>
+                ))}
+            </div>
         </SectionWrapper>
       </div>
 
