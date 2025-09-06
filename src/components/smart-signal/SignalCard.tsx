@@ -296,13 +296,15 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2">
             <div className="md:col-span-2 space-y-1">
                 <div className="flex justify-between text-lg items-center py-1">
-                    <span className="text-foreground/70 text-sm">Live Price:</span>
-                    <span className={cn("font-mono text-xl flex items-center gap-2 transition-colors duration-300",
+                    <span className="text-foreground/70 text-base">Live Price:</span>
+                    <span className={cn("font-mono text-2xl font-bold flex items-center gap-2 transition-colors duration-300",
                         priceDirection === 'up' && 'text-green-400',
                         priceDirection === 'down' && 'text-red-400',
-                    )}>
+                    )} style={{
+                        textShadow: priceDirection !== 'neutral' ? `0 0 8px currentColor` : 'none'
+                    }}>
                          <span className={cn(
-                            "w-3 h-3 rounded-full transition-all",
+                            "w-4 h-4 rounded-full transition-all",
                             priceDirection === 'up' && 'bg-green-500 shadow-[0_0_8px_theme(colors.green.500)] animate-pulse',
                             priceDirection === 'down' && 'bg-red-500 shadow-[0_0_8px_theme(colors.red.500)] animate-pulse',
                             priceDirection === 'neutral' && 'bg-gray-500'
