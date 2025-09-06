@@ -126,6 +126,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const closes = klines.map((k: any[]) => parseFloat(k[4]));
     const highPrices = klines.map((k: any[]) => parseFloat(k[2]));
     const lowPrices = klines.map((k: any[]) => parseFloat(k[3]));
+    const volumes = klines.map((k: any[]) => parseFloat(k[5]));
 
     const recentHighs = highPrices.slice(-50);
     const recentLows = lowPrices.slice(-50);
@@ -218,22 +219,27 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         confluenceFactors.push(`✅ Reversal Confirmed`);
     }
 
-    // Deterministic Whale Alert: Only show for major coins
+    // --- Live Whale Alert from Volume Spikes ---
     let whaleAlert: WhaleAlert | undefined = undefined;
-    const majorCoins = ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE'];
-    if (majorCoins.includes(symbol.toUpperCase())) {
-         if (pseudoRandom(seed + 'whale_event') > 0.4) { // 60% chance of a whale alert for major coins
-            const isBullishWhale = pseudoRandom(seed + 'whale_bull') > 0.5;
-            whaleAlert = {
-                amount: parseFloat((pseudoRandom(seed + 'whale_amount') * 2000 + 500).toFixed(0)),
-                symbol: symbol.toUpperCase(),
-                destination: isBullishWhale ? 'Cold Wallet' : 'Exchanges',
-                impactProbability: 'HIGH',
-                historicalPattern: isBullishWhale ? '78% chance of short-term rally' : '73% chance of price drop within 4h',
-            };
-            confluenceFactors.unshift(`🚨 WHALE SIGHTING: Large volume detected!`);
-        }
+    const volumeAvg = volumes.slice(0, -1).reduce((sum, vol) => sum + vol, 0) / (volumes.length - 1);
+    const latestVolume = volumes[volumes.length - 1];
+    const volumeThreshold = 3; // Spike is 3x the average volume
+
+    if (latestVolume > volumeAvg * volumeThreshold) {
+        const lastCandleOpen = parseFloat(klines[klines.length-1][1]);
+        const lastCandleClose = parseFloat(klines[klines.length-1][4]);
+        const isBullishSpike = lastCandleClose > lastCandleOpen;
+        
+        whaleAlert = {
+            amount: parseFloat((latestVolume * price / 1_000_000).toFixed(2)), // In millions USD
+            symbol: symbol.toUpperCase(),
+            destination: isBullishSpike ? 'Cold Wallet' : 'Exchanges', // Interpretation of spike
+            impactProbability: 'HIGH',
+            historicalPattern: `A ${((latestVolume / volumeAvg)).toFixed(1)}x volume spike often precedes significant price movement.`
+        };
+        confluenceFactors.unshift(`🚨 WHALE SIGHTING: Significant volume spike detected!`);
     }
+
 
     // --- Trend Strength (ADX simulation) ---
     const adxValue = Math.floor(pseudoRandom(seed + 'adx') * 60 + 10); // ADX between 10 and 70
@@ -298,11 +304,9 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
     const fib618 = parseFloat(fibonacciLevels.level_618);
     const fib500 = parseFloat(fibonacciLevels.level_500);
-    const shouldShowGoldenZone = pseudoRandom(seed + 'golden_zone_chance') > 0.5; // 50% chance to force a golden zone setup
+    const shouldShowGoldenZone = pseudoRandom(seed + 'golden_zone_chance') > 0.7; // 30% chance to force a golden zone setup
 
-    const entryPrice = shouldShowGoldenZone 
-      ? (fib618 + fib500) / 2 // Place entry squarely in the golden zone
-      : isBullish ? (price * 0.998) : (price * 1.002);
+    const entryPrice = isBullish ? (price * 0.998) : (price * 1.002);
 
     const fibValues = Object.values(fibonacciLevels).map(parseFloat);
     const closestFib = fibValues.reduce((prev, curr) => Math.abs(curr - entryPrice) < Math.abs(prev - entryPrice) ? curr : prev);
@@ -372,7 +376,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     
     const action = isBullish ? "Buy on Pullback" : "Sell on Rally";
-    const entry = entryPrice.toFixed(2);
+    const entry = shouldShowGoldenZone ? ((fib618 + pivot) / 2).toFixed(2) : entryPrice.toFixed(2);
     const sl = isBullish ? (parseFloat(entry) - atr*atrMultiplier).toFixed(2) : (parseFloat(entry) + atr*atrMultiplier).toFixed(2);
     const tp1 = isBullish ? (parseFloat(entry) + atr*tpMultiplier1).toFixed(2) : (parseFloat(entry) - atr*tpMultiplier1).toFixed(2);
     const tp2 = isBullish ? (parseFloat(entry) + atr*tpMultiplier2).toFixed(2) : (parseFloat(entry) - atr*tpMultiplier2).toFixed(2);
@@ -394,13 +398,15 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     };
     
     let goldenPullbackZone: GoldenPullbackZone | undefined = undefined;
-    const zoneMin = isBullish ? Math.min(fib618, pivot) : Math.max(fib618, pivot);
-    const zoneMax = isBullish ? Math.max(fib618, pivot) : Math.min(fib618, pivot);
+    
+    const isEntryInGoldenZone = isBullish
+      ? parseFloat(entry) <= Math.max(fib618, pivot) && parseFloat(entry) >= Math.min(fib618, pivot)
+      : parseFloat(entry) >= Math.min(fib618, pivot) && parseFloat(entry) <= Math.max(fib618, pivot);
 
-    if (shouldShowGoldenZone) {
+    if (shouldShowGoldenZone || isEntryInGoldenZone) {
          goldenPullbackZone = {
-            min: (isBullish ? zoneMin : zoneMax).toFixed(2),
-            max: (isBullish ? zoneMax : zoneMin).toFixed(2),
+            min: Math.min(fib618, pivot).toFixed(2),
+            max: Math.max(fib618, pivot).toFixed(2),
         };
         confluenceFactors.push(`✅ Entry within Golden Zone`);
     }
