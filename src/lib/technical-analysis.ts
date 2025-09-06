@@ -91,8 +91,16 @@ const generateVolumeAnalysis = (seed: string): VolumeAnalysis => {
     return analysis as VolumeAnalysis;
 }
 
+const isCrypto = (symbol: string): boolean => {
+    const upperSymbol = symbol.toUpperCase();
+    if (upperSymbol.includes('/')) return false; // Forex
+    const indianIndices = ['NIFTY', 'BANKNIFTY', 'GIFTNIFTY'];
+    if (indianIndices.includes(upperSymbol)) return false; // Indian Indices
+    return true; // Assume crypto
+}
+
 export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, forceMock = false): Promise<SignalData> => {
-    let price, klines: any[], symbolWithUSDT = symbol.toUpperCase() + "USDT";
+    let price, klines: any[], symbolWithUSDT = symbol.toUpperCase().replace('/', '') + (isCrypto(symbol) ? "USDT" : "");
     const seed = `${symbol}-${timeframe}-${mode}`;
     
     const timeframeToInterval = {
@@ -104,8 +112,16 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     };
     const apiInterval = timeframeToInterval[timeframe] || '15m';
 
-    if (forceMock) {
-        price = parseFloat((pseudoRandom(seed + 'price') * 70000 + 1000).toFixed(2));
+    // Forex and Indian markets currently do not have a live data source, so we force mock data for them.
+    const useMockData = forceMock || !isCrypto(symbol);
+
+    if (useMockData) {
+        let basePrice = 70000; // Default for crypto like BTC
+        if (symbol.toUpperCase().includes('NIFTY')) basePrice = 23000;
+        if (symbol.toUpperCase().includes('BANKNIFTY')) basePrice = 50000;
+        if (symbol.toUpperCase().includes('/')) basePrice = 1.1; // Forex
+        
+        price = parseFloat((pseudoRandom(seed + 'price') * basePrice * 0.2 + basePrice * 0.9).toFixed(4));
         klines = getMockKlines(price, timeframe);
     } else {
         try {
@@ -118,7 +134,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             if (!klinesResponse.ok) throw new Error('Klines fetch failed');
             klines = await klinesResponse.json();
         } catch (err) {
-            console.warn("Binance API failed, using mock data.", err);
+            console.warn(`Binance API failed for ${symbolWithUSDT}, using mock data.`, err);
             return getSignalData(symbol, mode, timeframe, true);
         }
     }
@@ -152,9 +168,9 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
     const fibRange = swingHigh - swingLow;
     const fibonacciLevels: FibonacciLevels = {
-        level_382: (swingHigh - fibRange * 0.382).toFixed(2),
-        level_500: (swingHigh - fibRange * 0.5).toFixed(2),
-        level_618: (swingHigh - fibRange * 0.618).toFixed(2),
+        level_382: (swingHigh - fibRange * 0.382).toFixed(4),
+        level_500: (swingHigh - fibRange * 0.5).toFixed(4),
+        level_618: (swingHigh - fibRange * 0.618).toFixed(4),
     };
 
     const timeframeMultipliers = {
@@ -183,18 +199,18 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const ema200 = calculateEMA(closes, 200);
 
     const movingAverageAnalysis: MovingAverageAnalysis = {
-        ema20: { value: ema20.toFixed(2), status: price > ema20 ? 'Above' : 'Below' },
-        ema50: { value: ema50.toFixed(2), status: price > ema50 ? 'Above' : 'Below' },
-        ema100: { value: ema100.toFixed(2), status: price > ema100 ? 'Above' : 'Below' },
-        ema200: { value: ema200.toFixed(2), status: price > ema200 ? 'Above' : 'Below' },
+        ema20: { value: ema20.toFixed(4), status: price > ema20 ? 'Above' : 'Below' },
+        ema50: { value: ema50.toFixed(4), status: price > ema50 ? 'Above' : 'Below' },
+        ema100: { value: ema100.toFixed(4), status: price > ema100 ? 'Above' : 'Below' },
+        ema200: { value: ema200.toFixed(4), status: price > ema200 ? 'Above' : 'Below' },
     };
 
     // Determine trend based on EMAs
     const isBullish = price > ema50 && ema50 > ema200;
 
-    const demandZone: [string, string] = [(lastClose * 0.98).toFixed(2), (lastClose * 0.99).toFixed(2)];
-    const supplyZone: [string, string] = [(lastClose * 1.01).toFixed(2), (lastClose * 1.02).toFixed(2)];
-    const fvg: [string, string] = [(lastClose * 0.985).toFixed(2), (lastClose * 0.995).toFixed(2)];
+    const demandZone: [string, string] = [(lastClose * 0.98).toFixed(4), (lastClose * 0.99).toFixed(4)];
+    const supplyZone: [string, string] = [(lastClose * 1.01).toFixed(4), (lastClose * 1.02).toFixed(4)];
+    const fvg: [string, string] = [(lastClose * 0.985).toFixed(4), (lastClose * 0.995).toFixed(4)];
 
     const recentVolumes = klines.slice(-20).map((k: any[]) => parseFloat(k[5]));
     const avgVolume = recentVolumes.reduce((a, b) => a + b, 0) / recentVolumes.length;
@@ -211,7 +227,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
     const confluenceFactors = [
         `MA Trend: ${isBullish ? 'Bullish' : 'Bearish'} (Price vs 50/200 EMA)`,
-        price > pivot ? `Price above Pivot ($${pivot.toFixed(2)})` : `Price below Pivot ($${pivot.toFixed(2)})`,
+        price > pivot ? `Price above Pivot ($${pivot.toFixed(4)})` : `Price below Pivot ($${pivot.toFixed(4)})`,
         volumeImbalance,
     ];
 
@@ -253,7 +269,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         trendStrength = { score: adxValue, rating: 'Ranging' };
         sidewaysMarket = {
             adx: adxValue,
-            range: [swingHigh.toFixed(2), swingLow.toFixed(2)]
+            range: [swingHigh.toFixed(4), swingLow.toFixed(4)]
         }
     }
     
@@ -274,11 +290,11 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             confidence: "Low",
             confluenceFactors: ["Market is in a consolidation phase.", `ADX below 15 indicates weak trend.`],
             confluenceCount: 2,
-            swingHigh: swingHigh.toFixed(2),
-            swingLow: swingLow.toFixed(2),
-            pivot: pivot.toFixed(2),
-            s1: s1.toFixed(2),
-            r1: r1.toFixed(2),
+            swingHigh: swingHigh.toFixed(4),
+            swingLow: swingLow.toFixed(4),
+            pivot: pivot.toFixed(4),
+            s1: s1.toFixed(4),
+            r1: r1.toFixed(4),
             buyVolume: buyVolume.toFixed(0),
             sellVolume: sellVolume.toFixed(0),
             volumeImbalance: "Neutral",
@@ -386,10 +402,10 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     
     const action = isBullish ? "Buy on Pullback" : "Sell on Rally";
-    const entry = shouldShowGoldenZone ? ((fib618 + pivot) / 2).toFixed(2) : entryPrice.toFixed(2);
-    const sl = isBullish ? (parseFloat(entry) - atr*atrMultiplier).toFixed(2) : (parseFloat(entry) + atr*atrMultiplier).toFixed(2);
-    const tp1 = isBullish ? (parseFloat(entry) + atr*tpMultiplier1).toFixed(2) : (parseFloat(entry) - atr*tpMultiplier1).toFixed(2);
-    const tp2 = isBullish ? (parseFloat(entry) + atr*tpMultiplier2).toFixed(2) : (parseFloat(entry) - atr*tpMultiplier2).toFixed(2);
+    const entry = shouldShowGoldenZone ? ((fib618 + pivot) / 2).toFixed(4) : entryPrice.toFixed(4);
+    const sl = isBullish ? (parseFloat(entry) - atr*atrMultiplier).toFixed(4) : (parseFloat(entry) + atr*atrMultiplier).toFixed(4);
+    const tp1 = isBullish ? (parseFloat(entry) + atr*tpMultiplier1).toFixed(4) : (parseFloat(entry) - atr*tpMultiplier1).toFixed(4);
+    const tp2 = isBullish ? (parseFloat(entry) + atr*tpMultiplier2).toFixed(4) : (parseFloat(entry) - atr*tpMultiplier2).toFixed(4);
 
     const risk = Math.abs(parseFloat(entry) - parseFloat(sl));
     const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
@@ -415,8 +431,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
     if (shouldShowGoldenZone || isEntryInGoldenZone) {
          goldenPullbackZone = {
-            min: Math.min(fib618, pivot).toFixed(2),
-            max: Math.max(fib618, pivot).toFixed(2),
+            min: Math.min(fib618, pivot).toFixed(4),
+            max: Math.max(fib618, pivot).toFixed(4),
         };
         confluenceFactors.push(`✅ Entry within Golden Zone`);
     }
@@ -460,11 +476,11 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         confidence,
         confluenceFactors,
         confluenceCount,
-        swingHigh: swingHigh.toFixed(2),
-        swingLow: swingLow.toFixed(2),
-        pivot: pivot.toFixed(2),
-        s1: s1.toFixed(2),
-        r1: r1.toFixed(2),
+        swingHigh: swingHigh.toFixed(4),
+        swingLow: swingLow.toFixed(4),
+        pivot: pivot.toFixed(4),
+        s1: s1.toFixed(4),
+        r1: r1.toFixed(4),
         buyVolume: buyVolume.toFixed(0),
         sellVolume: sellVolume.toFixed(0),
         volumeImbalance,
@@ -473,12 +489,12 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         fvg,
         liquidity: {
             type: isBullish ? 'Equal Highs (EQH)' : 'Equal Lows (EQL)',
-            level: liquidityLevel.toFixed(2),
+            level: liquidityLevel.toFixed(4),
             description: `A significant pool of liquidity is resting ${isBullish ? 'above' : 'below'} this level, acting as a price magnet.`
         },
         smartMoneyConcepts: {
-            bos: isBullish ? (swingHigh * 1.002).toFixed(2) : (swingLow * 0.998).toFixed(2),
-            choch: isBullish ? (swingLow * 0.998).toFixed(2) : (swingHigh * 1.002).toFixed(2),
+            bos: isBullish ? (swingHigh * 1.002).toFixed(4) : (swingLow * 0.998).toFixed(4),
+            choch: isBullish ? (swingLow * 0.998).toFixed(4) : (swingHigh * 1.002).toFixed(4),
         },
         marketStructure,
         multiTimeframeAnalysis,

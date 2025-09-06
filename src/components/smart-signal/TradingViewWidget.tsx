@@ -24,12 +24,36 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, timeframe
     }
   };
 
+  const getTradingViewSymbol = (rawSymbol: string): string => {
+    const upperSymbol = rawSymbol.toUpperCase();
+    
+    // Forex
+    if (upperSymbol.includes('/')) {
+      return `OANDA:${upperSymbol.replace('/', '')}`;
+    }
+    
+    // Indian Indices
+    const indianIndices: { [key: string]: string } = {
+      'NIFTY': 'NSE:NIFTY',
+      'BANKNIFTY': 'NSE:BANKNIFTY',
+      'GIFTNIFTY': 'SGX:IN1!', // Gift Nifty on SGX
+    };
+    if (indianIndices[upperSymbol]) {
+      return indianIndices[upperSymbol];
+    }
+    
+    // Default to Crypto
+    return `BINANCE:${upperSymbol}USDT`;
+  };
+
   useEffect(() => {
     const containerNode = container.current;
     if (!containerNode) return;
 
     // Clear the container on symbol or timeframe change
     containerNode.innerHTML = '';
+    
+    const tvSymbol = getTradingViewSymbol(symbol);
 
     const script = document.createElement("script");
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
@@ -37,7 +61,7 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, timeframe
     script.async = true;
     script.innerHTML = JSON.stringify({
         "autosize": true,
-        "symbol": `BINANCE:${symbol.toUpperCase()}USDT`,
+        "symbol": tvSymbol,
         "interval": mapTimeframeToInterval(timeframe),
         "timezone": "Etc/UTC",
         "theme": "dark",

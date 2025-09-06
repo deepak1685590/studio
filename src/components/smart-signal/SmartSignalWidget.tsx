@@ -233,12 +233,12 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       </header>
       <div className="widget-controls p-6 space-y-4">
         <div>
-          <label htmlFor="symbolInput" className="text-sm font-bold text-primary/80">Enter asset (e.g., BTC, ETH, SOL)</label>
+          <label htmlFor="symbolInput" className="text-sm font-bold text-primary/80">Enter asset (e.g., BTC, EUR/USD, NIFTY)</label>
           <Input 
             id="symbolInput"
             value={symbol}
             onChange={(e) => setSymbol(e.target.value)}
-            placeholder="e.g. BTC"
+            placeholder="e.g. BTC, EUR/USD, NIFTY"
             className={cn("bg-input text-foreground", inputColor)}
           />
         </div>
