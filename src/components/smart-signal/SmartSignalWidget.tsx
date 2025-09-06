@@ -45,19 +45,23 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
   const handleGenerateSignal = useCallback(async () => {
-    if (!symbol) {
-      toast({ title: "Input Error", description: "Please enter a symbol.", variant: "destructive" });
-      return;
-    }
+    // Immediately clear state and close any existing websocket connection
     setLoading(true);
     setSignalData(null);
     setRealtimePrice(null);
     setLiveTradeData(null);
+    setPriceDirection('neutral');
     previousPriceRef.current = null;
 
     if (ws.current) {
       ws.current.close();
       ws.current = null;
+    }
+
+    if (!symbol) {
+      toast({ title: "Input Error", description: "Please enter a symbol.", variant: "destructive" });
+      setLoading(false);
+      return;
     }
 
     try {
@@ -67,10 +71,9 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       previousPriceRef.current = data.price;
 
       if (typeof window !== 'undefined') {
-        const isCrypto = cryptoAssetsForWebsocket.includes(data.symbol.toUpperCase());
-        const isForex = data.symbol.includes('/');
+        const isSupportedCrypto = cryptoAssetsForWebsocket.includes(data.symbol.toUpperCase());
         
-        if (isCrypto && !isForex) {
+        if (isSupportedCrypto) {
           const wsSymbol = data.symbol.toLowerCase() + 'usdt';
           const socket = new WebSocket(`wss://stream.binance.com:9443/ws/${wsSymbol}@trade`);
           ws.current = socket;
