@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -219,6 +217,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       'Daily': data.multiTimeframeAnalysis['Daily'] || 'Neutral',
     },
     chartPatternName: data.chartPattern.name,
+    trendStrength: data.trendStrength.score,
+    momentum: data.momentum.score,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [data.symbol, data.entry, data.sl, data.tp1]); // Only re-run when the core signal parameters change.
 
