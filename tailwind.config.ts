@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -136,11 +137,11 @@ export default {
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        'flicker': 'flicker 3s infinite alternate',
+        flicker: 'flicker 3s infinite alternate',
         'pulse-glow': 'pulse-glow 2.5s infinite alternate',
         'neon-blue': 'neon-blue 2s ease-in-out infinite alternate',
         'neon-purple': 'neon-purple 2.5s ease-in-out infinite alternate',
-        'marquee': 'marquee 40s linear infinite',
+        marquee: 'marquee 40s linear infinite',
         'neon-glow': 'neon-glow 4s ease-in-out infinite alternate',
         'float-slow': 'float-slow 6s ease-in-out infinite',
       },
