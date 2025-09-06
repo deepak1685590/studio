@@ -4,7 +4,6 @@ import React from 'react';
 import { VolumeAnalysis, VolumeTimeframeData } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 
 interface VolumeAnalysisTableProps {
   data: VolumeAnalysis;
@@ -16,16 +15,30 @@ const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data }) => {
   const getDominantSideBadge = (side: VolumeTimeframeData['dominantSide']) => {
     switch (side) {
       case 'Buy':
-        return <Badge className="bg-green-500/80 text-white">Buy</Badge>;
+        return <Badge className="bg-green-500/80 text-white text-xs">Buy</Badge>;
       case 'Sell':
-        return <Badge variant="destructive" className="bg-red-500/80 text-white">Sell</Badge>;
+        return <Badge variant="destructive" className="bg-red-500/80 text-white text-xs">Sell</Badge>;
       default:
-        return <Badge variant="secondary">Neutral</Badge>;
+        return <Badge variant="secondary" className="text-xs">Neutral</Badge>;
     }
   };
 
   const formatVolume = (volume: number) => {
-    return (volume / 1000).toFixed(1) + 'k';
+    if (volume >= 1_000_000) return `${(volume / 1_000_000).toFixed(1)}M`;
+    if (volume >= 1_000) return `${(volume / 1_000).toFixed(1)}k`;
+    return volume.toFixed(0);
+  };
+
+  const VolumeBar = ({ item }: { item: VolumeTimeframeData }) => {
+    const buyPercentage = (item.buyVolume / item.totalVolume) * 100;
+    return (
+        <div className="w-full h-2.5 rounded-full bg-red-500/30 flex">
+            <div 
+                className="h-full rounded-l-full bg-green-500/70"
+                style={{ width: `${buyPercentage}%` }}
+            />
+        </div>
+    );
   };
 
   return (
@@ -33,23 +46,26 @@ const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data }) => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[100px]">Timeframe</TableHead>
-            <TableHead>Dominance</TableHead>
-            <TableHead className="text-right text-green-400">Buy Vol</TableHead>
-            <TableHead className="text-right text-red-400">Sell Vol</TableHead>
-            <TableHead className="text-right">Total Vol</TableHead>
+            <TableHead className="w-1/5">Time</TableHead>
+            <TableHead className="w-1/5">Dom.</TableHead>
+            <TableHead className="w-2/5 text-center">Volume Flow</TableHead>
+            <TableHead className="w-1/5 text-right">Total</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {timeframes.map((tf) => (
-            <TableRow key={tf}>
-              <TableCell className="font-medium">{tf}</TableCell>
-              <TableCell>{getDominantSideBadge(data[tf].dominantSide)}</TableCell>
-              <TableCell className="text-right font-mono text-green-400/80">{formatVolume(data[tf].buyVolume)}</TableCell>
-              <TableCell className="text-right font-mono text-red-400/80">{formatVolume(data[tf].sellVolume)}</TableCell>
-              <TableCell className="text-right font-mono">{formatVolume(data[tf].totalVolume)}</TableCell>
-            </TableRow>
-          ))}
+          {timeframes.map((tf) => {
+            const item = data[tf];
+            return (
+                <TableRow key={tf} className="text-xs">
+                <TableCell className="font-medium p-2">{tf}</TableCell>
+                <TableCell className="p-2">{getDominantSideBadge(item.dominantSide)}</TableCell>
+                <TableCell className="p-2 align-middle">
+                    <VolumeBar item={item} />
+                </TableCell>
+                <TableCell className="text-right font-mono p-2">{formatVolume(item.totalVolume)}</TableCell>
+                </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
     </div>
