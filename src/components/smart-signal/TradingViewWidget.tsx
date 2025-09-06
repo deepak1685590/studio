@@ -34,7 +34,11 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol }) => {
         "hide_side_toolbar": false,
         "allow_symbol_change": true,
         "calendar": false,
-        "support_host": "https://www.tradingview.com"
+        "support_host": "https://www.tradingview.com",
+        "studies": [
+          "TrendLines@tv-basicstudies",
+          "PivotPointsHighLow@tv-basicstudies"
+        ]
       });
     
     containerNode.appendChild(script);
