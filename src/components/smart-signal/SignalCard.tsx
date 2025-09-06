@@ -102,6 +102,27 @@ interface SignalCardProps {
     mode: string;
 }
 
+const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isBullish: boolean; }> = ({ livePrice, entryPrice, isBullish }) => {
+    const alertColor = isBullish ? 'border-green-400 text-green-300' : 'border-red-500 text-red-300';
+    const alertShadow = isBullish ? 'shadow-[0_0_20px_theme(colors.green.500)]' : 'shadow-[0_0_20px_theme(colors.red.500)]';
+
+    return (
+        <div className={cn(
+            "flex items-center gap-3 p-3 mb-4 rounded-lg border-2 animate-pulse",
+            alertColor,
+            alertShadow
+        )}>
+            <Zap className="h-6 w-6" />
+            <div className="flex-1">
+                <h5 className="font-headline text-lg">ENTRY ZONE IMMINENT</h5>
+                <p className="text-sm font-mono">
+                    Live: ${livePrice.toFixed(4)} → Entry: ${entryPrice.toFixed(4)}
+                </p>
+            </div>
+        </div>
+    );
+};
+
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
 
@@ -144,6 +165,9 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     )
   }
 
+  const entryPriceNum = parseFloat(data.entry);
+  const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; // 0.1% proximity
+
   return (
     <div id="signal-card-content" className={cn(
         "mt-5 p-5 bg-black/70 border-2 rounded-xl text-sm leading-relaxed shadow-lg space-y-4",
@@ -176,6 +200,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </header>
       
+      {isNearEntry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
+
       <SectionWrapper>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 font-mono">
             <div className="md:col-span-2 space-y-1">
