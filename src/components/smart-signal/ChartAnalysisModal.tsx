@@ -30,7 +30,7 @@ const ChartAnalysisModal: React.FC<ChartAnalysisModalProps> = ({ isOpen, onClose
       } catch (error) {
         console.error("Chart analysis error:", error);
         setAnalysis({
-          analysisSummary: "The AI is currently processing high-volume data. The visual analysis module is temporarily unavailable. Please refer to the primary signal data.",
+          analysisSummary: "An error occurred while the AI was analyzing the chart image. The visual analysis module is temporarily unavailable. Please refer to the primary signal data.",
           marketStructure: "Unavailable",
           identifiedPatterns: [],
           keyLevels: [],

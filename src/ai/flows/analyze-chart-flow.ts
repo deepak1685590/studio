@@ -53,7 +53,7 @@ const analyzeChartFlow = ai.defineFlow(
       },
       prompt: `You are a world-class technical chart analyst with 20 years of experience. Your task is to perform a comprehensive, institutional-grade analysis of the following trading chart image for ${symbol}.
 
-      Analyze the image provided and derive a complete trading thesis. Your analysis must be based **exclusively** on the visual information in the chart.
+      Analyze the image provided as a real-time snapshot and derive a complete trading thesis. Your analysis must be based **exclusively** on the visual information in the chart.
       
       Chart Snapshot:
       {{media url=chartImageUri}}
@@ -68,7 +68,7 @@ const analyzeChartFlow = ai.defineFlow(
       7.  **actionableStrategy**: Based on all the above points, formulate a concrete, actionable trading strategy. For example: "The chart suggests a potential long entry on a pullback to the demand zone around $X, with a stop-loss below the key support at $Y and a target at the resistance level of $Z."
       
       Provide your complete analysis in the required JSON format.`,
-      context: { chartImageUri },
+      input: { chartImageUri },
     });
     return output!;
   }
