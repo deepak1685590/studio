@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useRef, memo } from 'react';
@@ -8,21 +9,22 @@ interface TradingViewWidgetProps {
 
 const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol }) => {
   const container = useRef<HTMLDivElement>(null);
+  const scriptRef = useRef<HTMLScriptElement | null>(null);
 
   useEffect(() => {
-    if (!container.current) return;
+    const containerNode = container.current;
+    if (!containerNode) return;
 
-    // Ensure the container is empty before appending the new script and widget
-    container.current.innerHTML = '';
+    // Clear the container on symbol change
+    containerNode.innerHTML = '';
 
     const script = document.createElement("script");
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
     script.type = "text/javascript";
     script.async = true;
-    script.innerHTML = `
-      {
+    script.innerHTML = JSON.stringify({
         "autosize": true,
-        "symbol": "BINANCE:${symbol.toUpperCase()}USDT",
+        "symbol": `BINANCE:${symbol.toUpperCase()}USDT`,
         "interval": "D",
         "timezone": "Etc/UTC",
         "theme": "dark",
@@ -33,16 +35,27 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol }) => {
         "allow_symbol_change": true,
         "calendar": false,
         "support_host": "https://www.tradingview.com"
-      }`;
+      });
     
-    container.current.appendChild(script);
+    containerNode.appendChild(script);
+    scriptRef.current = script;
 
-    // No cleanup function needed as innerHTML clearing handles removal on change
+    // Cleanup function to remove the script when the component unmounts or symbol changes
+    return () => {
+      if (scriptRef.current && containerNode) {
+        try {
+            containerNode.removeChild(scriptRef.current);
+            scriptRef.current = null;
+        } catch (error) {
+            // This might fail if the container is already gone, which is fine.
+        }
+      }
+    };
   }, [symbol]);
 
   return (
-    <div className="tradingview-widget-container" ref={container} style={{ height: "400px", width: "100%" }}>
-      <div className="tradingview-widget-container__widget" style={{ height: "calc(100% - 32px)", width: "100%" }}></div>
+    <div className="tradingview-widget-container" ref={container} style={{ height: "100%", width: "100%" }}>
+      <div className="tradingview-widget-container__widget" style={{ height: "100%", width: "100%" }}></div>
     </div>
   );
 }
