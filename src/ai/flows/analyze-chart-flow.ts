@@ -46,7 +46,7 @@ const analyzeChartFlow = ai.defineFlow(
   },
   async ({ symbol, chartImageUri }) => {
     const { output } = await ai.generate({
-      model: 'googleai/gemini-pro-vision',
+      model: 'googleai/gemini-1.5-flash-latest',
       output: {
         format: 'json',
         schema: AnalyzeChartOutputSchema,
