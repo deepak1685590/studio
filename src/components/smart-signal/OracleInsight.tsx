@@ -48,8 +48,7 @@ const OracleInsight: React.FC<OracleInsightProps> = ({ data }) => {
           Consulting the digital ether...
         </div>
       ) : insight ? (
-        <div className="text-center">
-            <p className="text-sm font-bold text-amber-300/80 mb-2">{insight.persona} says:</p>
+        <div className="text-center pt-2">
             <p className="text-lg italic text-amber-200/90 whitespace-pre-wrap font-serif">"{insight.insight}"</p>
         </div>
       ) : null}
