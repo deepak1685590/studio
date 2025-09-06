@@ -11,7 +11,7 @@ interface TradingViewWidgetProps {
 
 const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, timeframe }) => {
   const container = useRef<HTMLDivElement>(null);
-  const scriptRef = useRef<HTMLScriptElement | null>(null);
+  const isScriptReady = useRef(false);
 
   const mapTimeframeToInterval = (tf: Timeframe): string => {
     switch (tf) {
@@ -46,17 +46,12 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, timeframe
     return `BINANCE:${upperSymbol}USDT`;
   };
 
-  useEffect(() => {
-    const containerNode = container.current;
-    if (!containerNode || typeof window === 'undefined' || !(window as any).TradingView) {
-        // If the script hasn't loaded yet, do nothing.
-        // It will be re-triggered once the script is available.
-        return;
+  const createWidget = () => {
+    if (!container.current || !(window as any).TradingView) {
+      return;
     }
-    
-    // Clear the container on symbol or timeframe change
-    containerNode.innerHTML = '';
-    
+
+    container.current.innerHTML = '';
     const tvSymbol = getTradingViewSymbol(symbol);
 
     new (window as any).TradingView.widget({
@@ -81,27 +76,20 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, timeframe
           "AutoFibRetracement@tv-basicstudies"
         ],
         "chart_type": "heikin_ashi",
-        "container_id": containerNode.id
+        "container_id": container.current.id
       });
-    
+  };
+  
+  useEffect(() => {
+    if (isScriptReady.current) {
+        createWidget();
+    }
   }, [symbol, timeframe]);
 
   useEffect(() => {
-    const containerNode = container.current;
-    if (!containerNode) return;
-    containerNode.id = `tradingview_widget_container_${Math.random()}`;
-
     if (document.getElementById('tradingview-widget-script')) {
-        if((window as any).TradingView) {
-            // If script and widget object exist, force a re-render of the chart
-            setTimeout(() => {
-                const tvSymbol = getTradingViewSymbol(symbol);
-                containerNode.innerHTML = ''; // Clear previous widget
-                new (window as any).TradingView.widget({
-                    "autosize": true, "symbol": tvSymbol, "interval": mapTimeframeToInterval(timeframe), "timezone": "Etc/UTC", "theme": "dark", "style": "1", "locale": "en", "enable_publishing": false, "hide_side_toolbar": false, "allow_symbol_change": true, "calendar": false, "support_host": "https://www.tradingview.com", "studies": ["TrendLines@tv-basicstudies", "PivotPointsHighLow@tv-basicstudies", "RelativeStrengthIndex@tv-basicstudies", "MACD@tv-basicstudies", "VolumeProfileVisibleRange@tv-basicstudies", "AutoFibRetracement@tv-basicstudies"], "chart_type": "heikin_ashi", "container_id": containerNode.id
-                });
-            }, 100);
-        }
+        isScriptReady.current = true;
+        createWidget();
         return;
     }
 
@@ -111,21 +99,19 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, timeframe
     script.type = "text/javascript";
     script.async = true;
     script.onload = () => {
-        if (containerNode) {
-             const tvSymbol = getTradingViewSymbol(symbol);
-             new (window as any).TradingView.widget({
-                "autosize": true, "symbol": tvSymbol, "interval": mapTimeframeToInterval(timeframe), "timezone": "Etc/UTC", "theme": "dark", "style": "1", "locale": "en", "enable_publishing": false, "hide_side_toolbar": false, "allow_symbol_change": true, "calendar": false, "support_host": "https://www.tradingview.com", "studies": ["TrendLines@tv-basicstudies", "PivotPointsHighLow@tv-basicstudies", "RelativeStrengthIndex@tv-basicstudies", "MACD@tv-basicstudies", "VolumeProfileVisibleRange@tv-basicstudies", "AutoFibRetracement@tv-basicstudies"], "chart_type": "heikin_ashi", "container_id": containerNode.id
-            });
-        }
+        isScriptReady.current = true;
+        createWidget();
     };
     document.head.appendChild(script);
 
-    scriptRef.current = script;
-
-  }, []); // Run only once to load the script
+  }, []);
 
   return (
-    <div className="tradingview-widget-container h-full w-full" ref={container}>
+    <div 
+      className="tradingview-widget-container h-full w-full" 
+      ref={container} 
+      id={`tradingview_widget_container_${Math.random()}`}
+    >
     </div>
   );
 }
