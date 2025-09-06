@@ -136,14 +136,13 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const captureChart = async () => {
     if (!chartContainerRef.current) return;
     setIsCapturing(true);
-    toast({ title: "Chart Vision", description: "Capturing chart snapshot..." });
+    toast({ title: "Chart Vision", description: "Capturing chart snapshot for AI analysis..." });
     try {
         await new Promise(resolve => setTimeout(resolve, 500)); // Allow chart to render fully
         const canvas = await html2canvas(chartContainerRef.current, {
             useCORS: true,
             backgroundColor: '#131722', // Match TradingView dark theme background
              onclone: (document) => {
-                // TradingView widget might have elements that are hard to capture.
                 // This is a spot for potential tweaks if capture is problematic.
             }
         });
