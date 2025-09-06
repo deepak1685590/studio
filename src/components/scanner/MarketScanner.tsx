@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { getSignalData } from '@/lib/technical-analysis';
 import type { SignalData } from '@/types';
-import { AreaChart, Search, Sparkles, TrendingDown, TrendingUp, Check, Activity } from 'lucide-react';
+import { AreaChart, Search, Sparkles, TrendingDown, TrendingUp, Check, Activity, ChevronDown } from 'lucide-react';
 import { useIsMounted } from '@/hooks/useIsMounted';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -27,6 +27,18 @@ const assetsToScan = [
     // Forex
     'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD',
 ];
+
+const ConfidenceFactor: React.FC<{ label: string; score: number }> = ({ label, score }) => {
+  let scoreColor = "text-yellow-400";
+  if (score > 80) scoreColor = "text-green-400";
+  if (score < 60) scoreColor = "text-red-400";
+  
+  return (
+    <div className="text-xs">
+      {label}: <span className={cn("font-mono font-bold", scoreColor)}>{score}%</span>
+    </div>
+  );
+};
 
 const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
     const [isScanning, setIsScanning] = useState(false);
@@ -55,7 +67,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
             const symbol = assetsToScan[i];
             try {
                 const data = await getSignalData(symbol, '2', '15m'); // Use Pro Signal for scanning
-                if (!data.sidewaysMarket && data.confidenceBreakdown.overall > 75) {
+                if (!data.sidewaysMarket && data.confidenceBreakdown.overall > 60) {
                     foundOpportunities.push({
                         symbol: data.symbol,
                         isBullish: data.isBullish,
@@ -121,32 +133,58 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                                     <TableHead>Asset</TableHead>
                                     <TableHead>Trend</TableHead>
                                     <TableHead>Entry</TableHead>
-                                    <TableHead>Target 1</TableHead>
                                     <TableHead>Confidence</TableHead>
                                     <TableHead>Action</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {opportunities.map(op => (
-                                    <TableRow key={op.symbol}>
-                                        <TableCell className="font-bold">{op.symbol}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className={cn(
-                                                op.isBullish ? "text-green-400 border-green-400/50" : "text-red-400 border-red-400/50"
-                                            )}>
-                                                {op.isBullish ? <TrendingUp size={14} className="mr-1"/> : <TrendingDown size={14} className="mr-1"/>}
-                                                {op.isBullish ? 'Bullish' : 'Bearish'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="font-mono">${op.entry}</TableCell>
-                                        <TableCell className="font-mono">${op.tp1}</TableCell>
-                                        <TableCell className="font-mono font-bold text-primary">{op.confidenceBreakdown.overall}%</TableCell>
-                                        <TableCell>
-                                            <Button size="sm" onClick={() => handleAnalyze(op.symbol)} className="bg-accent/80 hover:bg-accent text-xs">
-                                                <Activity size={14} className="mr-1"/> Analyze
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
+                                    <Collapsible asChild key={op.symbol}>
+                                        <>
+                                            <TableRow>
+                                                <TableCell className="font-bold">{op.symbol}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className={cn(
+                                                        op.isBullish ? "text-green-400 border-green-400/50" : "text-red-400 border-red-400/50"
+                                                    )}>
+                                                        {op.isBullish ? <TrendingUp size={14} className="mr-1"/> : <TrendingDown size={14} className="mr-1"/>}
+                                                        {op.isBullish ? 'Bullish' : 'Bearish'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="font-mono">${op.entry}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-mono font-bold text-primary">{op.confidenceBreakdown.overall}%</span>
+                                                        <CollapsibleTrigger asChild>
+                                                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                                                <ChevronDown className="h-4 w-4" />
+                                                            </Button>
+                                                        </CollapsibleTrigger>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Button size="sm" onClick={() => handleAnalyze(op.symbol)} className="bg-accent/80 hover:bg-accent text-xs">
+                                                        <Activity size={14} className="mr-1"/> Analyze
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                            <CollapsibleContent asChild>
+                                                <TableRow>
+                                                    <TableCell colSpan={5} className="p-0">
+                                                        <div className="p-2 px-4 bg-black/40">
+                                                            <h5 className="text-xs font-bold mb-1">Confidence Factors:</h5>
+                                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
+                                                                <ConfidenceFactor label="Pattern" score={op.confidenceBreakdown.patternStrength} />
+                                                                <ConfidenceFactor label="Volume" score={op.confidenceBreakdown.volumeConfirmation} />
+                                                                <ConfidenceFactor label="HTF Align" score={op.confidenceBreakdown.htfAlignment} />
+                                                                <ConfidenceFactor label="Smart Money" score={op.confidenceBreakdown.smartMoneyFlow} />
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            </CollapsibleContent>
+                                        </>
+                                    </Collapsible>
                                 ))}
                             </TableBody>
                         </Table>
