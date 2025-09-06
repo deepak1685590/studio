@@ -19,6 +19,7 @@ import VolumeAnalysisTable from './VolumeAnalysisTable';
 import { Skeleton } from '../ui/skeleton';
 import ChartAnalysisModal from './ChartAnalysisModal';
 import TradingSimulator from './TradingSimulator';
+import TrendRibbon from './TrendRibbon';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -51,17 +52,18 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   }, [symbol]);
 
   const handleGenerateSignal = useCallback(async () => {
-    setLoading(true);
     setSignalData(null);
     setRealtimePrice(null);
     setLiveTradeData(null);
     setPriceDirection('neutral');
     previousPriceRef.current = null;
-
+    
     if (ws.current) {
       ws.current.close();
       ws.current = null;
     }
+
+    setLoading(true);
 
     if (!symbol) {
       toast({ title: "Input Error", description: "Please enter a symbol.", variant: "destructive" });
@@ -87,7 +89,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
           socket.onmessage = (event) => {
             const messageData = JSON.parse(event.data);
             
-            if (messageData.s !== currentSymbolRef.current.toUpperCase() + 'USDT') {
+            if (messageData.s.toLowerCase() !== (currentSymbolRef.current.toLowerCase() + 'usdt')) {
               return;
             }
             
@@ -141,7 +143,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 
   useEffect(() => {
     handleGenerateSignalRef.current();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks-exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -307,6 +309,8 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
           )}
         </Button>
       </div>
+
+      {signalData && !loading && <TrendRibbon isBullish={signalData.isBullish} symbol={signalData.symbol} />}
 
       <div className="widget-body p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {loading ? <LoadingSkeleton /> : (

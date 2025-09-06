@@ -120,6 +120,10 @@ export default {
             color: '#fae8ff',
           },
         },
+        marquee: {
+          '0%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -128,6 +132,7 @@ export default {
         'pulse-glow': 'pulse-glow 2.5s infinite alternate',
         'neon-blue': 'neon-blue 2s ease-in-out infinite alternate',
         'neon-purple': 'neon-purple 2.5s ease-in-out infinite alternate',
+        'marquee': 'marquee 40s linear infinite',
       },
       textShadow: {
         DEFAULT: '0 2px 4px var(--tw-shadow-color)',
