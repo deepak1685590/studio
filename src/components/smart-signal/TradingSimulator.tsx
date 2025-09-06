@@ -6,7 +6,7 @@ import { SignalData, Position, Trade } from '@/types';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { TrendingUp, TrendingDown, Wallet, History } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, History, BarChart2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -21,6 +21,7 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
   const [balance, setBalance] = useLocalStorage('trading-sim-balance', 100000);
   const [position, setPosition] = useLocalStorage<Position | null>('trading-sim-position', null);
   const [tradeHistory, setTradeHistory] = useLocalStorage<Trade[]>('trading-sim-history', []);
+  const [stats, setStats] = useLocalStorage('trading-sim-stats', { wins: 0, losses: 0 });
   const [pnl, setPnl] = useState(0);
   const [tradeSize, setTradeSize] = useState('1000');
 
@@ -79,6 +80,13 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
     };
     setTradeHistory([newTrade, ...tradeHistory]);
     
+    // Update stats
+    if (pnl > 0) {
+      setStats(prev => ({ ...prev, wins: prev.wins + 1 }));
+    } else if (pnl < 0) {
+      setStats(prev => ({ ...prev, losses: prev.losses + 1 }));
+    }
+    
     toast({ title: "Position Closed", description: `Closed ${position.symbol} position. P&L: $${pnl.toFixed(2)}.` });
     setPosition(null);
     setPnl(0);
@@ -86,6 +94,8 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
   
   const equity = balance + pnl;
   const pnlColor = pnl > 0 ? 'text-green-400' : pnl < 0 ? 'text-red-400' : 'text-foreground';
+  const totalTrades = stats.wins + stats.losses;
+  const winRate = totalTrades > 0 ? (stats.wins / totalTrades) * 100 : 0;
 
   return (
     <div className="bg-black/30 rounded-lg border border-primary/20 p-4 space-y-4">
@@ -149,6 +159,18 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
             </Button>
         </div>
       )}
+
+      {/* Performance Metrics */}
+      <div className="pt-2">
+        <h4 className="font-headline text-lg text-primary/80 mb-2 flex items-center gap-2"><BarChart2 size={18} /> Performance Metrics</h4>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm p-3 bg-black/40 rounded-md border border-primary/20">
+            <div>Total Trades: <span className="font-mono font-bold float-right">{totalTrades}</span></div>
+            <div>Win Rate: <span className="font-mono font-bold float-right text-primary">{winRate.toFixed(1)}%</span></div>
+            <div className="text-green-400">Wins: <span className="font-mono font-bold float-right">{stats.wins}</span></div>
+            <div className="text-red-400">Losses: <span className="font-mono font-bold float-right">{stats.losses}</span></div>
+        </div>
+      </div>
+
 
       {/* Trade History */}
       <div className="pt-2">
