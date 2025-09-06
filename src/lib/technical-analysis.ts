@@ -360,15 +360,25 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         confluenceFactors.push(`Subspace Liquidity Pulse: ${liquidityPulse}M units detected`);
     }
     
-    const bullishPatterns = [
+    const bullishPatterns: ChartPattern[] = [
         { name: 'Bull Flag', description: 'A continuation pattern suggesting the uptrend will resume after a brief consolidation.' },
         { name: 'Ascending Triangle', description: 'Indicates a potential breakout to the upside as buying pressure builds.' },
         { name: 'Inverse Head & Shoulders', description: 'A strong reversal pattern indicating a shift from a downtrend to an uptrend.' },
+        { name: 'Bullish Engulfing', description: 'A powerful two-candle reversal pattern that can signal a bottom in a downtrend.' },
+        { name: 'Hammer', description: 'A single-candle bullish reversal pattern that appears during a downtrend.' },
+        { name: 'Morning Star', description: 'A three-candle bullish reversal pattern that signals a potential bottom.' },
+        { name: 'Three White Soldiers', description: 'A strong bullish reversal pattern consisting of three consecutive long green candles.' },
+        { name: 'Cup and Handle', description: 'A bullish continuation pattern that signals a consolidation followed by a breakout.' },
     ];
-    const bearishPatterns = [
+    const bearishPatterns: ChartPattern[] = [
         { name: 'Bear Flag', description: 'A continuation pattern suggesting the downtrend will resume after a brief consolidation.' },
         { name: 'Descending Triangle', description: 'Indicates a potential breakdown to the downside as selling pressure builds.' },
         { name: 'Head & Shoulders', description: 'A classic reversal pattern indicating a shift from an uptrend to a downtrend.' },
+        { name: 'Bearish Engulfing', description: 'A powerful two-candle reversal pattern that can signal a top in an uptrend.' },
+        { name: 'Hanging Man', description: 'A single-candle bearish reversal pattern that can mark a top or resistance level.' },
+        { name: 'Evening Star', description: 'A three-candle bearish reversal pattern that signals a potential top.' },
+        { name: 'Three Black Crows', description: 'A strong bearish reversal pattern consisting of three consecutive long red candles.' },
+        { name: 'Double Top', description: 'A bearish reversal pattern where the price hits a resistance level twice and fails to break through.' },
     ];
     const chartPattern: ChartPattern = isBullish 
         ? bullishPatterns[Math.floor(pseudoRandom(seed+'pattern') * bullishPatterns.length)] 
