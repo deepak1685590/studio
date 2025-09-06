@@ -15,10 +15,9 @@ import { cn } from '@/lib/utils';
 import './MarketScanner.css';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
-import { Progress } from '../ui/progress';
 
 interface MarketScannerProps {
-  onSelectSymbol: (symbol: string) => void;
+  onSelectSymbol: (string) => void;
 }
 
 type Opportunity = Pick<SignalData, 'symbol' | 'isBullish' | 'entry' | 'tp1' | 'confidence' | 'confidenceBreakdown' | 'sidewaysMarket' | 'chartPattern' | 'goldenPullbackZone' | 'whaleAlert'>;
@@ -190,7 +189,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
 
             {(isScanning || isPending) && (
                 <div className="mt-4">
-                    <Progress value={progress} className="w-full h-2 bg-primary/20 [&>div]:bg-primary"/>
+                    <div className="progress-bar" />
                     <p className="text-center text-xs text-primary/80 mt-1">{Math.round(progress)}% Complete</p>
                 </div>
             )}
