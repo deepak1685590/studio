@@ -22,8 +22,17 @@ const MarketAnalysisChatbotOutputSchema = z.object({
 });
 export type MarketAnalysisChatbotOutput = z.infer<typeof MarketAnalysisChatbotOutputSchema>;
 
+const chatbotCache = new Map<string, MarketAnalysisChatbotOutput>();
+
 export async function marketAnalysisChatbot(input: MarketAnalysisChatbotInput): Promise<MarketAnalysisChatbotOutput> {
-  return marketAnalysisChatbotFlow(input);
+  const cacheKey = JSON.stringify(input);
+  if (chatbotCache.has(cacheKey)) {
+    return chatbotCache.get(cacheKey)!;
+  }
+  
+  const result = await marketAnalysisChatbotFlow(input);
+  chatbotCache.set(cacheKey, result);
+  return result;
 }
 
 const prompt = ai.definePrompt({

@@ -34,8 +34,17 @@ const AnalyzeChartOutputSchema = z.object({
 });
 export type AnalyzeChartOutput = z.infer<typeof AnalyzeChartOutputSchema>;
 
+const analysisCache = new Map<string, AnalyzeChartOutput>();
+
 export async function analyzeChart(input: AnalyzeChartInput): Promise<AnalyzeChartOutput> {
-  return analyzeChartFlow(input);
+  const cacheKey = JSON.stringify(input);
+  if (analysisCache.has(cacheKey)) {
+    return analysisCache.get(cacheKey)!;
+  }
+  
+  const result = await analyzeChartFlow(input);
+  analysisCache.set(cacheKey, result);
+  return result;
 }
 
 const analyzeChartFlow = ai.defineFlow(

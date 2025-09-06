@@ -22,8 +22,17 @@ const AnalyzeCodeOutputSchema = z.object({
 });
 export type AnalyzeCodeOutput = z.infer<typeof AnalyzeCodeOutputSchema>;
 
+const codeAnalysisCache = new Map<string, AnalyzeCodeOutput>();
+
 export async function analyzeCodeAndSuggestFixes(input: AnalyzeCodeInput): Promise<AnalyzeCodeOutput> {
-  return analyzeCodeFlow(input);
+  const cacheKey = JSON.stringify(input);
+  if (codeAnalysisCache.has(cacheKey)) {
+    return codeAnalysisCache.get(cacheKey)!;
+  }
+  
+  const result = await analyzeCodeFlow(input);
+  codeAnalysisCache.set(cacheKey, result);
+  return result;
 }
 
 const analyzeCodeFlow = ai.defineFlow(

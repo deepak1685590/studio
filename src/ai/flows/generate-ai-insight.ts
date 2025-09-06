@@ -92,8 +92,17 @@ const GenerateAiInsightOutputSchema = z.object({
 });
 export type GenerateAiInsightOutput = z.infer<typeof GenerateAiInsightOutputSchema>;
 
+const insightCache = new Map<string, GenerateAiInsightOutput>();
+
 export async function generateAiInsight(input: GenerateAiInsightInput): Promise<GenerateAiInsightOutput> {
-  return generateAiInsightFlow(input);
+  const cacheKey = JSON.stringify(input);
+  if (insightCache.has(cacheKey)) {
+    return insightCache.get(cacheKey)!;
+  }
+  
+  const result = await generateAiInsightFlow(input);
+  insightCache.set(cacheKey, result);
+  return result;
 }
 
 const getMarketNews = ai.defineTool(
