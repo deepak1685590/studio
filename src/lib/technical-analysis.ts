@@ -1,6 +1,7 @@
 
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel } from '@/types';
+
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -115,6 +116,83 @@ const generateMultiTimeframeSR = (price: number, seed: string, isBullish: boolea
     });
 
     return sr as MultiTimeframeSR;
+};
+
+const generateAdvancedStrengthData = (price: number, closes: number[], volumes: number[], seed: string, isBullish: boolean, momentumScore: number, trendStrengthScore: number): AdvancedStrengthDashboardData => {
+    // 1. Price and Change
+    const prevClose = closes[closes.length - 2];
+    const priceChangePercent = ((price - prevClose) / prevClose) * 100;
+
+    // 2. Momentum & Power
+    const longPower = Math.max(0, momentumScore - 50) * 2;
+    const shortPower = Math.max(0, 50 - momentumScore) * 2;
+    const overallStrength = Math.round((longPower + (100 - shortPower)) / 2);
+
+    // 3. Trend
+    const trendMomentumSeed = pseudoRandom(seed + 'trend_mom');
+    const trendMomentum = trendMomentumSeed > 0.7 ? 'ACCELERATING' : trendMomentumSeed < 0.3 ? 'DECELERATING' : 'STABLE';
+
+    // 4. Volatility (ATR-based)
+    const atr = (closes.reduce((acc, _, i) => {
+        if (i === 0) return acc;
+        const high = Math.max(...closes.slice(i - 1, i + 1));
+        const low = Math.min(...closes.slice(i - 1, i + 1));
+        return acc + (high - low);
+    }, 0) / closes.length) / price * 100;
+    
+    let volLabel: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW';
+    if (atr > 2.5) volLabel = 'EXTREME';
+    else if (atr > 1.5) volLabel = 'HIGH';
+    else if (atr > 0.8) volLabel = 'MEDIUM';
+    else volLabel = 'LOW';
+
+    // 5. Volume
+    const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+    const latestVolume = volumes[volumes.length - 1];
+    const volumeChangePercent = ((latestVolume - avgVolume) / avgVolume) * 100;
+    
+    let volStatus: 'SPIKE' | 'DRY' | 'HIGH' | 'NORMAL' | 'LOW';
+    if (volumeChangePercent > 100) volStatus = 'SPIKE';
+    else if (volumeChangePercent > 50) volStatus = 'HIGH';
+    else if (volumeChangePercent < -50) volStatus = 'DRY';
+    else if (volumeChangePercent < -25) volStatus = 'LOW';
+    else volStatus = 'NORMAL';
+
+    // 6. Sentiment Score
+    const bullishScore = (isBullish ? 1 : 0) + (momentumScore > 55 ? 1 : 0) + (trendStrengthScore > 30 ? 1 : 0) + (volumeChangePercent > 10 ? 1 : 0);
+    const bearishScore = (!isBullish ? 1 : 0) + (momentumScore < 45 ? 1 : 0) + (trendStrengthScore > 30 ? 1 : 0) + (volumeChangePercent > 10 ? 1 : 0);
+    const netSentiment = bullishScore - bearishScore;
+    let sentimentLabel = 'NEUTRAL ⚖️';
+    if (netSentiment >= 3) sentimentLabel = 'STRONG BULL 🚀';
+    else if (netSentiment > 0) sentimentLabel = 'BULLISH 📈';
+    else if (netSentiment <= -3) sentimentLabel = 'STRONG BEAR 💥';
+    else if (netSentiment < 0) sentimentLabel = 'BEARISH 📉';
+
+    // 7. Market Phase
+    let marketPhase: AdvancedStrengthDashboardData['marketPhase'] = 'NEUTRAL';
+    if (volLabel === 'HIGH' && longPower > 70 && volStatus === 'SPIKE') marketPhase = 'BREAKOUT';
+    else if (volLabel === 'HIGH' && shortPower > 70 && volStatus === 'SPIKE') marketPhase = 'BREAKDOWN';
+    else if (volLabel === 'LOW' && trendStrengthScore < 20) marketPhase = 'CONSOLIDATION';
+    else if (isBullish && trendStrengthScore > 25) marketPhase = 'BULLISH TREND';
+    else if (!isBullish && trendStrengthScore > 25) marketPhase = 'BEARISH TREND';
+
+    return {
+        marketPhase,
+        price: price.toFixed(isCrypto(seed) ? 2 : 4),
+        priceChangePercent,
+        marketSentiment: { score: netSentiment, label: sentimentLabel },
+        momentum: { rsi: momentumScore, trend: momentumScore > 52 ? 'UP' : momentumScore < 48 ? 'DOWN' : 'NEUTRAL' },
+        longPower,
+        shortPower,
+        overallStrength,
+        trendAnalysis: { strength: trendStrengthScore, momentum: trendMomentum },
+        volatility: { percent: atr, label: volLabel },
+        volumeStatus: { status: volStatus, changePercent: volumeChangePercent },
+        volumeValue: latestVolume,
+        rsiStatus: momentumScore > 70 ? 'OVERBOUGHT' : momentumScore < 30 ? 'OVERSOLD' : 'NEUTRAL',
+        divergence: pseudoRandom(seed + 'div') > 0.9 ? 'BULLISH' : pseudoRandom(seed + 'div') < 0.1 ? 'BEARISH' : 'NONE',
+        stochRsi: { k: pseudoRandom(seed + 'k') * 100, d: pseudoRandom(seed + 'd') * 100, signal: 'NONE' }
+    };
 };
 
 
@@ -254,6 +332,25 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     else if (rsiValue > 25) momentum = { score: rsiValue, rating: 'Bearish' };
     else momentum = { score: rsiValue, rating: 'Oversold' };
 
+    // --- Trend Strength (ADX simulation) ---
+    const adxValue = Math.floor(pseudoRandom(seed + 'adx') * 60 + 10); // ADX between 10 and 70
+    let trendStrength: TrendStrength;
+    let sidewaysMarket: SidewaysMarket | undefined = undefined;
+
+    if (adxValue > 40) trendStrength = { score: adxValue, rating: 'Strong' };
+    else if (adxValue > 25) trendStrength = { score: adxValue, rating: 'Moderate' };
+    else if (adxValue > 15) trendStrength = { score: adxValue, rating: 'Weak' };
+    else {
+        trendStrength = { score: adxValue, rating: 'Ranging' };
+        sidewaysMarket = {
+            adx: adxValue,
+            range: [swingHigh.toFixed(4), swingLow.toFixed(4)]
+        }
+    }
+    
+    // --- ADVANCED STRENGTH DASHBOARD ---
+    const advancedStrengthDashboard = generateAdvancedStrengthData(price, closes, volumes, seed, isBullish, rsiValue, adxValue);
+
     // --- ADVANCED CONFLUENCE FACTORS ---
     const confluenceFactors = [
         `MA Trend: ${isBullish ? 'Bullish' : 'Bearish'} (Price vs 50/200 EMA)`,
@@ -303,21 +400,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     }
 
 
-    // --- Trend Strength (ADX simulation) ---
-    const adxValue = Math.floor(pseudoRandom(seed + 'adx') * 60 + 10); // ADX between 10 and 70
-    let trendStrength: TrendStrength;
-    let sidewaysMarket: SidewaysMarket | undefined = undefined;
-
-    if (adxValue > 40) trendStrength = { score: adxValue, rating: 'Strong' };
-    else if (adxValue > 25) trendStrength = { score: adxValue, rating: 'Moderate' };
-    else if (adxValue > 15) trendStrength = { score: adxValue, rating: 'Weak' };
-    else {
-        trendStrength = { score: adxValue, rating: 'Ranging' };
-        sidewaysMarket = {
-            adx: adxValue,
-            range: [swingHigh.toFixed(4), swingLow.toFixed(4)]
-        }
-    }
     
     // If market is ranging, we don't generate a directional signal.
     if (sidewaysMarket) {
@@ -362,6 +444,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             volumeAnalysis,
             multiTimeframeSR,
             sidewaysMarket,
+            advancedStrengthDashboard,
         };
     }
 
@@ -584,5 +667,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         momentum,
         volumeAnalysis,
         multiTimeframeSR,
+        advancedStrengthDashboard,
     };
 };

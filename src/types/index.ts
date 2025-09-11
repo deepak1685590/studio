@@ -157,6 +157,43 @@ export interface MultiTimeframeSR {
     '1H': SupportResistanceLevel;
 }
 
+export interface AdvancedStrengthDashboardData {
+    marketPhase: 'BREAKOUT' | 'BREAKDOWN' | 'CONSOLIDATION' | 'BULLISH TREND' | 'BEARISH TREND' | 'NEUTRAL';
+    price: string;
+    priceChangePercent: number;
+    marketSentiment: {
+        score: number;
+        label: string;
+    };
+    momentum: {
+        rsi: number;
+        trend: 'UP' | 'DOWN' | 'NEUTRAL';
+    };
+    longPower: number;
+    shortPower: number;
+    overallStrength: number;
+    trendAnalysis: {
+        strength: number;
+        momentum: 'ACCELERATING' | 'DECELERATING' | 'STABLE';
+    };
+    volatility: {
+        percent: number;
+        label: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW';
+    };
+    volumeStatus: {
+        status: 'SPIKE' | 'DRY' | 'HIGH' | 'NORMAL' | 'LOW';
+        changePercent: number;
+    };
+    volumeValue: number;
+    rsiStatus: 'OVERBOUGHT' | 'OVERSOLD' | 'NEUTRAL';
+    divergence: 'BULLISH' | 'BEARISH' | 'NONE';
+    stochRsi: {
+        k: number;
+        d: number;
+        signal: 'BULL_CROSS' | 'BEAR_CROSS' | 'NONE';
+    };
+}
+
 
 export interface SignalData {
   symbol: string;
@@ -203,4 +240,5 @@ export interface SignalData {
   sidewaysMarket?: SidewaysMarket;
   volumeAnalysis: VolumeAnalysis;
   multiTimeframeSR: MultiTimeframeSR;
+  advancedStrengthDashboard?: AdvancedStrengthDashboardData;
 }
