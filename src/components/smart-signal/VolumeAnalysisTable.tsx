@@ -23,32 +23,67 @@ const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveDat
     return volume.toFixed(0);
   };
 
-  const VolumeRow: React.FC<{ timeframe: string; item: VolumeTimeframeData }> = ({ timeframe, item }) => {
-    const buyPercentage = item.totalVolume > 0 ? (item.buyVolume / item.totalVolume) * 100 : 50;
-    const isBuyDominant = buyPercentage > 51;
-    const isSellDominant = buyPercentage < 49;
-    
-    const glowClass = isBuyDominant 
-      ? 'shadow-[0_0_15px_rgba(74,222,128,0.3)]' 
-      : isSellDominant 
-      ? 'shadow-[0_0_15px_rgba(239,68,68,0.3)]' 
-      : '';
+  const QuantumFlowMeter: React.FC<{ buyPercent: number }> = ({ buyPercent }) => {
+    const sellPercent = 100 - buyPercent;
+    const isBuyDominant = buyPercent > 51;
+    const isSellDominant = buyPercent < 49;
+    const dominantPercent = isBuyDominant ? buyPercent : sellPercent;
+    const dominantSide = isBuyDominant ? 'BUY' : 'SELL';
+
+    const needleRotation = (buyPercent - 50) * 1.8; // Map 0-100 to -90 to 90 degrees
 
     return (
-      <div className={cn("grid grid-cols-5 items-center gap-2 p-2 rounded-md bg-black/40 border border-primary/10 transition-shadow duration-300", glowClass)}>
-        <div className="col-span-1 font-bold text-sm text-primary/90">{timeframe}</div>
+      <div className="relative h-20 w-full">
+        <svg width="100%" height="100%" viewBox="0 0 200 60">
+          {/* Background Arc */}
+          <path d="M 10 50 A 90 90 0 0 1 190 50" fill="none" stroke="hsl(var(--primary) / 0.1)" strokeWidth="8" />
+          
+          {/* Sell Side Fill */}
+          <path d="M 10 50 A 90 90 0 0 1 100 8.7" fill="none" stroke="url(#sellGradient)" strokeWidth="8" />
+          
+          {/* Buy Side Fill */}
+          <path d="M 100 8.7 A 90 90 0 0 1 190 50" fill="none" stroke="url(#buyGradient)" strokeWidth="8" />
+          
+           {/* Center Dominance Text */}
+          <text x="100" y="35" textAnchor="middle" fill={isBuyDominant ? '#4ade80' : isSellDominant ? '#f87171' : 'hsl(var(--foreground))'} fontSize="14" fontWeight="bold" className="font-headline" style={{filter: `drop-shadow(0 0 5px currentColor)`}}>
+            {dominantPercent.toFixed(0)}%
+          </text>
+          <text x="100" y="50" textAnchor="middle" fill="hsl(var(--foreground) / 0.8)" fontSize="8" className="font-code">
+            {isBuyDominant ? 'BUY' : isSellDominant ? 'SELL' : 'NEUTRAL'}
+          </text>
+
+          {/* Needle */}
+          <g transform={`rotate(${needleRotation}, 100, 50)`}>
+              <line x1="100" y1="50" x2="100" y2="15" stroke="hsl(var(--primary))" strokeWidth="2" />
+              <circle cx="100" cy="50" r="3" fill="hsl(var(--primary))" />
+          </g>
+
+          <defs>
+            <linearGradient id="buyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#22c55e" stopOpacity={isBuyDominant ? 0.9 : 0.2} />
+              <stop offset="100%" stopColor="#4ade80" stopOpacity={isBuyDominant ? 1 : 0.3} />
+            </linearGradient>
+            <linearGradient id="sellGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#f87171" stopOpacity={isSellDominant ? 1 : 0.3} />
+              <stop offset="100%" stopColor="#ef4444" stopOpacity={isSellDominant ? 0.9 : 0.2} />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    );
+  };
+
+  const VolumeRow: React.FC<{ timeframe: string; item: VolumeTimeframeData }> = ({ timeframe, item }) => {
+    const buyPercentage = item.totalVolume > 0 ? (item.buyVolume / item.totalVolume) * 100 : 50;
+    
+    return (
+      <div className="grid grid-cols-5 items-center gap-2 p-2 rounded-md bg-black/40 border border-primary/10">
+        <div className="col-span-1 text-center">
+            <div className="font-bold text-lg text-primary/90">{timeframe}</div>
+            <div className="font-mono text-xs text-foreground/70">{formatVolume(item.totalVolume)}</div>
+        </div>
         <div className="col-span-4">
-          <div className="flex justify-between items-center text-xs mb-1">
-            <span className="text-green-400 font-bold">BUY: {buyPercentage.toFixed(1)}%</span>
-            <span className="font-mono text-xs text-foreground/70">Total: {formatVolume(item.totalVolume)}</span>
-            <span className="text-red-400 font-bold">SELL: {(100-buyPercentage).toFixed(1)}%</span>
-          </div>
-          <div className="w-full h-2.5 rounded-full bg-red-900/50 flex overflow-hidden border border-black/50">
-            <div 
-                className="h-full bg-gradient-to-r from-green-500/50 to-green-400 transition-all duration-500"
-                style={{ width: `${buyPercentage}%` }}
-            />
-          </div>
+          <QuantumFlowMeter buyPercent={buyPercentage} />
         </div>
       </div>
     );
