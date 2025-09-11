@@ -10,11 +10,10 @@ import Chatbot from '@/components/chatbot/Chatbot';
 import ProfileBar from './ProfileBar';
 import LiveNewsWidget from '../news/LiveNewsWidget';
 import { Button } from '../ui/button';
-import { AreaChart, BrainCircuit, Bug, Gauge, Wand2 } from 'lucide-react';
+import { AreaChart, BrainCircuit, Gauge } from 'lucide-react';
 import LiveClock from './LiveClock';
 import MarketSessions from '../info/MarketSessions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ErrorLogTool from '../tools/ErrorLogTool';
 import AdvancedStrengthDashboard from '../tools/AdvancedStrengthDashboard';
 
 interface MainAppProps {
@@ -42,7 +41,6 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
           <div className="flex items-center justify-between bg-black/50 border-2 border-primary/50 rounded-lg p-3 px-4 mb-6">
             <TabsList>
               <TabsTrigger value="quantum-engine" className="font-headline"><BrainCircuit size={16} className="mr-2"/>Quantum Engine</TabsTrigger>
-              <TabsTrigger value="ai-analysis-suite" className="font-headline"><Wand2 size={16} className="mr-2"/>AI Analysis Suite</TabsTrigger>
               <TabsTrigger value="strength-dashboard" className="font-headline"><Gauge size={16} className="mr-2"/>Strength Dashboard</TabsTrigger>
             </TabsList>
             <Button variant="ghost" size="sm" onClick={() => router.push('/scanner')}>
@@ -57,10 +55,6 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
               initialSymbol={selectedSymbol} 
               setSelectedSymbol={setSelectedSymbol} 
             />
-          </TabsContent>
-
-          <TabsContent value="ai-analysis-suite">
-            <ErrorLogTool />
           </TabsContent>
           
           <TabsContent value="strength-dashboard">
