@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { generateAiInsight, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import { Button } from '@/components/ui/button';
-import { Copy } from 'lucide-react';
+import { Copy, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
@@ -75,6 +75,32 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
       </AccordionContent>
     </AccordionItem>
   );
+
+  const renderPredictiveAnalysis = (content: Record<string, string>) => (
+    <div className="p-4 bg-gradient-to-r from-accent/20 to-primary/20 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.5)]">
+       <h4 className="font-headline text-lg text-accent flex items-center gap-2 mb-2">
+          <Target /> Predictive Analysis
+        </h4>
+        <div className="space-y-2 text-sm">
+            <div className="flex justify-between items-center">
+                <span className="text-foreground/80">Predicted Target:</span>
+                <span className="font-mono font-bold text-lg text-accent">{content.predictedTarget}</span>
+            </div>
+            <div className="flex justify-between items-center">
+                <span className="text-foreground/80">Timeframe:</span>
+                <span className="font-mono text-foreground/90">{content.timeframe}</span>
+            </div>
+             <div className="flex justify-between items-center">
+                <span className="text-foreground/80">Success Probability:</span>
+                <span className="font-mono font-bold text-lg text-green-400">{content.successProbability}</span>
+            </div>
+            <div className="flex justify-between items-center">
+                <span className="text-foreground/80">Invalidation Level:</span>
+                <span className="font-mono text-yellow-400">{content.invalidationLevel}</span>
+            </div>
+        </div>
+    </div>
+  )
   
   const LoadingState = () => (
      <div className="space-y-4">
@@ -101,19 +127,22 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
       }
 
       return (
-        <Accordion type="single" collapsible defaultValue="Executive Summary">
-          {renderSection("Executive Summary", insight.executiveSummary)}
-          {renderSection("Technical Analysis", insight.technicalAnalysis)}
-          {renderSection("Risk Management", insight.riskManagement)}
-          {renderSection("Sentiment & Flow", insight.sentimentAndFlow)}
-          {renderSection("Probability Assessment", insight.probabilityAssessment)}
-          {renderSection("Advanced Confluence", insight.advancedConfluence)}
-          {renderSection("Institutional Behavior", insight.institutionalBehavior)}
-          {renderSection("Execution Strategy", insight.executionStrategy)}
-          {renderSection("Market Context", insight.marketContext)}
-          {renderSection("Performance Tracking", insight.performanceTracking)}
-          {renderSection("Alert System", insight.alertSystem)}
-        </Accordion>
+        <div className="space-y-4">
+            {renderPredictiveAnalysis(insight.predictiveAnalysis)}
+            <Accordion type="single" collapsible defaultValue="Executive Summary">
+            {renderSection("Executive Summary", insight.executiveSummary)}
+            {renderSection("Technical Analysis", insight.technicalAnalysis)}
+            {renderSection("Risk Management", insight.riskManagement)}
+            {renderSection("Sentiment & Flow", insight.sentimentAndFlow)}
+            {renderSection("Probability Assessment", insight.probabilityAssessment)}
+            {renderSection("Advanced Confluence", insight.advancedConfluence)}
+            {renderSection("Institutional Behavior", insight.institutionalBehavior)}
+            {renderSection("Execution Strategy", insight.executionStrategy)}
+            {renderSection("Market Context", insight.marketContext)}
+            {renderSection("Performance Tracking", insight.performanceTracking)}
+            {renderSection("Alert System", insight.alertSystem)}
+            </Accordion>
+        </div>
       );
     }
     

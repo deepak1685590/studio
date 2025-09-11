@@ -49,6 +49,12 @@ const GenerateAiInsightOutputSchema = z.object({
     opportunityGrade: z.enum(['Institutional', 'Professional', 'Retail']),
     timeHorizon: z.string(),
   }),
+  predictiveAnalysis: z.object({
+    predictedTarget: z.string().describe("The AI's predicted price target based on all available data."),
+    timeframe: z.string().describe("The estimated time it will take to reach the predicted target."),
+    successProbability: z.string().describe("The AI's confidence in this prediction, as a percentage."),
+    invalidationLevel: z.string().describe("The price level at which this prediction would be considered invalid."),
+  }),
   technicalAnalysis: z.object({
     multiTimeframe: z.string(),
     volumeProfile: z.string(),
@@ -137,6 +143,12 @@ Fill out every field in the following JSON object with detailed, expert-level an
 - **opportunityGrade**: [Assign 'Institutional', 'Professional', or 'Retail' based on the overall quality of the setup].
 - **timeHorizon**: Expected time horizon for trade completion is [e.g., 'Intraday (4-8 hours)', 'Swing (2-5 days)'].
 
+## Predictive Analysis
+- **predictedTarget**: Based on the pattern, volume, and momentum, predict the most likely next major price target. Example: "$72,500".
+- **timeframe**: Estimate the time to reach this target. Example: "8-12 hours".
+- **successProbability**: Assign a probability percentage for this prediction succeeding. Example: "85%".
+- **invalidationLevel**: State the price level that would invalidate this prediction. This should be beyond the SL. Example: "$67,800".
+
 ## Technical Analysis Deep Dive
 - **multiTimeframe**: Provide a detailed breakdown of Weekly, Daily, 4H, and 1H structures based on the provided multiTimeframeAnalysis data. Assess cross-timeframe confluence.
 - **volumeProfile**: Analyze the volumeImbalance data. Infer potential POC, VAP levels, and accumulation/distribution zones.
@@ -212,6 +224,12 @@ const generateAiInsightFlow = ai.defineFlow(
           keyLevels: "N/A",
           opportunityGrade: "Retail", // A valid enum value is required.
           timeHorizon: errorMessage,
+        },
+        predictiveAnalysis: {
+          predictedTarget: "N/A",
+          timeframe: "N/A",
+          successProbability: "N/A",
+          invalidationLevel: "N/A",
         },
         technicalAnalysis: {
           multiTimeframe: "Unavailable due to error.",
