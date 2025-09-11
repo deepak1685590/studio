@@ -409,7 +409,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             <SectionHeader icon={<BrainCircuit />} title="AI Analysis Suite" />
             <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
                 <EliteAiInsight data={eliteAiInsightData} />
-                <OracleInsight data={oracleInsightData} />
+                {mode === '4' && <OracleInsight data={oracleInsightData} />}
             </div>
         </div>
       )}
