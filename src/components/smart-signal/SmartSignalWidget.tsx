@@ -333,7 +333,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             </div>
         </div>
 
-        <Button onClick={() => handleGenerateSignal(symbol)} disabled={loading} className={cn("w-full font-headline uppercase border-2 transition-all duration-300 text-base py-6", buttonColor)}>
+        <Button onClick={() => handleGenerateSignal(symbol)} disabled={loading} className={cn("w-full font-headline uppercase border-2 transition-all duration-300 text-base py-6 scanner-glow", buttonColor)}>
           {loading ? (
             <>
               <BrainCircuit className="mr-2 h-5 w-5 animate-spin" />
@@ -368,7 +368,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
                     onChange={handleFileChange}
                     className="bg-input text-foreground border-accent/50 file:text-accent file:font-bold"
                 />
-                <Button onClick={handleAnalyzeChart} disabled={isAnalyzing || !uploadedFile} className="w-full bg-accent/20 border-accent border hover:bg-accent hover:text-accent-foreground font-headline">
+                <Button onClick={handleAnalyzeChart} disabled={isAnalyzing || !uploadedFile} className="w-full bg-accent/20 border-accent border hover:bg-accent hover:text-accent-foreground font-headline scanner-glow">
                     <Upload className="mr-2" />
                     {isAnalyzing ? 'Analyzing...' : 'Analyze Chart Image'}
                 </Button>

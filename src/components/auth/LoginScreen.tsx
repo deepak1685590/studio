@@ -100,7 +100,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ initialStatus, revocationReas
             />
             </div>
             
-            <Button onClick={handleAuth} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">
+            <Button onClick={handleAuth} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300 scanner-glow">
             <LogIn className="mr-2" /> Authenticate
             </Button>
             

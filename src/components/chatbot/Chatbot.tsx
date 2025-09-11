@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -8,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { marked } from 'marked';
+import { cn } from '@/lib/utils';
 
 interface Message {
   text: string;
@@ -66,7 +68,7 @@ const Chatbot = () => {
       >
         <Button 
           onClick={() => setIsOpen(true)} 
-          className="rounded-full w-16 h-16 bg-primary text-background shadow-[0_0_15px_var(--primary),_0_0_30px_var(--primary)] hover:scale-110 transition-transform"
+          className={cn("rounded-full w-16 h-16 bg-primary text-background shadow-[0_0_15px_var(--primary),_0_0_30px_var(--primary)] hover:scale-110 transition-transform", "scanner-glow")}
         >
           <Bot size={32} />
         </Button>
