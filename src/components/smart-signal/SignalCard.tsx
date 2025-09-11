@@ -259,12 +259,12 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                     </span>
                 </div>
 
-                <LevelRow label={data.isBullish ? 'Long Entry' : 'Short Entry'} value={data.entry} isHit={hitTargets.entry} isConfluence />
+                <LevelRow label={data.isBullish ? 'Long Entry' : 'Short Entry'} value={data.entry} isHit={hitTargets.entry} isConfluence={mode === '4'} />
                 
                 <div className="flex justify-between text-base"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-yellow-400">${data.sl}</span></div>
 
-                <LevelRow label="Take-Profit 1" value={data.tp1} isHit={hitTargets.tp1} isConfluence />
-                <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} isConfluence />
+                <LevelRow label="Take-Profit 1" value={data.tp1} isHit={hitTargets.tp1} isConfluence={mode === '4'} />
+                <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} isConfluence={mode === '4'} />
                 
                 <div className="flex justify-between text-base pt-1"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono">1 : {data.riskReward.toFixed(1)}</span></div>
             </div>
@@ -404,7 +404,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </SectionWrapper>
       </div>
 
-      {mode === '3' && (
+      {(mode === '3' || mode === '4') && (
         <div>
             <SectionHeader icon={<BrainCircuit />} title="AI Analysis Suite" />
             <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">

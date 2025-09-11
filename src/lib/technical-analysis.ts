@@ -192,24 +192,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         trSum += Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
     }
     const atr = trSum / atrPeriod;
-
-    const fibRange = swingHigh - swingLow;
-    const fibonacciLevels: FibonacciLevels = {
-        level_382: isBullish ? (swingHigh - fibRange * 0.382).toFixed(4) : (swingLow + fibRange * 0.382).toFixed(4),
-        level_500: isBullish ? (swingHigh - fibRange * 0.5).toFixed(4) : (swingLow + fibRange * 0.5).toFixed(4),
-        level_618: isBullish ? (swingHigh - fibRange * 0.618).toFixed(4) : (swingLow + fibRange * 0.618).toFixed(4),
-    };
-
-    const timeframeMultipliers = {
-        '5m': { atr: 1.5 },
-        '15m': { atr: 2 },
-        '1h': { atr: 2.5 },
-        '4h': { atr: 3 },
-        '1d': { atr: 3.5 },
-    };
-    const multipliers = timeframeMultipliers[timeframe] || timeframeMultipliers['15m'];
-    const { atr: atrMultiplier } = multipliers;
-
+    
     // --- EMA Calculation ---
     const calculateEMA = (data: number[], period: number) => {
         const k = 2 / (period + 1);
@@ -235,6 +218,14 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     // Determine trend based on EMAs
     const isBullish = price > ema50 && ema50 > ema200;
     const marketStructure = isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL';
+    
+    const fibRange = swingHigh - swingLow;
+    const fibonacciLevels: FibonacciLevels = {
+        level_382: (isBullish ? (swingHigh - fibRange * 0.382) : (swingLow + fibRange * 0.382)).toFixed(4),
+        level_500: (isBullish ? (swingHigh - fibRange * 0.5) : (swingLow + fibRange * 0.5)).toFixed(4),
+        level_618: (isBullish ? (swingHigh - fibRange * 0.618) : (swingLow + fibRange * 0.618)).toFixed(4),
+    };
+
 
     const demandZone: [string, string] = [(lastClose * 0.98).toFixed(4), (lastClose * 0.99).toFixed(4)];
     const supplyZone: [string, string] = [(lastClose * 1.01).toFixed(4), (lastClose * 1.02).toFixed(4)];
@@ -373,24 +364,41 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             sidewaysMarket,
         };
     }
-    
-    // --- HIGH ACCURACY CONFLUENCE ENGINE ---
-    const confluenceLevels = [
-        parseFloat(fibonacciLevels.level_618),
-        pivot,
-        isBullish ? ema20 : ema50 // Use a faster EMA for entry confluence
-    ];
-    // Find the average of the confluence levels to determine the high-probability entry zone
-    const confluencePrice = confluenceLevels.reduce((a, b) => a + b, 0) / confluenceLevels.length;
 
+    let entry, sl, tp1, tp2, confirmedEntry;
     const action = isBullish ? "Buy on Pullback" : "Sell on Rally";
-    const entry = confluencePrice.toFixed(4);
-    const sl = isBullish ? (swingLow - atr * 0.5).toFixed(4) : (swingHigh + atr * 0.5).toFixed(4);
-    // Targets are now based on key S/R levels from the pivot matrix for higher accuracy
-    const tp1 = (isBullish ? multiTimeframeSR[timeframe].R1 : multiTimeframeSR[timeframe].S1).toFixed(4);
-    const tp2 = (isBullish ? multiTimeframeSR[timeframe].R2 : multiTimeframeSR[timeframe].S2).toFixed(4);
-    const confirmedEntry = (confluencePrice * (isBullish ? 1.0005 : 0.9995)).toFixed(4);
 
+    // --- Mode-Specific Calculation Logic ---
+    if (mode === '4') { // Multi-Layer Confirmation Mode
+        const confluenceLevels = [
+            parseFloat(fibonacciLevels.level_618),
+            pivot,
+            isBullish ? ema20 : ema50 // Use a faster EMA for entry confluence
+        ];
+        const confluencePrice = confluenceLevels.reduce((a, b) => a + b, 0) / confluenceLevels.length;
+        entry = confluencePrice.toFixed(4);
+        sl = (isBullish ? (swingLow - atr * 0.5) : (swingHigh + atr * 0.5)).toFixed(4);
+        tp1 = (isBullish ? multiTimeframeSR[timeframe].R1 : multiTimeframeSR[timeframe].S1).toFixed(4);
+        tp2 = (isBullish ? multiTimeframeSR[timeframe].R2 : multiTimeframeSR[timeframe].S2).toFixed(4);
+        confirmedEntry = (confluencePrice * (isBullish ? 1.0005 : 0.9995)).toFixed(4);
+    } else { // Original Logic for Elite Mode and others
+        const timeframeMultipliers = {
+            '5m': { atr: 1.5 },
+            '15m': { atr: 2 },
+            '1h': { atr: 2.5 },
+            '4h': { atr: 3 },
+            '1d': { atr: 3.5 },
+        };
+        const multipliers = timeframeMultipliers[timeframe] || timeframeMultipliers['15m'];
+        const { atr: atrMultiplier } = multipliers;
+
+        entry = (isBullish ? price - atr * 0.5 : price + atr * 0.5).toFixed(4);
+        sl = (isBullish ? parseFloat(entry) - atr * atrMultiplier : parseFloat(entry) + atr * atrMultiplier).toFixed(4);
+        tp1 = (isBullish ? parseFloat(entry) + atr * atrMultiplier : parseFloat(entry) - atr * atrMultiplier).toFixed(4);
+        tp2 = (isBullish ? parseFloat(entry) + atr * (atrMultiplier * 2) : parseFloat(entry) - atr * (atrMultiplier * 2)).toFixed(4);
+        confirmedEntry = (parseFloat(entry) * (isBullish ? 1.0005 : 0.9995)).toFixed(4);
+    }
+    
     const risk = Math.abs(parseFloat(entry) - parseFloat(sl));
     const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
     const riskReward = risk > 0 ? reward / risk : 0;

@@ -315,6 +315,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
                     <SelectItem value="1">1 - Quick Pulse</SelectItem>
                     <SelectItem value="2">2 - Pro Signal</SelectItem>
                     <SelectItem value="3">3 - Elite Mode (AI-Powered)</SelectItem>
+                    <SelectItem value="4">4 - Multi-Layer Confirmation</SelectItem>
                   </SelectContent>
                 </Select>
             </div>
