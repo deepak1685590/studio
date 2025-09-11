@@ -28,7 +28,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
         if (result.executiveSummary.primaryBias === "Error") {
             toast({
                 title: "AI Analysis Error",
-                description: result.executiveSummary.timeHorizon,
+                description: result.executiveSummary.timeHorizon, // This field now contains the user-friendly error message
                 variant: "destructive",
                 duration: 8000
             });
