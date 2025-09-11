@@ -213,11 +213,11 @@ const generateAiInsightFlow = ai.defineFlow(
       const errorMessage =
         error instanceof Error && (error.message.includes('429') || error.message.includes('Too Many Requests'))
           ? 'The AI model is currently experiencing high demand (rate limit exceeded). Please try again in a few moments.'
-          : 'An unexpected error occurred while generating the AI analysis. This could be a network issue or an API problem.';
+          : `An unexpected error occurred while generating the AI analysis: ${error instanceof Error ? error.message : String(error)}`;
 
-      // Return a valid object that matches the output schema but contains error messages.
-      // This is a "graceful failure" that the front-end can render.
-      return {
+      // Return a complete, valid object that matches the output schema but contains error messages.
+      // This is a "graceful failure" that the front-end can render without crashing.
+      const errorPayload: GenerateAiInsightOutput = {
         executiveSummary: {
           primaryBias: "Error",
           setupStrength: "N/A",
@@ -226,10 +226,10 @@ const generateAiInsightFlow = ai.defineFlow(
           timeHorizon: errorMessage,
         },
         predictiveAnalysis: {
-          predictedTarget: "N/A",
-          timeframe: "N/A",
-          successProbability: "N/A",
-          invalidationLevel: "N/A",
+          predictedTarget: "Unavailable",
+          timeframe: "Unavailable",
+          successProbability: "Unavailable",
+          invalidationLevel: "Unavailable",
         },
         technicalAnalysis: {
           multiTimeframe: "Unavailable due to error.",
@@ -273,6 +273,7 @@ const generateAiInsightFlow = ai.defineFlow(
           inTrade: "Unavailable due to error.",
         },
       };
+      return errorPayload;
     }
   }
 );
