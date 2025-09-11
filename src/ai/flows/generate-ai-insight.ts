@@ -233,7 +233,6 @@ const generateAiInsightFlow = ai.defineFlow(
         const fallbackResult = await fallbackGenerator(input);
         const fallbackSummary = fallbackResult.output?.executiveSummary || "Fallback summary could not be generated.";
         
-        // Return a valid payload with the fallback summary
         return {
             executiveSummary: {
                 primaryBias: "Summary (Fallback Model)",
@@ -257,8 +256,14 @@ const generateAiInsightFlow = ai.defineFlow(
       } catch (fallbackError) {
          console.error('Fallback AI flow also failed:', fallbackError);
          
-         // If even the fallback fails, return a structured error payload
-         const errorMessage = `Primary model failed and fallback also failed. Error: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`;
+         let errorMessage = "An unexpected error occurred in both primary and fallback AI models.";
+         const errorString = String(fallbackError);
+         if (errorString.includes("429") || errorString.toLowerCase().includes("quota")) {
+            errorMessage = "The AI model is experiencing high demand and the daily usage quota has been exceeded. The service will be available again tomorrow. Please try again later."
+         } else if (fallbackError instanceof Error) {
+            errorMessage = `Primary model failed and fallback also failed. Error: ${fallbackError.message}`;
+         }
+
          return {
             executiveSummary: {
               primaryBias: "Error",
