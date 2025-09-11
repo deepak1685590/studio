@@ -1,7 +1,8 @@
 
 
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData } from '@/types';
+
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -70,25 +71,52 @@ const pseudoRandom = (seedStr: string): number => {
 
 const generateVolumeAnalysis = (seed: string): VolumeAnalysis => {
     const analysis: Partial<VolumeAnalysis> = {};
-    const timeframes: (keyof VolumeAnalysis)[] = ['5m', '15m', '1H', '4H', '1D'];
+    const timeframes: (keyof Omit<VolumeAnalysis, 'summary'>)[] = ['5m', '15m', '1H', '4H', '1D'];
+    let totalBuyVolume = 0;
+    let totalSellVolume = 0;
 
     timeframes.forEach(tf => {
         const totalVolume = pseudoRandom(seed + tf + 'vol_total') * 50000 + 10000;
-        const buyRatio = pseudoRandom(seed + tf + 'vol_buy_ratio') * 0.4 + 0.3; // 30% to 70%
+        const buyRatio = pseudoRandom(seed + tf + 'vol_buy_ratio') * 0.6 + 0.2; // 20% to 80%
         const buyVolume = totalVolume * buyRatio;
         const sellVolume = totalVolume * (1 - buyRatio);
+        const buySellRatio = sellVolume > 0 ? buyVolume / sellVolume : buyVolume > 0 ? 100 : 1;
         
+        totalBuyVolume += buyVolume;
+        totalSellVolume += sellVolume;
+
         let dominantSide: 'Buy' | 'Sell' | 'Neutral' = 'Neutral';
         if (buyRatio > 0.55) dominantSide = 'Buy';
         else if (buyRatio < 0.45) dominantSide = 'Sell';
+
+        let signal: VolumeSignal = 'Neutral';
+        if (buySellRatio > 1.5) signal = 'Strong Buy';
+        else if (buySellRatio > 1.1) signal = 'Buy';
+        else if (1 / buySellRatio > 1.5) signal = 'Strong Sell';
+        else if (1 / buySellRatio > 1.1) signal = 'Sell';
 
         analysis[tf] = {
             totalVolume,
             buyVolume,
             sellVolume,
             dominantSide,
+            buySellRatio,
+            signal,
         };
     });
+
+    const overallRatio = totalSellVolume > 0 ? totalBuyVolume / totalSellVolume : totalBuyVolume > 0 ? 100 : 1;
+    let overallSignal: VolumeSignal = 'Neutral';
+    if (overallRatio > 1.5) overallSignal = 'Strong Buy';
+    else if (overallRatio > 1.1) overallSignal = 'Buy';
+    else if (1 / overallRatio > 1.5) overallSignal = 'Strong Sell';
+    else if (1 / overallRatio > 1.1) overallSignal = 'Sell';
+
+    analysis.summary = {
+        totalBuyVolume,
+        totalSellVolume,
+        overallSignal,
+    };
 
     return analysis as VolumeAnalysis;
 }
@@ -118,14 +146,14 @@ const generateMultiTimeframeSR = (price: number, seed: string, isBullish: boolea
     return sr as MultiTimeframeSR;
 };
 
-const generateAdvancedStrengthData = (price: number, closes: number[], volumes: number[], seed: string, isBullish: boolean, momentumScore: number, trendStrengthScore: number): AdvancedStrengthDashboardData => {
+const generateAdvancedStrengthData = (price: number, closes: number[], volumes: number[], seed: string, isBullish: boolean, momentumScore: number, trendStrengthScore: number, emas: { ema20: number, ema50: number }): AdvancedStrengthDashboardData => {
     // 1. Price and Change
     const prevClose = closes[closes.length - 2];
     const priceChangePercent = ((price - prevClose) / prevClose) * 100;
 
     // 2. Momentum & Power
-    const longPower = Math.max(0, momentumScore - 50) * 2;
-    const shortPower = Math.max(0, 50 - momentumScore) * 2;
+    const longPower = Math.floor(Math.max(0, pseudoRandom(seed + 'long_power') * 100));
+    const shortPower = Math.floor(Math.max(0, pseudoRandom(seed + 'short_power') * 100));
     const overallStrength = Math.round((longPower + (100 - shortPower)) / 2);
 
     // 3. Trend
@@ -133,12 +161,12 @@ const generateAdvancedStrengthData = (price: number, closes: number[], volumes: 
     const trendMomentum = trendMomentumSeed > 0.7 ? 'ACCELERATING' : trendMomentumSeed < 0.3 ? 'DECELERATING' : 'STABLE';
 
     // 4. Volatility (ATR-based)
-    const atr = (closes.reduce((acc, _, i) => {
+    const atr = (closes.slice(-14).reduce((acc, _, i, arr) => {
         if (i === 0) return acc;
         const high = Math.max(...closes.slice(i - 1, i + 1));
         const low = Math.min(...closes.slice(i - 1, i + 1));
         return acc + (high - low);
-    }, 0) / closes.length) / price * 100;
+    }, 0) / 14) / price * 100;
     
     let volLabel: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW';
     if (atr > 2.5) volLabel = 'EXTREME';
@@ -147,7 +175,7 @@ const generateAdvancedStrengthData = (price: number, closes: number[], volumes: 
     else volLabel = 'LOW';
 
     // 5. Volume
-    const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+    const avgVolume = volumes.slice(-20).reduce((a, b) => a + b, 0) / 20;
     const latestVolume = volumes[volumes.length - 1];
     const volumeChangePercent = ((latestVolume - avgVolume) / avgVolume) * 100;
     
@@ -159,8 +187,8 @@ const generateAdvancedStrengthData = (price: number, closes: number[], volumes: 
     else volStatus = 'NORMAL';
 
     // 6. Sentiment Score
-    const bullishScore = (isBullish ? 1 : 0) + (momentumScore > 55 ? 1 : 0) + (trendStrengthScore > 30 ? 1 : 0) + (volumeChangePercent > 10 ? 1 : 0);
-    const bearishScore = (!isBullish ? 1 : 0) + (momentumScore < 45 ? 1 : 0) + (trendStrengthScore > 30 ? 1 : 0) + (volumeChangePercent > 10 ? 1 : 0);
+    const bullishScore = (price > emas.ema50 ? 1 : 0) + (momentumScore > 52 ? 1 : 0) + (trendStrengthScore > 25 ? 1 : 0) + (volumeChangePercent > 10 ? 1 : 0);
+    const bearishScore = (price < emas.ema50 ? 1 : 0) + (momentumScore < 48 ? 1 : 0) + (trendStrengthScore > 25 ? 1 : 0) + (volumeChangePercent > 10 ? 1 : 0);
     const netSentiment = bullishScore - bearishScore;
     let sentimentLabel = 'NEUTRAL ⚖️';
     if (netSentiment >= 3) sentimentLabel = 'STRONG BULL 🚀';
@@ -349,7 +377,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     }
     
     // --- ADVANCED STRENGTH DASHBOARD ---
-    const advancedStrengthDashboard = generateAdvancedStrengthData(price, closes, volumes, seed, isBullish, rsiValue, adxValue);
+    const advancedStrengthDashboard = generateAdvancedStrengthData(price, closes, volumes, seed, isBullish, rsiValue, adxValue, { ema20, ema50 });
 
     // --- ADVANCED CONFLUENCE FACTORS ---
     const confluenceFactors = [

@@ -126,11 +126,15 @@ export interface SidewaysMarket {
     range: [string, string];
 }
 
+export type VolumeSignal = 'Strong Buy' | 'Buy' | 'Strong Sell' | 'Sell' | 'Neutral';
+
 export interface VolumeTimeframeData {
     totalVolume: number;
     buyVolume: number;
     sellVolume: number;
     dominantSide: 'Buy' | 'Sell' | 'Neutral';
+    buySellRatio: number;
+    signal: VolumeSignal;
 }
 
 export interface VolumeAnalysis {
@@ -139,6 +143,11 @@ export interface VolumeAnalysis {
     '1H': VolumeTimeframeData;
     '4H': VolumeTimeframeData;
     '1D': VolumeTimeframeData;
+    summary: {
+      totalBuyVolume: number;
+      totalSellVolume: number;
+      overallSignal: VolumeSignal;
+    };
 }
 
 export interface SupportResistanceLevel {
