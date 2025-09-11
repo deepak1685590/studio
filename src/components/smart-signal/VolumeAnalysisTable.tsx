@@ -28,34 +28,33 @@ const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveDat
     const isBuyDominant = buyPercent > 51;
     const isSellDominant = buyPercent < 49;
     const dominantPercent = isBuyDominant ? buyPercent : sellPercent;
-    const dominantSide = isBuyDominant ? 'BUY' : 'SELL';
 
     const needleRotation = (buyPercent - 50) * 1.8; // Map 0-100 to -90 to 90 degrees
 
     return (
       <div className="relative h-20 w-full">
-        <svg width="100%" height="100%" viewBox="0 0 200 60">
+        <svg width="100%" height="100%" viewBox="0 0 200 100">
           {/* Background Arc */}
-          <path d="M 10 50 A 90 90 0 0 1 190 50" fill="none" stroke="hsl(var(--primary) / 0.1)" strokeWidth="8" />
+          <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="hsl(var(--primary) / 0.1)" strokeWidth="12" />
           
           {/* Sell Side Fill */}
-          <path d="M 10 50 A 90 90 0 0 1 100 8.7" fill="none" stroke="url(#sellGradient)" strokeWidth="8" />
+          <path d="M 20 100 A 80 80 0 0 1 100 20" fill="none" stroke="url(#sellGradient)" strokeWidth="12" />
           
           {/* Buy Side Fill */}
-          <path d="M 100 8.7 A 90 90 0 0 1 190 50" fill="none" stroke="url(#buyGradient)" strokeWidth="8" />
+          <path d="M 100 20 A 80 80 0 0 1 180 100" fill="none" stroke="url(#buyGradient)" strokeWidth="12" />
           
            {/* Center Dominance Text */}
-          <text x="100" y="35" textAnchor="middle" fill={isBuyDominant ? '#4ade80' : isSellDominant ? '#f87171' : 'hsl(var(--foreground))'} fontSize="14" fontWeight="bold" className="font-headline" style={{filter: `drop-shadow(0 0 5px currentColor)`}}>
+          <text x="100" y="70" textAnchor="middle" fill={isBuyDominant ? '#4ade80' : isSellDominant ? '#f87171' : 'hsl(var(--foreground))'} fontSize="20" fontWeight="bold" className="font-headline" style={{filter: `drop-shadow(0 0 5px currentColor)`}}>
             {dominantPercent.toFixed(0)}%
           </text>
-          <text x="100" y="50" textAnchor="middle" fill="hsl(var(--foreground) / 0.8)" fontSize="8" className="font-code">
+          <text x="100" y="88" textAnchor="middle" fill="hsl(var(--foreground) / 0.8)" fontSize="12" className="font-code">
             {isBuyDominant ? 'BUY' : isSellDominant ? 'SELL' : 'NEUTRAL'}
           </text>
 
           {/* Needle */}
-          <g transform={`rotate(${needleRotation}, 100, 50)`}>
-              <line x1="100" y1="50" x2="100" y2="15" stroke="hsl(var(--primary))" strokeWidth="2" />
-              <circle cx="100" cy="50" r="3" fill="hsl(var(--primary))" />
+          <g transform={`rotate(${needleRotation}, 100, 100)`}>
+              <line x1="100" y1="100" x2="100" y2="30" stroke="hsl(var(--primary))" strokeWidth="3" style={{filter: `drop-shadow(0 0 5px hsl(var(--primary)))`}} />
+              <circle cx="100" cy="100" r="5" fill="hsl(var(--primary))" />
           </g>
 
           <defs>
