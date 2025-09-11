@@ -362,7 +362,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             multiTimeframeAnalysis: {},
             reversalConfirmed: false,
             chartPattern: { name: 'Ranging Market', description: 'Price is moving sideways in a defined channel. Await a clear breakout before entry.' },
-            tradersChecklist: { riskRewardPass: false, mtfAlignmentPass: false, volumeConfirmationPass: false, entryInZonePass: false },
+            tradersChecklist: { riskRewardPass: false, mtfAlignmentPass: false, volumeConfirmationPass: false, entryInZonePass: false, momentumAlignmentPass: false, smartMoneyEntryPass: false },
             fibonacciLevels,
             confidenceBreakdown: { overall: adxValue, patternStrength: 20, volumeConfirmation: 20, htfAlignment: 20, smartMoneyFlow: 20 },
             movingAverageAnalysis,
@@ -476,6 +476,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         mtfAlignmentPass: multiTimeframeAnalysis[mtfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish') || multiTimeframeAnalysis[htfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish'),
         volumeConfirmationPass: netFlow > 0 === isBullish,
         entryInZonePass: pseudoRandom(seed + 'entry_zone') > 0.4,
+        momentumAlignmentPass: isBullish ? momentum.rating !== 'Overbought' : momentum.rating !== 'Oversold',
+        smartMoneyEntryPass: pseudoRandom(seed + 'sm_entry') > 0.3,
     };
     
     let goldenPullbackZone: GoldenPullbackZone | undefined = undefined;

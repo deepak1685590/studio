@@ -56,6 +56,8 @@ export interface TradersChecklist {
     mtfAlignmentPass: boolean;
     volumeConfirmationPass: boolean;
     entryInZonePass: boolean;
+    momentumAlignmentPass: boolean;
+    smartMoneyEntryPass: boolean;
 }
 
 export interface FibonacciLevels {
