@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSignalData } from '@/lib/technical-analysis';
-import type { SignalData } from '@/types';
+import type { SignalData, BookTicker } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
 import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Layers } from 'lucide-react';
@@ -41,6 +41,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const [realtimePrice, setRealtimePrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
   const [liveTradeData, setLiveTradeData] = useState<LiveTradeData | null>(null);
+  const [bookTicker, setBookTicker] = useState<BookTicker | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [chartImage, setChartImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -67,6 +68,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     setSignalData(null);
     setRealtimePrice(null);
     setLiveTradeData(null);
+    setBookTicker(null);
     setPriceDirection('neutral');
     previousPriceRef.current = null;
     
@@ -94,44 +96,54 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
         
         if (isSupportedCrypto) {
           const wsSymbol = data.symbol.toLowerCase() + 'usdt';
-          const socket = new WebSocket(`wss://stream.binance.com:9443/ws/${wsSymbol}@trade`);
+          const streams = `${wsSymbol}@trade/${wsSymbol}@bookTicker`;
+          const socket = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
           ws.current = socket;
 
-          socket.onopen = () => console.log(`WebSocket connected for ${wsSymbol}`);
+          socket.onopen = () => console.log(`WebSocket connected for ${streams}`);
           socket.onmessage = (event) => {
-            const messageData = JSON.parse(event.data);
-            
-            if (messageData.s.toLowerCase() !== (currentSymbolRef.current.toLowerCase() + 'usdt')) {
+            const message = JSON.parse(event.data);
+            const stream = message.stream;
+            const messageData = message.data;
+
+            if (messageData.s.toLowerCase() !== wsSymbol) {
               return;
             }
             
-            const newPrice = parseFloat(messageData.p);
-            const newQuantity = parseFloat(messageData.q);
-            
-            setRealtimePrice(newPrice);
-            
-            let direction: 'up' | 'down' | 'neutral' = 'neutral';
-            if (previousPriceRef.current !== null) {
-              if (newPrice > previousPriceRef.current) {
-                direction = 'up';
-              } else if (newPrice < previousPriceRef.current) {
-                direction = 'down';
-              }
-            }
-            setPriceDirection(direction);
-            
-            setLiveTradeData({
-                volume: newQuantity,
-                side: direction === 'up' ? 'Buy' : direction === 'down' ? 'Sell' : 'Neutral'
-            });
+            if (stream.endsWith('@trade')) {
+                const newPrice = parseFloat(messageData.p);
+                const newQuantity = parseFloat(messageData.q);
+                
+                setRealtimePrice(newPrice);
+                
+                let direction: 'up' | 'down' | 'neutral' = 'neutral';
+                if (previousPriceRef.current !== null) {
+                  if (newPrice > previousPriceRef.current) {
+                    direction = 'up';
+                  } else if (newPrice < previousPriceRef.current) {
+                    direction = 'down';
+                  }
+                }
+                setPriceDirection(direction);
+                
+                setLiveTradeData({
+                    volume: newQuantity,
+                    side: direction === 'up' ? 'Buy' : direction === 'down' ? 'Sell' : 'Neutral'
+                });
 
-            previousPriceRef.current = newPrice;
+                previousPriceRef.current = newPrice;
+            } else if (stream.endsWith('@bookTicker')) {
+                setBookTicker({
+                    bidPrice: parseFloat(messageData.b),
+                    askPrice: parseFloat(messageData.a)
+                });
+            }
           };
           socket.onerror = (error) => {
             console.error('WebSocket Error:', error);
           };
           socket.onclose = () => {
-            console.log(`WebSocket disconnected for ${wsSymbol}`);
+            console.log(`WebSocket disconnected for ${streams}`);
             if (ws.current === socket) {
               ws.current = null;
             }
@@ -385,7 +397,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             )}
             
             {signalData && <TradingSimulator signalData={signalData} livePrice={realtimePrice} />}
-            {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} />}
+            {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} bookTicker={bookTicker} />}
           </div>
         )}
         

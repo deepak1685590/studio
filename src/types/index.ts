@@ -18,6 +18,11 @@ export interface LiveTradeData {
   side: 'Buy' | 'Sell' | 'Neutral';
 }
 
+export interface BookTicker {
+  bidPrice: number;
+  askPrice: number;
+}
+
 export interface Position {
   symbol: string;
   entryPrice: number;

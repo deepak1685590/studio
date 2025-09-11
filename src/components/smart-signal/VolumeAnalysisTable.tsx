@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { VolumeAnalysis, VolumeTimeframeData, LiveTradeData, VolumeSignal } from '@/types';
+import { VolumeAnalysis, LiveTradeData, VolumeSignal, BookTicker } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HelpCircle, Sparkles } from 'lucide-react';
@@ -12,9 +12,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 interface VolumeAnalysisTableProps {
   data: VolumeAnalysis;
   liveData: LiveTradeData | null;
+  bookTicker: BookTicker | null;
 }
 
-const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveData }) => {
+const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveData, bookTicker }) => {
   const [volumeState, setVolumeState] = useState(data);
 
   useEffect(() => {
@@ -98,19 +99,33 @@ const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveDat
 
   return (
     <div className="bg-black/30 rounded-lg border border-primary/20 p-4 space-y-3">
-        <h3 className="font-headline text-lg text-primary flex items-center gap-2">
-            <Sparkles size={18} /> Volume Intelligence
-             <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger>
-                        <HelpCircle size={14} className="text-foreground/50"/>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Multi-timeframe analysis of buying vs. selling pressure.</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-        </h3>
+        <div className="flex justify-between items-center">
+            <h3 className="font-headline text-lg text-primary flex items-center gap-2">
+                <Sparkles size={18} /> Volume Intelligence
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger>
+                            <HelpCircle size={14} className="text-foreground/50"/>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Multi-timeframe analysis of buying vs. selling pressure.</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </h3>
+            {bookTicker && (
+                <div className="flex gap-4 text-xs font-mono">
+                    <div>
+                        <span className="text-foreground/70">Top Bid: </span>
+                        <span className="text-green-400">{bookTicker.bidPrice.toFixed(4)}</span>
+                    </div>
+                    <div>
+                        <span className="text-foreground/70">Top Ask: </span>
+                        <span className="text-red-400">{bookTicker.askPrice.toFixed(4)}</span>
+                    </div>
+                </div>
+            )}
+        </div>
       
       <Table>
         <TableHeader>
