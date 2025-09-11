@@ -272,7 +272,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <Alert className="border-amber-400 bg-gradient-to-br from-yellow-900/40 to-black text-amber-300 shadow-[0_0_15px_hsl(38_92%_50%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(38_92%_50%_/_0.8)]">
             <Target className="h-5 w-5 text-amber-300" />
             <AlertTitle className="font-headline text-lg text-amber-300">
-                Golden Re-Entry Zone
+                Golden {data.isBullish ? "Long" : "Short"} Re-Entry Zone
             </AlertTitle>
             <AlertDescription className="font-mono text-xl mt-1 text-white/90">
                 ${data.goldenPullbackZone.min} - ${data.goldenPullbackZone.max}
@@ -284,7 +284,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <Alert className="border-purple-400 bg-gradient-to-br from-purple-900/40 to-black text-purple-300 shadow-[0_0_15px_hsl(271_76%_53%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(271_76%_53%_/_0.8)]">
             <ShieldAlert className="h-5 w-5 text-purple-300" />
             <AlertTitle className="font-headline text-lg text-purple-300">
-                Golden Reverse Zone
+                Golden {data.isBullish ? "Short" : "Long"} Reverse Zone
             </AlertTitle>
             <AlertDescription className="font-mono text-xl mt-1 text-white/90">
                 ${data.goldenReverseZone.min} - ${data.goldenReverseZone.max}
