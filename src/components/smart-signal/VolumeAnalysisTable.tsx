@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { VolumeAnalysis, VolumeTimeframeData, LiveTradeData, VolumeSignal } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -15,6 +15,59 @@ interface VolumeAnalysisTableProps {
 }
 
 const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveData }) => {
+  const [volumeState, setVolumeState] = useState(data);
+
+  useEffect(() => {
+    // Reset state when the initial data prop changes (e.g., new symbol)
+    setVolumeState(data);
+  }, [data]);
+
+  useEffect(() => {
+    if (liveData) {
+      setVolumeState(prevState => {
+        const newState = JSON.parse(JSON.stringify(prevState)); // Deep copy to avoid mutation
+        
+        // Update the 5m timeframe with live data
+        const fiveMinData = newState['5m'];
+        if (liveData.side === 'Buy') {
+          fiveMinData.buyVolume += liveData.volume;
+        } else if (liveData.side === 'Sell') {
+          fiveMinData.sellVolume += liveData.volume;
+        }
+        fiveMinData.totalVolume = fiveMinData.buyVolume + fiveMinData.sellVolume;
+        fiveMinData.buySellRatio = fiveMinData.sellVolume > 0 ? fiveMinData.buyVolume / fiveMinData.sellVolume : fiveMinData.buyVolume > 0 ? 100 : 1;
+        
+        // Recalculate 5m signal
+        fiveMinData.signal = calculateSignal(fiveMinData.buySellRatio);
+
+        // Recalculate summary
+        let totalBuy = 0;
+        let totalSell = 0;
+        const timeframes: (keyof Omit<VolumeAnalysis, 'summary'>)[] = ['5m', '15m', '1H', '4H', '1D'];
+        timeframes.forEach(tf => {
+            totalBuy += newState[tf].buyVolume;
+            totalSell += newState[tf].sellVolume;
+        });
+
+        newState.summary.totalBuyVolume = totalBuy;
+        newState.summary.totalSellVolume = totalSell;
+        const overallRatio = totalSell > 0 ? totalBuy / totalSell : totalBuy > 0 ? 100 : 1;
+        newState.summary.overallSignal = calculateSignal(overallRatio);
+
+        return newState;
+      });
+    }
+  }, [liveData]);
+  
+  const calculateSignal = (ratio: number): VolumeSignal => {
+    if (ratio > 1.5) return 'Strong Buy';
+    if (ratio > 1.1) return 'Buy';
+    if (1 / ratio > 1.5) return 'Strong Sell';
+    if (1 / ratio > 1.1) return 'Sell';
+    return 'Neutral';
+  };
+
+
   const timeframes: (keyof Omit<VolumeAnalysis, 'summary'>)[] = ['5m', '15m', '1H', '4H', '1D'];
 
   const formatVolume = (volume: number) => {
@@ -70,7 +123,7 @@ const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveDat
         </TableHeader>
         <TableBody>
             {timeframes.map((tf) => {
-                const item = data[tf];
+                const item = volumeState[tf];
                 return (
                     <TableRow key={tf}>
                         <TableCell className="font-bold">{tf.toUpperCase()}</TableCell>
@@ -80,7 +133,7 @@ const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveDat
                     </TableRow>
                 )
             })}
-            <SummaryRow summary={data.summary} />
+            <SummaryRow summary={volumeState.summary} />
         </TableBody>
       </Table>
     </div>
