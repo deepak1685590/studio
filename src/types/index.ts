@@ -139,6 +139,21 @@ export interface VolumeAnalysis {
     '1D': VolumeTimeframeData;
 }
 
+export interface SupportResistanceLevel {
+    S1: number;
+    S2: number;
+    S3: number;
+    R1: number;
+    R2: number;
+    R3: number;
+}
+
+export interface MultiTimeframeSR {
+    '5m': SupportResistanceLevel;
+    '15m': SupportResistanceLevel;
+    '1H': SupportResistanceLevel;
+}
+
 
 export interface SignalData {
   symbol: string;
@@ -184,4 +199,5 @@ export interface SignalData {
   momentum: Momentum;
   sidewaysMarket?: SidewaysMarket;
   volumeAnalysis: VolumeAnalysis;
+  multiTimeframeSR: MultiTimeframeSR;
 }

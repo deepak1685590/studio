@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -9,7 +10,7 @@ import { getSignalData } from '@/lib/technical-analysis';
 import type { SignalData } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
-import { Rocket, BrainCircuit, Upload, Eye, EyeOff } from 'lucide-react';
+import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Layers } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timeframe, LiveTradeData } from '@/types';
 import jsPDF from 'jspdf';
@@ -22,6 +23,7 @@ import TradingSimulator from './TradingSimulator';
 import TrendRibbon from './TrendRibbon';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
+import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -374,6 +376,13 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
                 </Button>
             </div>
 
+            {signalData && (
+                <div className="bg-black/30 rounded-lg border border-primary/20 p-4 space-y-3">
+                     <h3 className="font-headline text-xl text-primary flex items-center gap-2"><Layers /> Quantum Pivots Matrix</h3>
+                     <QuantumPivotsMatrix data={signalData.multiTimeframeSR} />
+                </div>
+            )}
+            
             {signalData && <TradingSimulator signalData={signalData} livePrice={realtimePrice} />}
             {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} />}
           </div>

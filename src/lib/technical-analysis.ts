@@ -1,6 +1,6 @@
 
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -91,6 +91,31 @@ const generateVolumeAnalysis = (seed: string): VolumeAnalysis => {
 
     return analysis as VolumeAnalysis;
 }
+
+const generateMultiTimeframeSR = (price: number, seed: string): MultiTimeframeSR => {
+    const sr: Partial<MultiTimeframeSR> = {};
+    const tfs: (keyof MultiTimeframeSR)[] = ['5m', '15m', '1H'];
+
+    tfs.forEach((tf, index) => {
+        const volatility = (index + 1) * 0.005; // 5m is less volatile, 1H is more
+        const high = price * (1 + pseudoRandom(seed + tf + 'h') * volatility);
+        const low = price * (1 - pseudoRandom(seed + tf + 'l') * volatility);
+        const pivot = (high + low + price) / 3;
+        const range = high - low;
+        
+        sr[tf] = {
+            S1: pivot - 0.382 * range,
+            S2: pivot - 0.618 * range,
+            S3: pivot - 1.000 * range,
+            R1: pivot + 0.382 * range,
+            R2: pivot + 0.618 * range,
+            R3: pivot + 1.000 * range,
+        };
+    });
+
+    return sr as MultiTimeframeSR;
+};
+
 
 const isCrypto = (symbol: string): boolean => {
     const upperSymbol = symbol.toUpperCase();
@@ -226,6 +251,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const reversalConfirmed = pseudoRandom(seed + 'reversal') > 0.6;
     
     const volumeAnalysis = generateVolumeAnalysis(seed);
+    const multiTimeframeSR = generateMultiTimeframeSR(price, seed);
     
     // --- Momentum (RSI simulation) ---
     const rsiValue = Math.floor(pseudoRandom(seed + 'rsi') * 80 + 10); // RSI between 10 and 90
@@ -342,6 +368,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             trendStrength,
             momentum: { score: 50, rating: 'Neutral' },
             volumeAnalysis,
+            multiTimeframeSR,
             sidewaysMarket,
         };
     }
@@ -548,5 +575,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         trendStrength,
         momentum,
         volumeAnalysis,
+        multiTimeframeSR,
     };
 };
