@@ -1,6 +1,6 @@
 
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -484,6 +484,17 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
     const liquidityLevel = isBullish ? swingHigh * 1.005 : swingLow * 0.995;
 
+    let sniperZone: SniperZone | undefined = undefined;
+    if (confidenceBreakdown.overall > 80 && pseudoRandom(seed + 'sniper_zone_chance') > 0.6) {
+        const zoneCenter = (fib618 + pivot) / 2;
+        const zoneSize = atr * 0.1; // Make it a very tight zone
+        sniperZone = {
+            min: (zoneCenter - zoneSize).toFixed(4),
+            max: (zoneCenter + zoneSize).toFixed(4),
+        };
+        confluenceFactors.push(`🎯 QUANTUM SNIPER ZONE IDENTIFIED`);
+    }
+
 
     return {
         symbol: symbol.toUpperCase(),
@@ -529,6 +540,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         whaleAlert,
         goldenPullbackZone,
         goldenReverseZone,
+        sniperZone,
         confidenceBreakdown,
         movingAverageAnalysis,
         trendStrength,

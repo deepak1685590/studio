@@ -69,6 +69,11 @@ export interface GoldenPullbackZone {
     max: string;
 }
 
+export interface SniperZone {
+    min: string;
+    max: string;
+}
+
 export interface ConfidenceBreakdown {
   overall: number;
   patternStrength: number;
@@ -171,6 +176,7 @@ export interface SignalData {
   whaleAlert?: WhaleAlert;
   goldenPullbackZone?: GoldenPullbackZone;
   goldenReverseZone?: GoldenPullbackZone;
+  sniperZone?: SniperZone;
   confidenceBreakdown: ConfidenceBreakdown;
   movingAverageAnalysis: MovingAverageAnalysis;
   trendStrength: TrendStrength;
