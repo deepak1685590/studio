@@ -24,19 +24,25 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
       setInsight(null);
       try {
         const result = await generateAiInsight(data);
-        // Check if the result indicates an error was returned from the flow
         if (result.executiveSummary.primaryBias === "Error") {
             toast({
                 title: "AI Analysis Error",
-                description: result.executiveSummary.timeHorizon, // This field now contains the user-friendly error message
+                description: result.executiveSummary.timeHorizon,
                 variant: "destructive",
+                duration: 8000
+            });
+        } else if (result.executiveSummary.primaryBias === "Summary (Fallback Model)") {
+             toast({
+                title: "AI Model Busy",
+                description: "Primary model is busy. Displaying a condensed summary from a high-speed model.",
+                variant: "default",
                 duration: 8000
             });
         }
         setInsight(result);
       } catch (error) {
         console.error('AI Insight Error:', error);
-        setInsight(null); // Clear any partial data
+        setInsight(null);
         toast({ title: "AI Error", description: "The Elite AI failed to generate the report. This might be a network issue or an API quota limit.", variant: "destructive" });
       } finally {
         setLoading(false);
@@ -90,13 +96,24 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
     }
 
     if (insight) {
-      // Check for the error condition we defined in the flow
       if (insight.executiveSummary.primaryBias === "Error") {
         return (
            <div className="text-center text-destructive-foreground bg-destructive/30 p-4 rounded-md border border-destructive">
              <strong>AI Analysis Failed:</strong>
              <p className="mt-2">{insight.executiveSummary.timeHorizon}</p>
           </div>
+        )
+      }
+
+      if (insight.executiveSummary.primaryBias === "Summary (Fallback Model)") {
+        return (
+             <div className="p-4 bg-gradient-to-r from-accent/20 to-primary/20 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.5)]">
+              <h4 className="font-headline text-lg text-accent flex items-center gap-2 mb-2">
+                  Executive Summary (Fallback Model)
+              </h4>
+              <p className="text-sm text-foreground/90">{insight.executiveSummary.timeHorizon}</p>
+              <p className="text-xs text-foreground/60 mt-3">Full analysis is unavailable due to high model demand. This is a condensed report from a high-speed model.</p>
+            </div>
         )
       }
 
@@ -156,7 +173,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
         <h4 className="font-headline text-lg text-primary">
           Elite AI Analysis Report
         </h4>
-        {insight && insight.executiveSummary.primaryBias !== "Error" && (
+        {insight && insight.executiveSummary.primaryBias !== "Error" && insight.executiveSummary.primaryBias !== "Summary (Fallback Model)" && (
             <Button onClick={copyToClipboard} variant="outline" size="sm" className="gap-2 border-primary/50 hover:bg-primary/20" disabled={!insight}>
             <Copy size={14} /> Copy Report
             </Button>

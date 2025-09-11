@@ -117,7 +117,7 @@ const getMarketNews = ai.defineTool(
   }
 );
 
-const prompt = ai.definePrompt({
+const primaryPrompt = ai.definePrompt({
   name: 'generateAiInsightPrompt',
   input: {schema: GenerateAiInsightInputSchema},
   output: {schema: GenerateAiInsightOutputSchema},
@@ -193,13 +193,24 @@ Fill out every field in the following JSON object with detailed, expert-level an
 `,
 });
 
-/**
- * Retries a promise-based function with exponential backoff.
- * @param fn The async function to retry.
- * @param retries The number of retries.
- * @param delay The initial delay in ms.
- * @returns The result of the function if successful.
- */
+const fallbackPrompt = ai.definePrompt({
+    name: 'fallbackAiInsightPrompt',
+    input: { schema: GenerateAiInsightInputSchema },
+    output: { schema: z.object({ executiveSummary: z.string() }) },
+    prompt: `You are a backup financial analyst AI. The primary analysis model is unavailable.
+    Your task is to provide a concise, single-paragraph executive summary based on the provided data for {{{symbol}}}.
+    
+    Data:
+    - Bias: {{#if isBullish}}Bullish{{else}}Bearish{{/if}}
+    - Key Levels: Entry=\${{{entry}}}, SL=\${{{sl}}}, TP1=\${{{tp1}}}
+    - Pattern: {{{chartPatternName}}}
+    - Confluences: {{{confluenceCount}}}
+    - HTF Trend: The 4H trend is {{{multiTimeframeAnalysis.4H}}} and the Daily trend is {{{multiTimeframeAnalysis.Daily}}}.
+
+    Synthesize this into a professional, clear paragraph. Start with the primary bias and setup strength, mention the key levels and pattern, and comment on the higher-timeframe alignment.
+    `,
+});
+
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   retries = 3,
@@ -225,8 +236,7 @@ const generateAiInsightFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      // Wrap the AI call in the retry utility
-      const result = await retryWithBackoff(() => prompt(input));
+      const result = await retryWithBackoff(() => primaryPrompt(input));
       
       const output = result.output;
       if (!output) {
@@ -234,70 +244,61 @@ const generateAiInsightFlow = ai.defineFlow(
       }
       return output;
     } catch (error) {
-      console.error('Error in generateAiInsightFlow after all retries:', error);
+      console.error('Primary AI flow failed after all retries:', error);
       
-      const errorMessage =
-        error instanceof Error && (error.message.includes('429') || error.message.includes('Too Many Requests'))
-          ? 'The AI model is still experiencing high demand after several retries. Please try again in a few moments.'
-          : `An unexpected error occurred while generating the AI analysis: ${error instanceof Error ? error.message : String(error)}`;
+      if (error instanceof Error && (error.message.includes('429') || error.message.includes('Too Many Requests'))) {
+        console.log('Primary model failed. Attempting fallback to faster model.');
+        try {
+            const fallbackResult = await fallbackPrompt(input);
+            const fallbackSummary = fallbackResult.output?.executiveSummary || "Fallback summary could not be generated.";
 
-      // Return a complete, valid object that matches the output schema but contains error messages.
-      // This is a "graceful failure" that the front-end can render without crashing.
+            const fallbackPayload: GenerateAiInsightOutput = {
+                executiveSummary: {
+                    primaryBias: "Summary (Fallback Model)",
+                    setupStrength: "N/A",
+                    keyLevels: "N/A",
+                    opportunityGrade: "Retail",
+                    timeHorizon: fallbackSummary,
+                },
+                predictiveAnalysis: { predictedTarget: "Unavailable", timeframe: "Unavailable", successProbability: "Unavailable", invalidationLevel: "Unavailable" },
+                technicalAnalysis: { multiTimeframe: "Unavailable due to high model demand.", volumeProfile: "Unavailable", marketMicrostructure: "Unavailable" },
+                riskManagement: { positionSizing: "Unavailable", dynamicLevels: "Unavailable" },
+                sentimentAndFlow: { onChainMetrics: "Unavailable", marketSentiment: "Unavailable" },
+                probabilityAssessment: { successMatrix: "Unavailable", alternativeScenarios: "Unavailable" },
+                advancedConfluence: { indicators: "Unavailable", patterns: "Unavailable" },
+                institutionalBehavior: { smartMoney: "Unavailable", correlation: "Unavailable" },
+                executionStrategy: { entryTactics: "Unavailable", exitStrategy: "Unavailable" },
+                marketContext: { macroFactors: "Unavailable", technicalCatalysts: "Unavailable" },
+                performanceTracking: { tradeManagementKPIs: "Unavailable", learningMetrics: "Unavailable" },
+                alertSystem: { preEntry: "Unavailable", inTrade: "Unavailable" },
+            };
+            return fallbackPayload;
+        } catch (fallbackError) {
+             console.error('Fallback AI flow also failed:', fallbackError);
+        }
+      }
+
+      // If it's not a rate limit error or if the fallback fails, return the original generic error payload.
+      const errorMessage = `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`;
       const errorPayload: GenerateAiInsightOutput = {
         executiveSummary: {
           primaryBias: "Error",
           setupStrength: "N/A",
           keyLevels: "N/A",
-          opportunityGrade: "Retail", // A valid enum value is required.
+          opportunityGrade: "Retail",
           timeHorizon: errorMessage,
         },
-        predictiveAnalysis: {
-          predictedTarget: "Unavailable",
-          timeframe: "Unavailable",
-          successProbability: "Unavailable",
-          invalidationLevel: "Unavailable",
-        },
-        technicalAnalysis: {
-          multiTimeframe: "Unavailable due to error.",
-          volumeProfile: "Unavailable due to error.",
-          marketMicrostructure: "Unavailable due to error.",
-        },
-        riskManagement: {
-          positionSizing: "Unavailable due to error.",
-          dynamicLevels: "Unavailable due to error.",
-        },
-        sentimentAndFlow: {
-          onChainMetrics: "Unavailable due to error.",
-          marketSentiment: "Unavailable due to error.",
-        },
-        probabilityAssessment: {
-          successMatrix: "Unavailable due to error.",
-          alternativeScenarios: "Unavailable due to error.",
-        },
-        advancedConfluence: {
-          indicators: "Unavailable due to error.",
-          patterns: "Unavailable due to error.",
-        },
-        institutionalBehavior: {
-          smartMoney: "Unavailable due to error.",
-          correlation: "Unavailable due to error.",
-        },
-        executionStrategy: {
-          entryTactics: "Unavailable due to error.",
-          exitStrategy: "Unavailable due to error.",
-        },
-        marketContext: {
-          macroFactors: "Unavailable due to error.",
-          technicalCatalysts: "Unavailable due to error.",
-        },
-        performanceTracking: {
-          tradeManagementKPIs: "Unavailable due to error.",
-          learningMetrics: "Unavailable due to error.",
-        },
-        alertSystem: {
-          preEntry: "Unavailable due to error.",
-          inTrade: "Unavailable due to error.",
-        },
+        predictiveAnalysis: { predictedTarget: "Unavailable", timeframe: "Unavailable", successProbability: "Unavailable", invalidationLevel: "Unavailable" },
+        technicalAnalysis: { multiTimeframe: "Unavailable", volumeProfile: "Unavailable", marketMicrostructure: "Unavailable" },
+        riskManagement: { positionSizing: "Unavailable", dynamicLevels: "Unavailable" },
+        sentimentAndFlow: { onChainMetrics: "Unavailable", marketSentiment: "Unavailable" },
+        probabilityAssessment: { successMatrix: "Unavailable", alternativeScenarios: "Unavailable" },
+        advancedConfluence: { indicators: "Unavailable", patterns: "Unavailable" },
+        institutionalBehavior: { smartMoney: "Unavailable", correlation: "Unavailable" },
+        executionStrategy: { entryTactics: "Unavailable", exitStrategy: "Unavailable" },
+        marketContext: { macroFactors: "Unavailable", technicalCatalysts: "Unavailable" },
+        performanceTracking: { tradeManagementKPIs: "Unavailable", learningMetrics: "Unavailable" },
+        alertSystem: { preEntry: "Unavailable", inTrade: "Unavailable" },
       };
       return errorPayload;
     }
