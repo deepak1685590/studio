@@ -199,64 +199,62 @@ const generateAiInsightFlow = ai.defineFlow(
       // Construct a user-friendly error message within the expected output schema.
       // This prevents the entire component from crashing.
       const errorMessage =
-        error instanceof Error && error.message.includes('429')
+        error instanceof Error && (error.message.includes('429') || error.message.includes('Too Many Requests'))
           ? 'The AI model is currently experiencing high demand (rate limit exceeded). Please try again in a few moments.'
           : 'An unexpected error occurred while generating the AI analysis.';
 
       // Return a valid object that matches the output schema but contains error messages.
-      const errorOutput: GenerateAiInsightOutput = {
+      // This is a "graceful failure" that the front-end can render.
+      return {
         executiveSummary: {
-          primaryBias: 'Error',
-          setupStrength: 'Error',
-          keyLevels: 'Error',
-          opportunityGrade: 'Retail', // Default value
+          primaryBias: "Error",
+          setupStrength: "N/A",
+          keyLevels: "N/A",
+          opportunityGrade: "Retail", // A valid enum value is required.
           timeHorizon: errorMessage,
         },
         technicalAnalysis: {
-          multiTimeframe: 'Unavailable due to error.',
-          volumeProfile: 'Unavailable due to error.',
-          marketMicrostructure: 'Unavailable due to error.',
+          multiTimeframe: "Unavailable due to error.",
+          volumeProfile: "Unavailable due to error.",
+          marketMicrostructure: "Unavailable due to error.",
         },
         riskManagement: {
-          positionSizing: 'Unavailable due to error.',
-          dynamicLevels: 'Unavailable due to error.',
+          positionSizing: "Unavailable due to error.",
+          dynamicLevels: "Unavailable due to error.",
         },
         sentimentAndFlow: {
-          onChainMetrics: 'Unavailable due to error.',
-          marketSentiment: 'Unavailable due to error.',
+          onChainMetrics: "Unavailable due to error.",
+          marketSentiment: "Unavailable due to error.",
         },
         probabilityAssessment: {
-          successMatrix: 'Unavailable due to error.',
-          alternativeScenarios: 'Unavailable due to error.',
+          successMatrix: "Unavailable due to error.",
+          alternativeScenarios: "Unavailable due to error.",
         },
         advancedConfluence: {
-          indicators: 'Unavailable due to error.',
-          patterns: 'Unavailable due to error.',
+          indicators: "Unavailable due to error.",
+          patterns: "Unavailable due to error.",
         },
         institutionalBehavior: {
-          smartMoney: 'Unavailable due to error.',
-          correlation: 'Unavailable due to error.',
+          smartMoney: "Unavailable due to error.",
+          correlation: "Unavailable due to error.",
         },
         executionStrategy: {
-          entryTactics: 'Unavailable due to error.',
-          exitStrategy: 'Unavailable due to error.',
+          entryTactics: "Unavailable due to error.",
+          exitStrategy: "Unavailable due to error.",
         },
         marketContext: {
-          macroFactors: 'Unavailable due to error.',
-          technicalCatalysts: 'Unavailable due to error.',
+          macroFactors: "Unavailable due to error.",
+          technicalCatalysts: "Unavailable due to error.",
         },
         performanceTracking: {
-          tradeManagementKPIs: 'Unavailable due to error.',
-          learningMetrics: 'Unavailable due to error.',
+          tradeManagementKPIs: "Unavailable due to error.",
+          learningMetrics: "Unavailable due to error.",
         },
         alertSystem: {
-          preEntry: 'Unavailable due to error.',
-          inTrade: 'Unavailable due to error.',
+          preEntry: "Unavailable due to error.",
+          inTrade: "Unavailable due to error.",
         },
       };
-      // We are still "resolving" the flow, but with an error object
-      // so the front end can handle it gracefully.
-      return errorOutput;
     }
   }
 );
