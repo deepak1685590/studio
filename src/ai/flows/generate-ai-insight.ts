@@ -193,6 +193,30 @@ Fill out every field in the following JSON object with detailed, expert-level an
 `,
 });
 
+/**
+ * Retries a promise-based function with exponential backoff.
+ * @param fn The async function to retry.
+ * @param retries The number of retries.
+ * @param delay The initial delay in ms.
+ * @returns The result of the function if successful.
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  delay = 1000
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries > 0 && error instanceof Error && (error.message.includes('429') || error.message.includes('Too Many Requests'))) {
+      console.log(`Rate limit hit. Retrying in ${delay / 1000}s... (${retries} retries left)`);
+      await new Promise(res => setTimeout(res, delay));
+      return retryWithBackoff(fn, retries - 1, delay * 2); // Exponential backoff
+    }
+    throw error;
+  }
+}
+
 const generateAiInsightFlow = ai.defineFlow(
   {
     name: 'generateAiInsightFlow',
@@ -201,18 +225,20 @@ const generateAiInsightFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      const result = await prompt(input);
+      // Wrap the AI call in the retry utility
+      const result = await retryWithBackoff(() => prompt(input));
+      
       const output = result.output;
       if (!output) {
-        throw new Error('AI failed to generate a valid output.');
+        throw new Error('AI failed to generate a valid output after retries.');
       }
       return output;
     } catch (error) {
-      console.error('Error in generateAiInsightFlow:', error);
+      console.error('Error in generateAiInsightFlow after all retries:', error);
       
       const errorMessage =
         error instanceof Error && (error.message.includes('429') || error.message.includes('Too Many Requests'))
-          ? 'The AI model is currently experiencing high demand (rate limit exceeded). Please try again in a few moments.'
+          ? 'The AI model is still experiencing high demand after several retries. Please try again in a few moments.'
           : `An unexpected error occurred while generating the AI analysis: ${error instanceof Error ? error.message : String(error)}`;
 
       // Return a complete, valid object that matches the output schema but contains error messages.
