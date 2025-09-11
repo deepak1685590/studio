@@ -92,7 +92,7 @@ const generateVolumeAnalysis = (seed: string): VolumeAnalysis => {
     return analysis as VolumeAnalysis;
 }
 
-const generateMultiTimeframeSR = (price: number, seed: string): MultiTimeframeSR => {
+const generateMultiTimeframeSR = (price: number, seed: string, isBullish: boolean): MultiTimeframeSR => {
     const sr: Partial<MultiTimeframeSR> = {};
     const tfs: (keyof MultiTimeframeSR)[] = ['5m', '15m', '1H'];
 
@@ -110,6 +110,7 @@ const generateMultiTimeframeSR = (price: number, seed: string): MultiTimeframeSR
             R1: pivot + 0.382 * range,
             R2: pivot + 0.618 * range,
             R3: pivot + 1.000 * range,
+            probableTarget: isBullish ? 'R1' : 'S1',
         };
     });
 
@@ -251,7 +252,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const reversalConfirmed = pseudoRandom(seed + 'reversal') > 0.6;
     
     const volumeAnalysis = generateVolumeAnalysis(seed);
-    const multiTimeframeSR = generateMultiTimeframeSR(price, seed);
+    const multiTimeframeSR = generateMultiTimeframeSR(price, seed, isBullish);
     
     // --- Momentum (RSI simulation) ---
     const rsiValue = Math.floor(pseudoRandom(seed + 'rsi') * 80 + 10); // RSI between 10 and 90

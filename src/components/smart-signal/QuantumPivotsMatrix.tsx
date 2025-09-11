@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { MultiTimeframeSR } from '@/types';
+import { MultiTimeframeSR, SupportResistanceLevel } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
@@ -17,8 +17,11 @@ const QuantumPivotsMatrix: React.FC<QuantumPivotsMatrixProps> = ({ data }) => {
         return price < 10 ? price.toFixed(4) : price.toFixed(2);
     }
   
-    const LevelCell: React.FC<{ label: string; value: number; type: 'support' | 'resistance' }> = ({ label, value, type }) => (
-        <div className="text-center">
+    const LevelCell: React.FC<{ label: string; value: number; type: 'support' | 'resistance'; isTarget: boolean }> = ({ label, value, type, isTarget }) => (
+        <div className={cn(
+            "text-center p-2 rounded-md transition-all duration-300",
+            isTarget && (type === 'support' ? 'bg-green-500/10 shadow-[0_0_15px_rgba(74,222,128,0.6)]' : 'bg-red-500/10 shadow-[0_0_15px_rgba(239,68,68,0.6)]')
+        )}>
             <div className={cn(
                 "font-mono font-bold text-lg",
                 type === 'support' ? "text-green-400" : "text-red-400"
@@ -35,15 +38,15 @@ const QuantumPivotsMatrix: React.FC<QuantumPivotsMatrixProps> = ({ data }) => {
         <div key={tf} className="bg-black/40 p-3 rounded-lg border border-primary/20">
           <h4 className="font-headline text-lg text-primary text-center mb-2">{tf.toUpperCase()} Levels</h4>
           <div className="grid grid-cols-3 gap-2">
-            <LevelCell label="Support 1" value={data[tf].S1} type="support" />
-            <LevelCell label="Support 2" value={data[tf].S2} type="support" />
-            <LevelCell label="Support 3" value={data[tf].S3} type="support" />
+            <LevelCell label="Support 1" value={data[tf].S1} type="support" isTarget={data[tf].probableTarget === 'S1'} />
+            <LevelCell label="Support 2" value={data[tf].S2} type="support" isTarget={data[tf].probableTarget === 'S2'} />
+            <LevelCell label="Support 3" value={data[tf].S3} type="support" isTarget={data[tf].probableTarget === 'S3'} />
           </div>
           <hr className="my-2 border-primary/20 border-dashed" />
           <div className="grid grid-cols-3 gap-2">
-            <LevelCell label="Resistance 1" value={data[tf].R1} type="resistance" />
-            <LevelCell label="Resistance 2" value={data[tf].R2} type="resistance" />
-            <LevelCell label="Resistance 3" value={data[tf].R3} type="resistance" />
+            <LevelCell label="Resistance 1" value={data[tf].R1} type="resistance" isTarget={data[tf].probableTarget === 'R1'} />
+            <LevelCell label="Resistance 2" value={data[tf].R2} type="resistance" isTarget={data[tf].probableTarget === 'R2'} />
+            <LevelCell label="Resistance 3" value={data[tf].R3} type="resistance" isTarget={data[tf].probableTarget === 'R3'} />
           </div>
         </div>
       ))}

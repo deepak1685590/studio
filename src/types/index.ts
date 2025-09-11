@@ -146,6 +146,7 @@ export interface SupportResistanceLevel {
     R1: number;
     R2: number;
     R3: number;
+    probableTarget: 'S1' | 'S2' | 'S3' | 'R1' | 'R2' | 'R3';
 }
 
 export interface MultiTimeframeSR {
