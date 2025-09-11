@@ -116,6 +116,7 @@ export interface LiquidityInfo {
 export interface SmartMoneyConcepts {
     bos: string;
     choch: string;
+    confirmedEntry: string;
 }
 
 export interface SidewaysMarket {

@@ -330,7 +330,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             supplyZone,
             fvg,
             liquidity: { type: 'Range-Bound', level: 'N/A', description: 'Liquidity is building on both sides of the range.' },
-            smartMoneyConcepts: { bos: 'N/A', choch: 'N/A' },
+            smartMoneyConcepts: { bos: 'N/A', choch: 'N/A', confirmedEntry: 'N/A' },
             marketStructure: "Consolidating",
             multiTimeframeAnalysis: {},
             reversalConfirmed: false,
@@ -434,6 +434,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const sl = isBullish ? (parseFloat(entry) - atr*atrMultiplier).toFixed(4) : (parseFloat(entry) + atr*atrMultiplier).toFixed(4);
     const tp1 = isBullish ? (parseFloat(entry) + atr*tpMultiplier1).toFixed(4) : (parseFloat(entry) - atr*tpMultiplier1).toFixed(4);
     const tp2 = isBullish ? (parseFloat(entry) + atr*tpMultiplier2).toFixed(4) : (parseFloat(entry) - atr*tpMultiplier2).toFixed(4);
+    const confirmedEntry = (parseFloat(entry) * (isBullish ? 1.0005 : 0.9995)).toFixed(4);
 
     const risk = Math.abs(parseFloat(entry) - parseFloat(sl));
     const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
@@ -530,6 +531,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         smartMoneyConcepts: {
             bos: bosLevel,
             choch: isBullish ? (swingLow * 0.998).toFixed(4) : (swingHigh * 1.002).toFixed(4),
+            confirmedEntry,
         },
         marketStructure,
         multiTimeframeAnalysis,

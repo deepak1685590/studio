@@ -382,6 +382,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 <p className="text-xs text-foreground/70 pt-1">{data.liquidity.description}</p>
                 <div className="flex justify-between text-sm pt-1 font-mono"><span className="text-foreground/70 font-sans">Break of Structure:</span><span>${data.smartMoneyConcepts.bos}</span></div>
                 <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">Change of Character:</span><span>${data.smartMoneyConcepts.choch}</span></div>
+                <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">Confirmed {data.isBullish ? 'Long' : 'Short'} Entry:</span><span className={cn('font-bold', trendColor)}>${data.smartMoneyConcepts.confirmedEntry}</span></div>
               </div>
            </SectionWrapper>
         </div>
