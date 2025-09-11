@@ -271,7 +271,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </SectionWrapper>
 
-      {data.sniperZone && (
+      {mode === '4' && data.sniperZone && (
         <Alert className="border-primary bg-gradient-to-br from-primary/20 via-black to-accent/20 text-primary shadow-[0_0_25px_hsl(var(--primary)_/_0.6)] scanner-glow">
             <Crosshair className="h-5 w-5 text-primary" />
             <AlertTitle className="font-headline text-lg text-primary">
