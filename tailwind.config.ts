@@ -98,8 +98,8 @@ export default {
           },
         },
          'pulse-glow': {
-          '0%, 100%': { boxShadow: '0 0 20px hsl(var(--primary) / 0.5)' },
-          '50%': { boxShadow: '0 0 30px hsl(var(--primary) / 0.7)' },
+          '0%, 100%': { filter: 'drop-shadow(0 0 10px hsl(var(--primary) / 0.5))' },
+          '50%': { filter: 'drop-shadow(0 0 15px hsl(var(--primary) / 0.7))' },
         },
         'neon-blue': {
           '0%, 100%': {
