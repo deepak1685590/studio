@@ -1,12 +1,44 @@
 
 "use client";
 
+import React from 'react';
+import dynamic from 'next/dynamic';
 import { useAuth } from "@/hooks/useAuth";
-import LoginScreen from "@/components/auth/LoginScreen";
-import MainApp from "@/components/layout/MainApp";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams } from 'next/navigation';
-import React from 'react';
+
+// Dynamically import components to split the code and improve initial load time.
+// The main app bundle won't be loaded until the user is logged in.
+const MainApp = dynamic(() => import('@/components/layout/MainApp'), {
+  loading: () => <AppSkeleton />,
+});
+
+const LoginScreen = dynamic(() => import('@/components/auth/LoginScreen'), {
+  loading: () => <LoginSkeleton />,
+});
+
+const LoginSkeleton = () => (
+  <div className="flex justify-center items-center min-h-screen">
+    <div className="w-full max-w-md p-8 space-y-4">
+      <Skeleton className="h-10 w-3/4 mx-auto" />
+      <Skeleton className="h-8 w-1/2 mx-auto" />
+      <Skeleton className="h-12 w-full" />
+      <Skeleton className="h-12 w-full" />
+      <Skeleton className="h-12 w-full" />
+    </div>
+  </div>
+);
+
+const AppSkeleton = () => (
+  <div className="flex justify-center items-center min-h-screen">
+    <div className="w-full max-w-7xl p-4 space-y-6">
+       <Skeleton className="h-16 w-full max-w-5xl mx-auto" />
+       <Skeleton className="h-64 w-full" />
+       <Skeleton className="h-48 w-full" />
+    </div>
+  </div>
+);
+
 
 function HomePageContent() {
   const { user, loading, status, revocationReason } = useAuth();
@@ -14,17 +46,7 @@ function HomePageContent() {
   const symbolFromScanner = searchParams.get('symbol');
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="w-full max-w-md p-8 space-y-4">
-          <Skeleton className="h-10 w-3/4 mx-auto" />
-          <Skeleton className="h-8 w-1/2 mx-auto" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      </div>
-    );
+    return <AppSkeleton />;
   }
 
   if (!user) {
@@ -36,7 +58,8 @@ function HomePageContent() {
 
 export default function Home() {
   return (
-    <React.Suspense fallback={<div className="flex justify-center items-center min-h-screen">Loading...</div>}>
+    // Suspense boundary for useSearchParams and dynamic components
+    <React.Suspense fallback={<AppSkeleton />}>
       <HomePageContent />
     </React.Suspense>
   );

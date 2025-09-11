@@ -273,7 +273,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       "smartsignal-widget w-full border-2 rounded-xl overflow-hidden shadow-[0_0_30px_var(--tw-shadow-color)] bg-black/70 backdrop-blur-sm transition-all duration-500",
       borderColor
     )}>
-      <header className="widget-header p-4 text-center font-headline text-2xl bg-black/50">
+      <header className="widget-header p-4 text-center font-headline text-xl md:text-2xl bg-black/50">
          <h3 className="animate-flicker text-primary" style={{ textShadow: '0 0 5px var(--primary), 0 0 15px var(--primary)' }}>
             SmartSignal Pro - Quantum Analysis Engine
         </h3>
@@ -281,7 +281,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             CREATOR: <span className="animate-neon-purple">DG143</span>
         </div>
       </header>
-      <div className="widget-controls p-6 space-y-4">
+      <div className="widget-controls p-4 md:p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div className='flex-grow'>
                 <label htmlFor="symbolInput" className="text-sm font-bold text-primary/80">Enter asset (e.g., BTC, EUR/USD, NIFTY)</label>
@@ -293,7 +293,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
                     className={cn("bg-input text-foreground", inputColor)}
                 />
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 shrink-0">
                 <Switch id="show-chart" checked={showChart} onCheckedChange={setShowChart} />
                 <Label htmlFor="show-chart" className="flex items-center gap-1 font-bold text-primary/80">
                     {showChart ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -333,15 +333,15 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             </div>
         </div>
 
-        <Button onClick={() => handleGenerateSignal(symbol)} disabled={loading} className={cn("w-full font-headline uppercase border-2 transition-all duration-300", buttonColor)}>
+        <Button onClick={() => handleGenerateSignal(symbol)} disabled={loading} className={cn("w-full font-headline uppercase border-2 transition-all duration-300 text-base py-6", buttonColor)}>
           {loading ? (
             <>
-              <BrainCircuit className="mr-2 h-4 w-4 animate-spin" />
+              <BrainCircuit className="mr-2 h-5 w-5 animate-spin" />
               Analyzing Market Vectors...
             </>
           ) : (
             <>
-              <Rocket className="mr-2 h-4 w-4" />
+              <Rocket className="mr-2 h-5 w-5" />
               Engage Quantum Analysis
             </>
           )}
@@ -350,11 +350,11 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 
       {signalData && !loading && <TrendRibbon isBullish={signalData.isBullish} symbol={signalData.symbol} />}
 
-      <div className="widget-body p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="widget-body p-4 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {loading ? <LoadingSkeleton /> : (
           <div className="space-y-6">
             {showChart && (
-                <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
+                <div className="h-[300px] md:h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
                     <TradingViewWidget symbol={signalData?.symbol || initialSymbol} timeframe={timeframe} />
                 </div>
             )}
