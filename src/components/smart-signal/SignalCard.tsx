@@ -331,9 +331,9 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
           <SectionHeader icon={<GitCommitHorizontal />} title="Fibonacci Levels" />
           <SectionWrapper>
               <div className="space-y-1 font-mono">
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Aggressive (38.2%):</span><span>${data.fibonacciLevels.level_382}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Standard (50.0%):</span><span>${data.fibonacciLevels.level_500}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Conservative (61.8%):</span><span>${data.fibonacciLevels.level_618}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">{data.isBullish ? 'Long' : 'Short'} Entry (38.2%):</span><span>${data.fibonacciLevels.level_382}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">{data.isBullish ? 'Long' : 'Short'} Entry (50.0%):</span><span>${data.fibonacciLevels.level_500}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-foreground/70">{data.isBullish ? 'Long' : 'Short'} Entry (61.8%):</span><span>${data.fibonacciLevels.level_618}</span></div>
               </div>
           </SectionWrapper>
         </div>

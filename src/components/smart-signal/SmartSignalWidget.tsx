@@ -9,7 +9,7 @@ import { getSignalData } from '@/lib/technical-analysis';
 import type { SignalData } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
-import { Rocket, BrainCircuit, Upload } from 'lucide-react';
+import { Rocket, BrainCircuit, Upload, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timeframe, LiveTradeData } from '@/types';
 import jsPDF from 'jspdf';
@@ -20,6 +20,8 @@ import { Skeleton } from '../ui/skeleton';
 import ChartAnalysisModal from './ChartAnalysisModal';
 import TradingSimulator from './TradingSimulator';
 import TrendRibbon from './TrendRibbon';
+import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -41,6 +43,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const [chartImage, setChartImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [showChart, setShowChart] = useState(true);
 
 
   const { toast } = useToast();
@@ -279,15 +282,24 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
         </div>
       </header>
       <div className="widget-controls p-6 space-y-4">
-        <div>
-          <label htmlFor="symbolInput" className="text-sm font-bold text-primary/80">Enter asset (e.g., BTC, EUR/USD, NIFTY)</label>
-          <Input 
-            id="symbolInput"
-            value={symbol}
-            onChange={handleSymbolInputChange}
-            placeholder="e.g. BTC, EUR/USD, NIFTY"
-            className={cn("bg-input text-foreground", inputColor)}
-          />
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div className='flex-grow'>
+                <label htmlFor="symbolInput" className="text-sm font-bold text-primary/80">Enter asset (e.g., BTC, EUR/USD, NIFTY)</label>
+                <Input 
+                    id="symbolInput"
+                    value={symbol}
+                    onChange={handleSymbolInputChange}
+                    placeholder="e.g. BTC, EUR/USD, NIFTY"
+                    className={cn("bg-input text-foreground", inputColor)}
+                />
+            </div>
+            <div className="flex items-center space-x-2">
+                <Switch id="show-chart" checked={showChart} onCheckedChange={setShowChart} />
+                <Label htmlFor="show-chart" className="flex items-center gap-1 font-bold text-primary/80">
+                    {showChart ? <Eye size={16} /> : <EyeOff size={16} />}
+                    Show Chart
+                </Label>
+            </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -341,9 +353,11 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       <div className="widget-body p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {loading ? <LoadingSkeleton /> : (
           <div className="space-y-6">
-            <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
-              <TradingViewWidget symbol={signalData?.symbol || initialSymbol} timeframe={timeframe} />
-            </div>
+            {showChart && (
+                <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
+                    <TradingViewWidget symbol={signalData?.symbol || initialSymbol} timeframe={timeframe} />
+                </div>
+            )}
             
             <div className="bg-black/30 rounded-lg border border-accent/50 p-4 space-y-3">
                  <h4 className="font-headline text-lg text-accent text-center">AI Chart Vision</h4>
