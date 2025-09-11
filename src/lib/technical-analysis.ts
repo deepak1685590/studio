@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
@@ -236,7 +231,8 @@ const isCrypto = (symbol: string): boolean => {
 
 export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, forceMock = false): Promise<SignalData> => {
     let price, klines: any[], symbolWithUSDT = symbol.toUpperCase().replace('/', '') + (isCrypto(symbol) ? "USDT" : "");
-    const seed = `${symbol}-${timeframe}-${mode}`;
+    // The analysis seed should be consistent regardless of mode.
+    const analysisSeed = `${symbol}-${timeframe}`;
     
     const timeframeToInterval = {
       '5m': '5m',
@@ -256,7 +252,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         if (symbol.toUpperCase().includes('BANKNIFTY')) basePrice = 50000;
         if (symbol.toUpperCase().includes('/')) basePrice = 1.1; // Forex
         
-        price = parseFloat((pseudoRandom(seed + 'price') * basePrice * 0.2 + basePrice * 0.9).toFixed(4));
+        price = parseFloat((pseudoRandom(analysisSeed + 'price') * basePrice * 0.2 + basePrice * 0.9).toFixed(4));
         klines = getMockKlines(price, timeframe);
     } else {
         try {
@@ -342,19 +338,19 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const recentVolumes = klines.slice(-20).map((k: any[]) => parseFloat(k[5]));
     const avgVolume = recentVolumes.reduce((a, b) => a + b, 0) / recentVolumes.length;
     
-    const buyVolume = avgVolume * (isBullish ? 1.2 : 0.8) * (1 + (pseudoRandom(seed+'buy') - 0.5) * 0.2);
-    const sellVolume = avgVolume * (isBullish ? 0.8 : 1.2) * (1 + (pseudoRandom(seed+'sell') - 0.5) * 0.2);
+    const buyVolume = avgVolume * (isBullish ? 1.2 : 0.8) * (1 + (pseudoRandom(analysisSeed+'buy') - 0.5) * 0.2);
+    const sellVolume = avgVolume * (isBullish ? 0.8 : 1.2) * (1 + (pseudoRandom(analysisSeed+'sell') - 0.5) * 0.2);
     const netFlow = buyVolume - sellVolume;
 
     const volumeImbalance = netFlow > 0 ? `🟢 Buyers in Control (+${Math.round(netFlow)} units)` : `🔴 Sellers in Control (${Math.round(netFlow)} units)`;
       
-    const reversalConfirmed = pseudoRandom(seed + 'reversal') > 0.6;
+    const reversalConfirmed = pseudoRandom(analysisSeed + 'reversal') > 0.6;
     
-    const volumeAnalysis = generateVolumeAnalysis(seed);
-    const multiTimeframeSR = generateMultiTimeframeSR(price, seed, isBullish);
+    const volumeAnalysis = generateVolumeAnalysis(analysisSeed);
+    const multiTimeframeSR = generateMultiTimeframeSR(price, analysisSeed, isBullish);
     
     // --- Momentum (RSI simulation) ---
-    const rsiValue = Math.floor(pseudoRandom(seed + 'rsi') * 80 + 10); // RSI between 10 and 90
+    const rsiValue = Math.floor(pseudoRandom(analysisSeed + 'rsi') * 80 + 10); // RSI between 10 and 90
     let momentum: Momentum;
     if (rsiValue > 75) momentum = { score: rsiValue, rating: 'Overbought' };
     else if (rsiValue > 55) momentum = { score: rsiValue, rating: 'Bullish' };
@@ -363,7 +359,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     else momentum = { score: rsiValue, rating: 'Oversold' };
 
     // --- Trend Strength (ADX simulation) ---
-    const adxValue = Math.floor(pseudoRandom(seed + 'adx') * 60 + 10); // ADX between 10 and 70
+    const adxValue = Math.floor(pseudoRandom(analysisSeed + 'adx') * 60 + 10); // ADX between 10 and 70
     let trendStrength: TrendStrength;
     let sidewaysMarket: SidewaysMarket | undefined = undefined;
 
@@ -379,7 +375,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     }
     
     // --- ADVANCED STRENGTH DASHBOARD ---
-    const advancedStrengthDashboard = generateAdvancedStrengthData(price, closes, volumes, seed, isBullish, rsiValue, adxValue, { ema20, ema50 });
+    const advancedStrengthDashboard = generateAdvancedStrengthData(price, closes, volumes, analysisSeed, isBullish, rsiValue, adxValue, { ema20, ema50 });
 
     // --- ADVANCED CONFLUENCE FACTORS ---
     const confluenceFactors = [
@@ -438,7 +434,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             price,
             mode,
             timeframe,
-            isBullish: pseudoRandom(seed + 'sideways_bull') > 0.5, // Random for UI color
+            isBullish: pseudoRandom(analysisSeed + 'sideways_bull') > 0.5, // Random for UI color
             action: "Monitor for Breakout",
             entry: "N/A",
             sl: "N/A",
@@ -536,7 +532,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     analysisTimeframes.forEach(tf => {
         if (!multiTimeframeAnalysis[tf]) {
-            multiTimeframeAnalysis[tf] = trends[Math.floor(pseudoRandom(seed + tf) * 3)];
+            multiTimeframeAnalysis[tf] = trends[Math.floor(pseudoRandom(analysisSeed + tf) * 3)];
         }
     });
     
@@ -548,15 +544,15 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     });
 
     if (parseInt(mode) >= 2) {
-        const waveConvergence = (pseudoRandom(seed + 'wave') * 40 + 60).toFixed(1);
+        const waveConvergence = (pseudoRandom(analysisSeed + 'wave') * 40 + 60).toFixed(1);
         confluenceFactors.push(`Quantum Wave Convergence: ${waveConvergence}%`);
     }
     if (parseInt(mode) >= 3) {
         const anomalyType = isBullish ? 'Expansion' : 'Contraction';
-        const anomalySeverity = (pseudoRandom(seed + 'anomaly') * 0.5 + 1.2).toFixed(2);
+        const anomalySeverity = (pseudoRandom(analysisSeed + 'anomaly') * 0.5 + 1.2).toFixed(2);
         confluenceFactors.push(`Chrono-Distortion Anomaly: ${anomalyType} (${anomalySeverity}σ)`);
         
-        const liquidityPulse = (pseudoRandom(seed + 'pulse') * 150 + 50).toFixed(0);
+        const liquidityPulse = (pseudoRandom(analysisSeed + 'pulse') * 150 + 50).toFixed(0);
         confluenceFactors.push(`Subspace Liquidity Pulse: ${liquidityPulse}M units detected`);
     }
     
@@ -581,23 +577,23 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         { name: 'Double Top', description: 'A bearish reversal pattern where the price hits a resistance level twice and fails to break through.' },
     ];
     const chartPattern: ChartPattern = isBullish 
-        ? bullishPatterns[Math.floor(pseudoRandom(seed+'pattern') * bullishPatterns.length)] 
-        : bearishPatterns[Math.floor(pseudoRandom(seed+'pattern') * bearishPatterns.length)];
+        ? bullishPatterns[Math.floor(pseudoRandom(analysisSeed+'pattern') * bullishPatterns.length)] 
+        : bearishPatterns[Math.floor(pseudoRandom(analysisSeed+'pattern') * bearishPatterns.length)];
     
     
     const tradersChecklist: TradersChecklist = {
         riskRewardPass: riskReward > 1.5,
         mtfAlignmentPass: multiTimeframeAnalysis[mtfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish') || multiTimeframeAnalysis[htfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish'),
         volumeConfirmationPass: netFlow > 0 === isBullish,
-        entryInZonePass: pseudoRandom(seed + 'entry_zone') > 0.4,
+        entryInZonePass: pseudoRandom(analysisSeed + 'entry_zone') > 0.4,
         momentumAlignmentPass: isBullish ? momentum.rating !== 'Overbought' : momentum.rating !== 'Oversold',
-        smartMoneyEntryPass: pseudoRandom(seed + 'sm_entry') > 0.3,
+        smartMoneyEntryPass: pseudoRandom(analysisSeed + 'sm_entry') > 0.3,
     };
     
     let goldenPullbackZone: GoldenPullbackZone | undefined = undefined;
     
     const fib618 = parseFloat(fibonacciLevels.level_618);
-    const shouldShowGoldenZone = pseudoRandom(seed + 'golden_zone_chance') > 0.7; // 30% chance to force a golden zone setup
+    const shouldShowGoldenZone = pseudoRandom(analysisSeed + 'golden_zone_chance') > 0.7; // 30% chance to force a golden zone setup
 
     const isEntryInGoldenZone = isBullish
       ? parseFloat(entry) <= Math.max(fib618, pivot) && parseFloat(entry) >= Math.min(fib618, pivot)
@@ -619,10 +615,10 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     };
 
     const confidenceBreakdown: ConfidenceBreakdown = {
-        patternStrength: Math.floor(pseudoRandom(seed + 'cs1') * 15 + 80),
-        volumeConfirmation: Math.floor(pseudoRandom(seed + 'cs2') * 20 + 70),
-        htfAlignment: tradersChecklist.mtfAlignmentPass ? Math.floor(pseudoRandom(seed + 'cs3') * 15 + 85) : Math.floor(pseudoRandom(seed + 'cs3') * 20 + 50),
-        smartMoneyFlow: Math.floor(pseudoRandom(seed + 'cs4') * 25 + 65),
+        patternStrength: Math.floor(pseudoRandom(analysisSeed + 'cs1') * 15 + 80),
+        volumeConfirmation: Math.floor(pseudoRandom(analysisSeed + 'cs2') * 20 + 70),
+        htfAlignment: tradersChecklist.mtfAlignmentPass ? Math.floor(pseudoRandom(analysisSeed + 'cs3') * 15 + 85) : Math.floor(pseudoRandom(analysisSeed + 'cs3') * 20 + 50),
+        smartMoneyFlow: Math.floor(pseudoRandom(analysisSeed + 'cs4') * 25 + 65),
         overall: 0,
     };
     confidenceBreakdown.overall = Math.round((confidenceBreakdown.patternStrength + confidenceBreakdown.volumeConfirmation + confidenceBreakdown.htfAlignment + confidenceBreakdown.smartMoneyFlow) / 4);
@@ -633,7 +629,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const liquidityLevel = isBullish ? swingHigh * 1.005 : swingLow * 0.995;
 
     let sniperZone: SniperZone | undefined = undefined;
-    if (mode === '4' && confidenceBreakdown.overall > 80 && pseudoRandom(seed + 'sniper_zone_chance') > 0.6) {
+    if (mode === '4' && confidenceBreakdown.overall > 80 && pseudoRandom(analysisSeed + 'sniper_zone_chance') > 0.6) {
         const zoneCenter = (fib618 + pivot) / 2;
         const zoneSize = atr * 0.1; // Make it a very tight zone
         sniperZone = {

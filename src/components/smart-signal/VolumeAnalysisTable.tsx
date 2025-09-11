@@ -1,11 +1,11 @@
 
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { VolumeAnalysis, LiveTradeData, VolumeSignal, BookTicker } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { HelpCircle, Sparkles } from 'lucide-react';
+import { HelpCircle, Sparkles, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 
@@ -24,13 +24,26 @@ const calculateSignal = (ratio: number): VolumeSignal => {
 };
 
 const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveData, bookTicker }) => {
-  
+  const [lastTrade, setLastTrade] = useState<'buy' | 'sell' | null>(null);
+
+  useEffect(() => {
+    if (liveData) {
+      const side = liveData.side === 'Buy' ? 'buy' : liveData.side === 'Sell' ? 'sell' : null;
+      if (side) {
+        setLastTrade(side);
+        const timer = setTimeout(() => setLastTrade(null), 300); // Effect lasts for 300ms
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [liveData]);
+
   const volumeState = useMemo(() => {
     if (!liveData) {
       return data;
     }
 
-    const newState = JSON.parse(JSON.stringify(data)); // Deep copy
+    // Create a deep copy to avoid mutating the original prop data
+    const newState = JSON.parse(JSON.stringify(data));
 
     const fiveMinData = newState['5m'];
     if (liveData.side === 'Buy') {
@@ -42,7 +55,7 @@ const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveDat
     fiveMinData.buySellRatio = fiveMinData.sellVolume > 0 ? fiveMinData.buyVolume / fiveMinData.sellVolume : fiveMinData.buyVolume > 0 ? 100 : 1;
     fiveMinData.signal = calculateSignal(fiveMinData.buySellRatio);
     
-    // Recalculate summary
+    // Recalculate summary based on the updated 5m data
     let totalBuy = 0;
     let totalSell = 0;
     const timeframes: (keyof Omit<VolumeAnalysis, 'summary'>)[] = ['5m', '15m', '1H', '4H', '1D'];
@@ -86,6 +99,7 @@ const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveDat
         <TableCell className="font-mono text-green-400">{formatVolume(summary.totalBuyVolume)}</TableCell>
         <TableCell className="font-mono text-red-400">{formatVolume(summary.totalSellVolume)}</TableCell>
         <TableCell>{getSignalBadge(summary.overallSignal)}</TableCell>
+        <TableCell></TableCell>
     </TableRow>
   );
 
@@ -126,17 +140,22 @@ const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveDat
                 <TableHead>Buy Volume</TableHead>
                 <TableHead>Sell Volume</TableHead>
                 <TableHead>Signal</TableHead>
+                <TableHead>Live Flow</TableHead>
             </TableRow>
         </TableHeader>
         <TableBody>
             {timeframes.map((tf) => {
                 const item = volumeState[tf];
+                const isLiveTf = tf === '5m';
                 return (
                     <TableRow key={tf}>
                         <TableCell className="font-bold">{tf.toUpperCase()}</TableCell>
-                        <TableCell className="font-mono text-green-400">{formatVolume(item.buyVolume)}</TableCell>
-                        <TableCell className="font-mono text-red-400">{formatVolume(item.sellVolume)}</TableCell>
+                        <TableCell className={cn("font-mono text-green-400 transition-all duration-150", isLiveTf && lastTrade === 'buy' && 'bg-green-500/30 shadow-[0_0_15px_rgba(74,222,128,0.6)] rounded-md')}>{formatVolume(item.buyVolume)}</TableCell>
+                        <TableCell className={cn("font-mono text-red-400 transition-all duration-150", isLiveTf && lastTrade === 'sell' && 'bg-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.6)] rounded-md')}>{formatVolume(item.sellVolume)}</TableCell>
                         <TableCell>{getSignalBadge(item.signal)}</TableCell>
+                        <TableCell className="text-center">
+                          {isLiveTf && <Zap size={16} className="text-primary/70 animate-pulse" title="Live Data Feed" />}
+                        </TableCell>
                     </TableRow>
                 )
             })}
