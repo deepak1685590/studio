@@ -25,9 +25,8 @@ const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveDat
 
   const VolumeRow: React.FC<{ timeframe: string; item: VolumeTimeframeData }> = ({ timeframe, item }) => {
     const buyPercentage = item.totalVolume > 0 ? (item.buyVolume / item.totalVolume) * 100 : 50;
-    const sellPercentage = 100 - buyPercentage;
     const isBuyDominant = buyPercentage > 51;
-    const isSellDominant = sellPercentage > 51;
+    const isSellDominant = buyPercentage < 49;
     
     const glowClass = isBuyDominant 
       ? 'shadow-[0_0_15px_rgba(74,222,128,0.3)]' 
@@ -41,17 +40,15 @@ const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveDat
         <div className="col-span-4">
           <div className="flex justify-between items-center text-xs mb-1">
             <span className="text-green-400 font-bold">BUY: {buyPercentage.toFixed(1)}%</span>
-            <span className="text-red-400 font-bold">SELL: {sellPercentage.toFixed(1)}%</span>
+            <span className="font-mono text-xs text-foreground/70">Total: {formatVolume(item.totalVolume)}</span>
+            <span className="text-red-400 font-bold">SELL: {(100-buyPercentage).toFixed(1)}%</span>
           </div>
-          <div className="w-full h-2.5 rounded-full bg-red-500/30 flex overflow-hidden">
+          <div className="w-full h-2.5 rounded-full bg-red-900/50 flex overflow-hidden border border-black/50">
             <div 
-                className="h-full bg-green-500/70 transition-all duration-500"
+                className="h-full bg-gradient-to-r from-green-500/50 to-green-400 transition-all duration-500"
                 style={{ width: `${buyPercentage}%` }}
             />
           </div>
-           <div className="text-right text-xs text-foreground/70 mt-1 font-mono">
-            Total Vol: {formatVolume(item.totalVolume)}
-           </div>
         </div>
       </div>
     );
@@ -63,13 +60,13 @@ const VolumeAnalysisTable: React.FC<VolumeAnalysisTableProps> = ({ data, liveDat
     
     return (
       <div className={cn(
-          "p-2 rounded-md bg-black/40 border-2",
-          isBuy && "border-green-400/50",
-          isSell && "border-red-400/50",
+          "p-2 rounded-md bg-black/40 border-2 transition-all duration-200",
+          isBuy && "border-green-400/50 animate-pulse",
+          isSell && "border-red-400/50 animate-pulse",
           !isBuy && !isSell && "border-primary/30"
         )}>
         <div className="flex justify-between items-center">
-            <Badge className="bg-primary/80 text-primary-foreground animate-pulse text-xs">LIVE FEED</Badge>
+            <Badge className="bg-primary/80 text-primary-foreground text-xs">LIVE FEED</Badge>
             <div className="text-right">
                 <div className="text-xs text-foreground/70">Last Trade</div>
                 <div className={cn(
