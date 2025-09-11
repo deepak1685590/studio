@@ -189,19 +189,19 @@ const generateAiInsightFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      const { output } = await prompt(input);
+      const result = await prompt(input);
+      const output = result.output;
       if (!output) {
         throw new Error('AI failed to generate a valid output.');
       }
       return output;
     } catch (error) {
       console.error('Error in generateAiInsightFlow:', error);
-      // Construct a user-friendly error message within the expected output schema.
-      // This prevents the entire component from crashing.
+      
       const errorMessage =
         error instanceof Error && (error.message.includes('429') || error.message.includes('Too Many Requests'))
           ? 'The AI model is currently experiencing high demand (rate limit exceeded). Please try again in a few moments.'
-          : 'An unexpected error occurred while generating the AI analysis.';
+          : 'An unexpected error occurred while generating the AI analysis. This could be a network issue or an API problem.';
 
       // Return a valid object that matches the output schema but contains error messages.
       // This is a "graceful failure" that the front-end can render.
