@@ -187,8 +187,76 @@ const generateAiInsightFlow = ai.defineFlow(
     inputSchema: GenerateAiInsightInputSchema,
     outputSchema: GenerateAiInsightOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input) => {
+    try {
+      const { output } = await prompt(input);
+      if (!output) {
+        throw new Error('AI failed to generate a valid output.');
+      }
+      return output;
+    } catch (error) {
+      console.error('Error in generateAiInsightFlow:', error);
+      // Construct a user-friendly error message within the expected output schema.
+      // This prevents the entire component from crashing.
+      const errorMessage =
+        error instanceof Error && error.message.includes('429')
+          ? 'The AI model is currently experiencing high demand (rate limit exceeded). Please try again in a few moments.'
+          : 'An unexpected error occurred while generating the AI analysis.';
+
+      // Return a valid object that matches the output schema but contains error messages.
+      const errorOutput: GenerateAiInsightOutput = {
+        executiveSummary: {
+          primaryBias: 'Error',
+          setupStrength: 'Error',
+          keyLevels: 'Error',
+          opportunityGrade: 'Retail', // Default value
+          timeHorizon: errorMessage,
+        },
+        technicalAnalysis: {
+          multiTimeframe: 'Unavailable due to error.',
+          volumeProfile: 'Unavailable due to error.',
+          marketMicrostructure: 'Unavailable due to error.',
+        },
+        riskManagement: {
+          positionSizing: 'Unavailable due to error.',
+          dynamicLevels: 'Unavailable due to error.',
+        },
+        sentimentAndFlow: {
+          onChainMetrics: 'Unavailable due to error.',
+          marketSentiment: 'Unavailable due to error.',
+        },
+        probabilityAssessment: {
+          successMatrix: 'Unavailable due to error.',
+          alternativeScenarios: 'Unavailable due to error.',
+        },
+        advancedConfluence: {
+          indicators: 'Unavailable due to error.',
+          patterns: 'Unavailable due to error.',
+        },
+        institutionalBehavior: {
+          smartMoney: 'Unavailable due to error.',
+          correlation: 'Unavailable due to error.',
+        },
+        executionStrategy: {
+          entryTactics: 'Unavailable due to error.',
+          exitStrategy: 'Unavailable due to error.',
+        },
+        marketContext: {
+          macroFactors: 'Unavailable due to error.',
+          technicalCatalysts: 'Unavailable due to error.',
+        },
+        performanceTracking: {
+          tradeManagementKPIs: 'Unavailable due to error.',
+          learningMetrics: 'Unavailable due to error.',
+        },
+        alertSystem: {
+          preEntry: 'Unavailable due to error.',
+          inTrade: 'Unavailable due to error.',
+        },
+      };
+      // We are still "resolving" the flow, but with an error object
+      // so the front end can handle it gracefully.
+      return errorOutput;
+    }
   }
 );

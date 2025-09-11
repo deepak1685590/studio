@@ -24,6 +24,15 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
       setInsight(null);
       try {
         const result = await generateAiInsight(data);
+        // Check if the result indicates an error was returned from the flow
+        if (result.executiveSummary.primaryBias === "Error") {
+            toast({
+                title: "AI Analysis Error",
+                description: result.executiveSummary.timeHorizon,
+                variant: "destructive",
+                duration: 8000
+            });
+        }
         setInsight(result);
       } catch (error) {
         console.error('AI Insight Error:', error);
@@ -81,6 +90,16 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
     }
 
     if (insight) {
+      // Check for the error condition we defined in the flow
+      if (insight.executiveSummary.primaryBias === "Error") {
+        return (
+           <div className="text-center text-destructive-foreground bg-destructive/30 p-4 rounded-md border border-destructive">
+             <strong>AI Analysis Failed:</strong>
+             <p className="mt-2">{insight.executiveSummary.timeHorizon}</p>
+          </div>
+        )
+      }
+
       return (
         <Accordion type="single" collapsible defaultValue="Executive Summary">
           {renderSection("Executive Summary", insight.executiveSummary)}
@@ -111,7 +130,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
         <h4 className="font-headline text-lg text-primary">
           Elite AI Analysis Report
         </h4>
-        {insight && (
+        {insight && insight.executiveSummary.primaryBias !== "Error" && (
             <Button onClick={copyToClipboard} variant="outline" size="sm" className="gap-2 border-primary/50 hover:bg-primary/20" disabled={!insight}>
             <Copy size={14} /> Copy Report
             </Button>
