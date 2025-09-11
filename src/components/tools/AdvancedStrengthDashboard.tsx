@@ -9,35 +9,55 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown, Gauge, Flame, Snowflake, Volume, BarChartBig, BrainCircuit, Activity, Clock, Waves, Search } from 'lucide-react';
+import { TrendingUp, TrendingDown, Gauge, Flame, Snowflake, Volume, BarChartBig, BrainCircuit, Activity, Clock, Waves, Search, Rocket, Zap } from 'lucide-react';
 
 interface AdvancedStrengthDashboardProps {
   initialSymbol?: string;
   setSelectedSymbol: (symbol: string) => void;
 }
 
-const DashboardRow: React.FC<{ label: string; value: React.ReactNode; icon?: React.ReactNode; tooltip?: string; }> = ({ label, value, icon, tooltip }) => (
+const DashboardRow: React.FC<{ label: string; value: React.ReactNode; icon?: React.ReactNode; tooltip?: string; valueClassName?: string; }> = ({ label, value, icon, valueClassName }) => (
   <div className="flex items-center justify-between p-2 bg-black/30 rounded-md border border-primary/10">
     <div className="flex items-center gap-2 text-sm text-foreground/80">
       {icon}
       <span>{label}</span>
     </div>
-    <div className="font-mono text-base font-bold text-primary">{value}</div>
+    <div className={cn("font-mono text-base font-bold text-primary", valueClassName)}>{value}</div>
   </div>
 );
 
-const StrengthMeter: React.FC<{ value: number; segments?: number }> = ({ value, segments = 10 }) => {
+const StrengthMeter: React.FC<{ value: number; colorClass: string; segments?: number }> = ({ value, colorClass, segments = 10 }) => {
     const activeSegments = Math.round((value / 100) * segments);
-    const color = value > 50 ? 'bg-green-500' : value < 50 ? 'bg-red-500' : 'bg-yellow-500';
     
     return (
         <div className="flex gap-1 w-24">
             {Array.from({ length: segments }).map((_, i) => (
-                <div key={i} className={cn("h-4 flex-1 rounded-sm", i < activeSegments ? color : 'bg-primary/10')} />
+                <div key={i} className={cn("h-4 flex-1 rounded-sm", i < activeSegments ? colorClass : 'bg-primary/10')} />
             ))}
         </div>
     );
 };
+
+const MarketPhaseHeader: React.FC<{ phase: AdvancedStrengthDashboardData['marketPhase'] }> = ({ phase }) => {
+    const phaseConfig = {
+        'BREAKOUT': { icon: <Rocket />, color: 'text-green-400', shadow: 'shadow-[0_0_15px_theme(colors.green.400)]' },
+        'BREAKDOWN': { icon: <Zap />, color: 'text-red-400', shadow: 'shadow-[0_0_15px_theme(colors.red.400)]' },
+        'CONSOLIDATION': { icon: <Waves />, color: 'text-yellow-400', shadow: 'shadow-[0_0_15px_theme(colors.yellow.400)]' },
+        'BULLISH TREND': { icon: <TrendingUp />, color: 'text-cyan-400', shadow: 'shadow-[0_0_15px_theme(colors.cyan.400)]' },
+        'BEARISH TREND': { icon: <TrendingDown />, color: 'text-orange-400', shadow: 'shadow-[0_0_15px_theme(colors.orange.400)]' },
+        'NEUTRAL': { icon: <Activity />, color: 'text-primary', shadow: 'shadow-[0_0_15px_theme(colors.primary)]' },
+    };
+    const config = phaseConfig[phase] || phaseConfig['NEUTRAL'];
+    
+    return (
+        <div className={cn("p-3 mb-4 rounded-lg border text-center transition-all duration-500", config.shadow)}>
+            <div className={cn("font-headline text-lg flex items-center justify-center gap-2", config.color)}>
+                {config.icon}
+                MARKET PHASE: {phase}
+            </div>
+        </div>
+    )
+}
 
 
 const AdvancedStrengthDashboard: React.FC<AdvancedStrengthDashboardProps> = ({ initialSymbol = 'BTC', setSelectedSymbol }) => {
@@ -78,46 +98,37 @@ const AdvancedStrengthDashboard: React.FC<AdvancedStrengthDashboardProps> = ({ i
 
   const renderContent = () => {
     if (loading) {
-      return <div className="text-center p-8">Loading Advanced Data...</div>;
+      return <div className="text-center p-8 font-headline text-primary animate-pulse">Loading Advanced Data...</div>;
     }
     if (!data) {
       return <div className="text-center p-8">No data available for this asset.</div>;
     }
 
     const trendColor = data.priceChangePercent >= 0 ? 'text-green-400' : 'text-red-400';
-    const trendIcon = data.priceChangePercent >= 0 ? <TrendingUp className={cn("inline-block", trendColor)} /> : <TrendingDown className={cn("inline-block", trendColor)} />;
+    const trendIcon = data.priceChangePercent >= 0 ? <TrendingUp className="inline-block" /> : <TrendingDown className="inline-block" />;
+    const sentimentColor = data.marketSentiment.score > 0 ? 'text-green-400' : data.marketSentiment.score < 0 ? 'text-red-400' : 'text-yellow-400';
     
     return (
         <div className="space-y-4">
-            <DashboardRow label="Market Phase" value={<span className="text-amber-400">{data.marketPhase}</span>} icon={<Waves />} />
+            <MarketPhaseHeader phase={data.marketPhase} />
             <DashboardRow 
                 label="Current Price" 
-                value={
-                    <div className={cn("flex items-center gap-2", trendColor)}>
-                        {trendIcon} {data.price} ({data.priceChangePercent.toFixed(2)}%)
-                    </div>
-                }
-                icon={<Activity />} 
+                value={<>{trendIcon} {data.price} ({data.priceChangePercent.toFixed(2)}%)</>}
+                icon={<Activity />}
+                valueClassName={trendColor}
             />
-            <DashboardRow label="Market Sentiment" value={data.marketSentiment.label} icon={<BrainCircuit />} />
+            <DashboardRow label="Market Sentiment" value={data.marketSentiment.label} icon={<BrainCircuit />} valueClassName={sentimentColor} />
             
             <h4 className="font-headline text-lg text-primary pt-2">Strength Analysis</h4>
-            <DashboardRow label="Momentum (RSI)" value={`${data.momentum.rsi.toFixed(0)} - ${data.momentum.trend}`} icon={<Gauge />} />
-            <DashboardRow label="Long Power" value={<StrengthMeter value={data.longPower} />} icon={<Flame className="text-green-400"/>} />
-            <DashboardRow label="Short Power" value={<StrengthMeter value={100 - data.shortPower} />} icon={<Snowflake className="text-red-400"/>} />
-            <DashboardRow label="Overall Strength" value={`${data.overallStrength}%`} icon={<Gauge />} />
+            <DashboardRow label="Momentum (RSI)" value={`${data.momentum.rsi.toFixed(0)} - ${data.momentum.trend}`} icon={<Gauge />} valueClassName={data.momentum.rsi > 52 ? 'text-green-400' : data.momentum.rsi < 48 ? 'text-red-400' : 'text-yellow-400'}/>
+            <DashboardRow label="Long Power" value={<StrengthMeter value={data.longPower} colorClass="bg-green-500" />} icon={<Flame className="text-green-400"/>} />
+            <DashboardRow label="Short Power" value={<StrengthMeter value={data.shortPower} colorClass="bg-red-500"/>} icon={<Snowflake className="text-red-400"/>} />
+            <DashboardRow label="Overall Strength" value={`${data.overallStrength}%`} icon={<Gauge />} valueClassName={data.overallStrength > 50 ? 'text-green-400' : 'text-red-400'}/>
 
             <h4 className="font-headline text-lg text-primary pt-2">Technical Indicators</h4>
-            <DashboardRow label="Trend Analysis" value={`${data.trendAnalysis.strength.toFixed(0)}% - ${data.trendAnalysis.momentum}`} icon={<TrendingUp />} />
-            <DashboardRow label="Volatility (ATR)" value={`${data.volatility.label} (${data.volatility.percent.toFixed(2)}%)`} icon={<Activity />} />
-            <DashboardRow label="Volume Status" value={`${data.volumeStatus.status} (${data.volumeStatus.changePercent > 0 ? '+' : ''}${data.volumeStatus.changePercent.toFixed(0)}%)`} icon={<Volume />} />
-            <DashboardRow label="Volume Meter" value={<StrengthMeter value={Math.min(100, 50 + data.volumeStatus.changePercent / 2)} />} icon={<BarChartBig />} />
-            <DashboardRow label="Volume" value={data.volumeValue.toLocaleString(undefined, { notation: 'compact' })} icon={<Volume />} />
-            
-            <h4 className="font-headline text-lg text-primary pt-2">RSI Analysis</h4>
-            <DashboardRow label="RSI Status" value={data.rsiStatus} icon={<Gauge />} />
-            <DashboardRow label="RSI Divergence" value={data.divergence} icon={<Activity />} />
-            <DashboardRow label="Stoch RSI (K/D)" value={`${data.stochRsi.k.toFixed(0)} / ${data.stochRsi.d.toFixed(0)}`} icon={<Gauge />} />
+            <DashboardRow label="Trend Analysis" value={`${data.trendAnalysis.strength.toFixed(0)}% - ${data.trendAnalysis.momentum}`} icon={<TrendingUp />} valueClassName={data.trendAnalysis.momentum === 'ACCELERATING' ? 'text-green-400' : 'text-primary/80'} />
+            <DashboardRow label="Volatility (ATR)" value={`${data.volatility.label} (${data.volatility.percent.toFixed(2)}%)`} icon={<Activity />} valueClassName={data.volatility.label === 'HIGH' || data.volatility.label === 'EXTREME' ? 'text-orange-400' : 'text-primary/80'}/>
+            <DashboardRow label="Volume Status" value={`${data.volumeStatus.status} (${data.volumeStatus.changePercent > 0 ? '+' : ''}${data.volumeStatus.changePercent.toFixed(0)}%)`} icon={<Volume />} valueClassName={data.volumeStatus.status === 'SPIKE' ? 'text-amber-400' : 'text-primary/80'}/>
             
             <DashboardRow label="Last Updated" value={new Date().toLocaleTimeString()} icon={<Clock />} />
         </div>
