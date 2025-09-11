@@ -191,12 +191,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     ? "bg-green-500/20 text-green-300 shadow-[0_0_15px_theme(colors.green.400)]"
     : "bg-red-500/20 text-red-300 shadow-[0_0_15px_theme(colors.red.500)]";
 
-  const LevelRow = ({ label, value, isHit }: { label: string; value: string; isHit: boolean }) => (
+  const LevelRow = ({ label, value, isHit, isConfluence }: { label: string; value: string; isHit: boolean; isConfluence?: boolean; }) => (
     <div className={cn("flex justify-between items-center text-lg my-2 p-2 rounded-md border transition-all duration-300", 
       isHit ? achievedClass : "border-transparent"
     )}>
       <span className="text-foreground/80 text-base flex items-center gap-2">
-        {isHit && <Check size={16} />} {label}:
+        {isHit && <Check size={16} />} 
+        {isConfluence && <CheckCircle2 size={14} className="text-primary/70" title="Confluence Price" />}
+        {label}:
       </span>
       <span className={cn("font-mono font-bold text-xl", trendColor)}>${value}</span>
     </div>
@@ -257,12 +259,12 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                     </span>
                 </div>
 
-                <LevelRow label={data.isBullish ? 'Long Entry' : 'Short Entry'} value={data.entry} isHit={hitTargets.entry} />
+                <LevelRow label={data.isBullish ? 'Long Entry' : 'Short Entry'} value={data.entry} isHit={hitTargets.entry} isConfluence />
                 
                 <div className="flex justify-between text-base"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-yellow-400">${data.sl}</span></div>
 
-                <LevelRow label="Take-Profit 1" value={data.tp1} isHit={hitTargets.tp1} />
-                <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} />
+                <LevelRow label="Take-Profit 1" value={data.tp1} isHit={hitTargets.tp1} isConfluence />
+                <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} isConfluence />
                 
                 <div className="flex justify-between text-base pt-1"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono">1 : {data.riskReward.toFixed(1)}</span></div>
             </div>

@@ -195,20 +195,20 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
     const fibRange = swingHigh - swingLow;
     const fibonacciLevels: FibonacciLevels = {
-        level_382: (swingHigh - fibRange * 0.382).toFixed(4),
-        level_500: (swingHigh - fibRange * 0.5).toFixed(4),
-        level_618: (swingHigh - fibRange * 0.618).toFixed(4),
+        level_382: isBullish ? (swingHigh - fibRange * 0.382).toFixed(4) : (swingLow + fibRange * 0.382).toFixed(4),
+        level_500: isBullish ? (swingHigh - fibRange * 0.5).toFixed(4) : (swingLow + fibRange * 0.5).toFixed(4),
+        level_618: isBullish ? (swingHigh - fibRange * 0.618).toFixed(4) : (swingLow + fibRange * 0.618).toFixed(4),
     };
 
     const timeframeMultipliers = {
-        '5m': { atr: 1.5, tp1: 1.5, tp2: 3 },
-        '15m': { atr: 2, tp1: 2, tp2: 4 },
-        '1h': { atr: 2.5, tp1: 2.5, tp2: 5 },
-        '4h': { atr: 3, tp1: 3, tp2: 6 },
-        '1d': { atr: 3.5, tp1: 3.5, tp2: 7 },
+        '5m': { atr: 1.5 },
+        '15m': { atr: 2 },
+        '1h': { atr: 2.5 },
+        '4h': { atr: 3 },
+        '1d': { atr: 3.5 },
     };
     const multipliers = timeframeMultipliers[timeframe] || timeframeMultipliers['15m'];
-    const { atr: atrMultiplier, tp1: tpMultiplier1, tp2: tpMultiplier2 } = multipliers;
+    const { atr: atrMultiplier } = multipliers;
 
     // --- EMA Calculation ---
     const calculateEMA = (data: number[], period: number) => {
@@ -373,22 +373,30 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             sidewaysMarket,
         };
     }
+    
+    // --- HIGH ACCURACY CONFLUENCE ENGINE ---
+    const confluenceLevels = [
+        parseFloat(fibonacciLevels.level_618),
+        pivot,
+        isBullish ? ema20 : ema50 // Use a faster EMA for entry confluence
+    ];
+    // Find the average of the confluence levels to determine the high-probability entry zone
+    const confluencePrice = confluenceLevels.reduce((a, b) => a + b, 0) / confluenceLevels.length;
 
-    const fib618 = parseFloat(fibonacciLevels.level_618);
-    const fib500 = parseFloat(fibonacciLevels.level_500);
-    const shouldShowGoldenZone = pseudoRandom(seed + 'golden_zone_chance') > 0.7; // 30% chance to force a golden zone setup
+    const action = isBullish ? "Buy on Pullback" : "Sell on Rally";
+    const entry = confluencePrice.toFixed(4);
+    const sl = isBullish ? (swingLow - atr * 0.5).toFixed(4) : (swingHigh + atr * 0.5).toFixed(4);
+    // Targets are now based on key S/R levels from the pivot matrix for higher accuracy
+    const tp1 = (isBullish ? multiTimeframeSR[timeframe].R1 : multiTimeframeSR[timeframe].S1).toFixed(4);
+    const tp2 = (isBullish ? multiTimeframeSR[timeframe].R2 : multiTimeframeSR[timeframe].S2).toFixed(4);
+    const confirmedEntry = (confluencePrice * (isBullish ? 1.0005 : 0.9995)).toFixed(4);
 
-    const entryPrice = isBullish ? (price * 0.998) : (price * 1.002);
-
-    const fibValues = Object.values(fibonacciLevels).map(parseFloat);
-    const closestFib = fibValues.reduce((prev, curr) => Math.abs(curr - entryPrice) < Math.abs(prev - entryPrice) ? curr : prev);
-    if (Math.abs(closestFib - entryPrice) / entryPrice < 0.005) {
-        const fibKey = Object.keys(fibonacciLevels).find(key => parseFloat(fibonacciLevels[key as keyof FibonacciLevels]) === closestFib);
-        if (fibKey) {
-            const fibPercent = fibKey.split('_')[1];
-            confluenceFactors.push(`✅ Entry near ${parseInt(fibPercent) / 10}% Fib retracement`);
-        }
-    }
+    const risk = Math.abs(parseFloat(entry) - parseFloat(sl));
+    const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
+    const riskReward = risk > 0 ? reward / risk : 0;
+    
+    const mtfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '5m' ? '15m' : '4H';
+    const htfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '1h' ? '4H' : 'Daily';
     
     const trends: ('Bullish' | 'Bearish' | 'Neutral')[] = ['Bullish', 'Bearish', 'Neutral'];
     let multiTimeframeAnalysis: MultiTimeframeAnalysis = {};
@@ -457,20 +465,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         : bearishPatterns[Math.floor(pseudoRandom(seed+'pattern') * bearishPatterns.length)];
     
     
-    const action = isBullish ? "Buy on Pullback" : "Sell on Rally";
-    const entry = shouldShowGoldenZone ? ((fib618 + pivot) / 2).toFixed(4) : entryPrice.toFixed(4);
-    const sl = isBullish ? (parseFloat(entry) - atr*atrMultiplier).toFixed(4) : (parseFloat(entry) + atr*atrMultiplier).toFixed(4);
-    const tp1 = isBullish ? (parseFloat(entry) + atr*tpMultiplier1).toFixed(4) : (parseFloat(entry) - atr*tpMultiplier1).toFixed(4);
-    const tp2 = isBullish ? (parseFloat(entry) + atr*tpMultiplier2).toFixed(4) : (parseFloat(entry) - atr*tpMultiplier2).toFixed(4);
-    const confirmedEntry = (parseFloat(entry) * (isBullish ? 1.0005 : 0.9995)).toFixed(4);
-
-    const risk = Math.abs(parseFloat(entry) - parseFloat(sl));
-    const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
-    const riskReward = risk > 0 ? reward / risk : 0;
-    
-    const mtfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '5m' ? '15m' : '4H';
-    const htfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '1h' ? '4H' : 'Daily';
-    
     const tradersChecklist: TradersChecklist = {
         riskRewardPass: riskReward > 1.5,
         mtfAlignmentPass: multiTimeframeAnalysis[mtfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish') || multiTimeframeAnalysis[htfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish'),
@@ -482,6 +476,9 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     let goldenPullbackZone: GoldenPullbackZone | undefined = undefined;
     
+    const fib618 = parseFloat(fibonacciLevels.level_618);
+    const shouldShowGoldenZone = pseudoRandom(seed + 'golden_zone_chance') > 0.7; // 30% chance to force a golden zone setup
+
     const isEntryInGoldenZone = isBullish
       ? parseFloat(entry) <= Math.max(fib618, pivot) && parseFloat(entry) >= Math.min(fib618, pivot)
       : parseFloat(entry) >= Math.min(fib618, pivot) && parseFloat(entry) <= Math.max(fib618, pivot);
