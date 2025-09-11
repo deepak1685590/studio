@@ -2,6 +2,7 @@
 
 
 
+
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
@@ -471,7 +472,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             momentum: { score: 50, rating: 'Neutral' },
             volumeAnalysis,
             multiTimeframeSR,
-            sidewaysMarket,
             advancedStrengthDashboard,
         };
     }
