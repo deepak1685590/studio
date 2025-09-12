@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { generateAiInsight, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import { Button } from '@/components/ui/button';
-import { Copy, BrainCircuit, Target } from 'lucide-react';
+import { Copy, BrainCircuit, Target, Lightbulb, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
@@ -123,23 +123,37 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
               <h4 className="font-headline text-lg text-accent flex items-center gap-2 mb-2">
                   <Target /> Predictive Analysis
               </h4>
-              <div className="space-y-2 text-sm">
-                  <div className="flex justify-between items-center">
-                      <span className="text-foreground/80">Predicted Target:</span>
-                      <span className="font-mono font-bold text-lg text-accent">{insight.predictiveAnalysis.predictedTarget}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                      <span className="text-foreground/80">Timeframe:</span>
-                      <span className="font-mono text-foreground/90">{insight.predictiveAnalysis.timeframe}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                      <span className="text-foreground/80">Success Probability:</span>
-                      <span className="font-mono font-bold text-lg text-green-400">{insight.predictiveAnalysis.successProbability}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                      <span className="text-foreground/80">Invalidation Level:</span>
-                      <span className="font-mono text-yellow-400">{insight.predictiveAnalysis.invalidationLevel}</span>
-                  </div>
+              <div className="space-y-3">
+                 <div className="text-sm">
+                    <strong className="text-accent/80 block">Primary Scenario:</strong>
+                    <p className="text-foreground/90">{insight.predictiveAnalysis.primaryScenario}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                    <div className="flex flex-col">
+                        <span className="text-foreground/70">Predicted Target:</span>
+                        <span className="font-mono font-bold text-lg text-accent">{insight.predictiveAnalysis.predictedTarget}</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-foreground/70">Timeframe:</span>
+                        <span className="font-mono text-foreground/90">{insight.predictiveAnalysis.timeframe}</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-foreground/70">Success Probability:</span>
+                        <span className="font-mono font-bold text-lg text-green-400">{insight.predictiveAnalysis.successProbability}</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-foreground/70">Invalidation Level:</span>
+                        <span className="font-mono text-yellow-400">{insight.predictiveAnalysis.invalidationLevel}</span>
+                    </div>
+                </div>
+                <div className="text-sm pt-2">
+                    <strong className="text-accent/80 flex items-center gap-1"><Lightbulb size={14}/> Key Catalysts:</strong>
+                    <p className="text-foreground/90">{insight.predictiveAnalysis.keyCatalysts}</p>
+                </div>
+                 <div className="text-sm">
+                    <strong className="text-yellow-400 flex items-center gap-1"><AlertTriangle size={14}/> Alternative Scenario:</strong>
+                    <p className="text-foreground/90">{insight.predictiveAnalysis.alternativeScenario}</p>
+                </div>
               </div>
             </div>
 

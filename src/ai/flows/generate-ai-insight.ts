@@ -50,10 +50,13 @@ const GenerateAiInsightOutputSchema = z.object({
     timeHorizon: z.string(),
   }),
   predictiveAnalysis: z.object({
-    predictedTarget: z.string().describe("The AI's predicted price target based on all available data."),
+    primaryScenario: z.string().describe("A detailed description of the most likely price action scenario over the specified timeframe."),
+    predictedTarget: z.string().describe("The AI's primary price target based on the primary scenario."),
     timeframe: z.string().describe("The estimated time it will take to reach the predicted target."),
-    successProbability: z.string().describe("The AI's confidence in this prediction, as a percentage."),
-    invalidationLevel: z.string().describe("The price level at which this prediction would be considered invalid."),
+    successProbability: z.string().describe("The AI's confidence in the primary scenario, as a percentage."),
+    invalidationLevel: z.string().describe("The price level at which the primary scenario would be considered invalid."),
+    keyCatalysts: z.string().describe("The key technical or fundamental catalysts that could trigger the predicted move."),
+    alternativeScenario: z.string().describe("A brief description of a plausible alternative scenario if the primary prediction is invalidated.")
   }),
   technicalAnalysis: z.object({
     multiTimeframe: z.string(),
@@ -145,10 +148,13 @@ Fill out every field in the following JSON object with detailed, expert-level an
 - **timeHorizon**: Expected time horizon for trade completion is [e.g., 'Intraday (4-8 hours)', 'Swing (2-5 days)'].
 
 ## Predictive Analysis
-- **predictedTarget**: Based on the pattern, volume, and momentum, predict the most likely next major price target. Example: "$72,500".
+- **primaryScenario**: Based on the technicals (pattern, EMAs) and news sentiment, describe the most likely scenario. Example: "Price is expected to consolidate near the entry zone before a volume-supported push towards TP1. News sentiment provides tailwinds, suggesting conviction."
+- **predictedTarget**: Based on the pattern, volume, and momentum, predict the most likely next major price target. This should align with TP1 or TP2. Example: "$72,500".
 - **timeframe**: Estimate the time to reach this target. Example: "8-12 hours".
 - **successProbability**: Assign a probability percentage for this prediction succeeding. Example: "85%".
 - **invalidationLevel**: State the price level that would invalidate this prediction. This should be beyond the SL. Example: "$67,800".
+- **keyCatalysts**: List the primary triggers. Example: "A break and hold above the current micro-resistance at $X, combined with increasing buy-side volume."
+- **alternativeScenario**: Describe what happens if the invalidationLevel is hit. Example: "If the invalidation level is breached, a deeper correction towards the major support at $Y is likely, as this would indicate a failure of the current bullish structure."
 
 ## Technical Analysis Deep Dive
 - **multiTimeframe**: Provide a detailed breakdown of Weekly, Daily, 4H, and 1H structures based on the provided multiTimeframeAnalysis data. Assess cross-timeframe confluence.
@@ -253,7 +259,15 @@ const generateAiInsightFlow = ai.defineFlow(
                 opportunityGrade: "Retail",
                 timeHorizon: fallbackSummary,
             },
-            predictiveAnalysis: { predictedTarget: "Unavailable", timeframe: "Unavailable", successProbability: "Unavailable", invalidationLevel: "Unavailable" },
+            predictiveAnalysis: { 
+                primaryScenario: "Unavailable",
+                predictedTarget: "Unavailable", 
+                timeframe: "Unavailable", 
+                successProbability: "Unavailable", 
+                invalidationLevel: "Unavailable",
+                keyCatalysts: "Unavailable",
+                alternativeScenario: "Unavailable"
+            },
             technicalAnalysis: { multiTimeframe: "Unavailable due to high model demand.", volumeProfile: "Unavailable", marketMicrostructure: "Unavailable" },
             riskManagement: { positionSizing: "Unavailable", dynamicLevels: "Unavailable" },
             sentimentAndFlow: { onChainMetrics: "Unavailable", marketSentiment: "Unavailable" },
@@ -284,7 +298,15 @@ const generateAiInsightFlow = ai.defineFlow(
               opportunityGrade: "Retail",
               timeHorizon: errorMessage,
             },
-            predictiveAnalysis: { predictedTarget: "Unavailable", timeframe: "Unavailable", successProbability: "Unavailable", invalidationLevel: "Unavailable" },
+            predictiveAnalysis: { 
+                primaryScenario: "Unavailable",
+                predictedTarget: "Unavailable", 
+                timeframe: "Unavailable", 
+                successProbability: "Unavailable", 
+                invalidationLevel: "Unavailable",
+                keyCatalysts: "Unavailable",
+                alternativeScenario: "Unavailable"
+            },
             technicalAnalysis: { multiTimeframe: "Unavailable", volumeProfile: "Unavailable", marketMicrostructure: "Unavailable" },
             riskManagement: { positionSizing: "Unavailable", dynamicLevels: "Unavailable" },
             sentimentAndFlow: { onChainMetrics: "Unavailable", marketSentiment: "Unavailable" },
