@@ -16,7 +16,7 @@ const LevelRow: React.FC<{ label: string; value: string; icon: React.ReactNode; 
       {icon}
       <span>{label}</span>
     </div>
-    <span className="font-mono font-bold text-lg text-primary">{value}</span>
+    <span className="font-mono font-bold text-lg">{value}</span>
   </div>
 );
 
@@ -37,7 +37,7 @@ const KeyLevels: React.FC<{ data: SignalData }> = ({ data }) => {
             label="Resistance 1 (R1)" 
             value={`$${r1}`} 
             icon={<GitCommit size={16} className="rotate-90"/>} 
-            className="text-red-400/80" 
+            className="text-red-400/80 border-red-500/10"
         />
         <LevelRow 
             label="Point of Control (POC)" 
@@ -49,13 +49,13 @@ const KeyLevels: React.FC<{ data: SignalData }> = ({ data }) => {
             label="Pivot Point" 
             value={`$${pivot}`} 
             icon={<GitCommit size={16} className="rotate-90"/>} 
-            className="text-primary/80" 
+            className="text-primary/80 border-primary/20"
         />
         <LevelRow 
             label="Support 1 (S1)" 
             value={`$${s1}`} 
             icon={<GitCommit size={16} className="rotate-90"/>} 
-            className="text-green-400/80" 
+            className="text-green-400/80 border-green-500/10"
         />
         <LevelRow 
             label="Swing Low" 
