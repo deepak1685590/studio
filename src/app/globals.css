@@ -107,3 +107,30 @@
     background: linear-gradient(135deg, hsl(var(--background)) 0%, #000000 100%);
   }
 }
+
+@layer utilities {
+  .price-scanner {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: hsl(var(--primary));
+    box-shadow: 0 0 10px hsl(var(--primary)), 0 0 20px hsl(var(--primary));
+    animation: scan-anim 4s infinite linear;
+  }
+
+  @keyframes scan-anim {
+    0% {
+      transform: translateY(-10px);
+      opacity: 0.5;
+    }
+    50% {
+      transform: translateY(calc(100% + 10px));
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-10px);
+      opacity: 0.5;
+    }
+  }
+}

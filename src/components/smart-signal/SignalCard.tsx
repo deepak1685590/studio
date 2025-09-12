@@ -7,7 +7,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair } from 'lucide-react';
+import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -107,6 +107,83 @@ const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isB
         </div>
     );
 };
+
+
+const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | null }> = ({ data, livePrice }) => {
+    const { supplyZone, demandZone, fvg, isBullish, entry } = data;
+    const supplyMin = parseFloat(supplyZone[0]);
+    const supplyMax = parseFloat(supplyZone[1]);
+    const demandMin = parseFloat(demandZone[0]);
+    const demandMax = parseFloat(demandZone[1]);
+    const fvgMin = parseFloat(fvg[0]);
+    const fvgMax = parseFloat(fvg[1]);
+    
+    const entryPrice = parseFloat(entry);
+
+    const fullRangeMin = Math.min(demandMin, fvgMin);
+    const fullRangeMax = Math.max(supplyMax, fvgMax);
+    const fullRange = fullRangeMax - fullRangeMin;
+
+    const calculateTop = (price: number) => {
+        if (fullRange === 0) return '50%';
+        const position = ((price - fullRangeMin) / fullRange) * 100;
+        return `${100 - position}%`; // Invert because CSS top is from the top
+    };
+
+    return (
+        <div>
+            <SectionHeader icon={<Building />} title="Institutional Interest" />
+            <div className="p-4 bg-black/30 rounded-lg border border-primary/30 font-mono">
+                <div className="relative h-48 w-full">
+                    {/* Zones */}
+                    <div className="absolute inset-0 flex flex-col justify-between">
+                        {/* Supply Zone */}
+                        <div className="h-1/3 bg-red-500/10 border-y border-dashed border-red-500/50 flex flex-col justify-center items-end pr-2 text-right">
+                            <div className="text-xs text-red-300">SUPPLY</div>
+                            <div className="text-sm text-red-200/80">${supplyMin.toFixed(4)} - ${supplyMax.toFixed(4)}</div>
+                        </div>
+                        {/* FVG */}
+                        <div className="h-1/3 flex flex-col justify-center items-end pr-2 text-right">
+                             <div className="text-xs text-purple-300">FVG</div>
+                            <div className="text-sm text-purple-200/80">${fvgMin.toFixed(4)} - ${fvgMax.toFixed(4)}</div>
+                        </div>
+                        {/* Demand Zone */}
+                        <div className="h-1/3 bg-green-500/10 border-y border-dashed border-green-500/50 flex flex-col justify-center items-end pr-2 text-right">
+                             <div className="text-xs text-green-300">DEMAND</div>
+                            <div className="text-sm text-green-200/80">${demandMin.toFixed(4)} - ${demandMax.toFixed(4)}</div>
+                        </div>
+                    </div>
+
+                    {/* Entry Price Line */}
+                    <div 
+                        className="absolute left-0 right-0 h-px bg-accent/80 transition-all duration-300" 
+                        style={{ top: calculateTop(entryPrice) }}
+                    >
+                        <div className="absolute left-0 -translate-y-1/2 flex items-center gap-1 text-xs font-bold bg-accent text-accent-foreground px-1 py-0.5 rounded">
+                           <ArrowRight size={12}/> {isBullish ? 'LONG' : 'SHORT'} ENTRY: ${entryPrice.toFixed(4)}
+                        </div>
+                    </div>
+                    
+                    {/* Live Price Scanner */}
+                    {livePrice !== null && (
+                        <div 
+                            className="absolute left-0 right-0 h-0.5 bg-primary transition-all duration-200 ease-linear"
+                            style={{ top: calculateTop(livePrice), boxShadow: '0 0 8px hsl(var(--primary))' }}
+                        >
+                             <div className="absolute right-full mr-2 -translate-y-1/2 text-xs text-primary whitespace-nowrap">
+                                LIVE
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <div className="text-center text-xs text-foreground/60 mt-2">
+                    {data.volumeImbalance}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
@@ -342,40 +419,9 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <SectionHeader icon={<GitCommitHorizontal />} title="Fibonacci Levels" />
-          <SectionWrapper>
-              <div className="space-y-1 font-mono">
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">{data.isBullish ? 'Long' : 'Short'} Entry (38.2%):</span><span>${data.fibonacciLevels.level_382}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">{data.isBullish ? 'Long' : 'Short'} Entry (50.0%):</span><span>${data.fibonacciLevels.level_500}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">{data.isBullish ? 'Long' : 'Short'} Entry (61.8%):</span><span>${data.fibonacciLevels.level_618}</span></div>
-              </div>
-          </SectionWrapper>
-        </div>
-        <div>
-          <SectionHeader icon={<Scaling />} title="Key Levels" />
-          <SectionWrapper>
-               <div className="space-y-1 font-mono">
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Swing High:</span><span>${data.swingHigh}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Swing Low:</span><span>${data.swingLow}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Daily Pivot:</span><span>${data.pivot}</span></div>
-              </div>
-           </SectionWrapper>
-        </div>
-      </div>
-      
        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <SectionHeader icon={<Building />} title="Institutional Interest" />
-           <SectionWrapper>
-               <div className="space-y-1 font-mono">
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Demand Zone:</span><span>${data.demandZone[0]} - ${data.demandZone[1]}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Supply Zone:</span><span>${data.supplyZone[0]} - ${data.supplyZone[1]}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Fair Value Gap:</span><span>${data.fvg[0]} - ${data.fvg[1]}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Volume Imbalance:</span><span className="font-sans">{data.volumeImbalance}</span></div>
-              </div>
-           </SectionWrapper>
+            <InstitutionalInterest data={data} livePrice={displayPrice} />
         </div>
         <div>
           <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
