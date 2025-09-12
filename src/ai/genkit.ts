@@ -1,11 +1,12 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
-import {config} from 'dotenv';
-
-// Explicitly load environment variables from .env file
-config();
+import {GEMINI_API_KEY} from '@/config';
 
 export const ai = genkit({
-  plugins: [googleAI()],
+  plugins: [
+    googleAI({
+      apiKey: GEMINI_API_KEY,
+    }),
+  ],
   model: 'googleai/gemini-1.5-flash-latest',
 });
