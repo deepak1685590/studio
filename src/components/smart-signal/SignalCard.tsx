@@ -21,6 +21,7 @@ import KeyLevels from './KeyLevels';
 import QuantumEntryMatrix from './QuantumEntryMatrix';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
+import LiquidityTargetAlert from './LiquidityTargetAlert';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -443,13 +444,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       <div>
         <SectionHeader icon={<Zap />} title={`Quantum Signals Detected (${data.confluenceCount})`} />
         <SectionWrapper>
-            <div className="space-y-2">
+            <div className="space-y-3">
                 {data.confluenceFactors.map((factor, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm text-primary/90 p-2 bg-primary/5 rounded-md border border-primary/10">
                         <Zap size={14} className="text-amber-400" />
                         <span>{factor}</span>
                     </div>
                 ))}
+                {data.liquidityMatrix && <LiquidityTargetAlert prediction={data.liquidityMatrix.prediction} />}
             </div>
         </SectionWrapper>
       </div>
