@@ -155,9 +155,9 @@ const generateAiInsightFlow = ai.defineFlow(
       return output;
     } catch (error) {
        console.error("AI Generation Error in Flow:", error);
-       // Create a specific error object that the frontend can interpret
        const errorMessage = error instanceof Error ? error.message : "An unknown internal error occurred.";
-       return {
+       
+       const errorPayload: GenerateAiInsightOutput = {
          executiveSummary: {
            primaryBias: "Error",
            setupStrength: "N/A",
@@ -165,11 +165,58 @@ const generateAiInsightFlow = ai.defineFlow(
            opportunityGrade: "Retail",
            timeHorizon: `The AI model encountered an error: ${errorMessage}`
          },
-         predictiveAnalysis: {} as any, technicalAnalysis: {} as any, riskManagement: {} as any,
-         sentimentAndFlow: {} as any, probabilityAssessment: {} as any, advancedConfluence: {} as any,
-         institutionalBehavior: {} as any, executionStrategy: {} as any, marketContext: {} as any,
-         performanceTracking: {} as any, alertSystem: {} as any
+         predictiveAnalysis: {
+            primaryScenario: "N/A",
+            predictedTarget: "N/A",
+            timeframe: "N/A",
+            successProbability: "N/A",
+            invalidationLevel: "N/A",
+            keyCatalysts: "N/A",
+            alternativeScenario: "N/A",
+         },
+         technicalAnalysis: {
+            multiTimeframe: "N/A",
+            volumeProfile: "N/A",
+            marketMicrostructure: "N/A",
+         },
+         riskManagement: {
+            positionSizing: "N/A",
+            dynamicLevels: "N/A",
+         },
+         sentimentAndFlow: {
+            onChainMetrics: "N/A",
+            marketSentiment: "N/A",
+         },
+         probabilityAssessment: {
+            successMatrix: "N/A",
+            alternativeScenarios: "N/A",
+         },
+         advancedConfluence: {
+            indicators: "N/A",
+            patterns: "N/A",
+         },
+         institutionalBehavior: {
+            smartMoney: "N/A",
+            correlation: "N/A",
+         },
+         executionStrategy: {
+            entryTactics: "N/A",
+            exitStrategy: "N/A",
+         },
+         marketContext: {
+            macroFactors: "N/A",
+            technicalCatalysts: "N/A",
+         },
+         performanceTracking: {
+            tradeManagementKPIs: "N/A",
+            learningMetrics: "N/A",
+         },
+         alertSystem: {
+            preEntry: "N/A",
+            inTrade: "N/A",
+         }
        };
+       return errorPayload;
     }
   }
 );
