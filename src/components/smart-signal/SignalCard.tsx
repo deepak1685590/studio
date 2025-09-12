@@ -83,8 +83,8 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     if (livePrice !== null) {
         allPrices.push(livePrice);
     }
-    const fullRangeMin = Math.min(...allPrices);
-    const fullRangeMax = Math.max(...allPrices);
+    const fullRangeMin = Math.min(...allPrices) * 0.999;
+    const fullRangeMax = Math.max(...allPrices) * 1.001;
     const fullRange = fullRangeMax - fullRangeMin;
 
     const calculatePosition = (price: number) => {
@@ -93,17 +93,20 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
         return `${Math.max(0, Math.min(100, position))}%`;
     };
 
-    const ZoneBar: React.FC<{min: number, max: number, label: string, color: string}> = ({min, max, label, color}) => {
+    const ZoneBar: React.FC<{min: number, max: number, label: string, color: string, glowColor: string}> = ({min, max, label, color, glowColor}) => {
         const left = calculatePosition(min);
         const widthValue = ((max - min) / fullRange) * 100;
         const width = `${widthValue}%`;
         
         return (
              <div className="absolute top-0 bottom-0 text-center flex flex-col justify-center" style={{ left, width }}>
-                <div className={cn("h-full opacity-20", color)} />
+                <div 
+                    className={cn("h-full opacity-20", color)} 
+                    style={{boxShadow: `inset 0 0 10px ${glowColor}`}}
+                />
                 <div className="absolute inset-0 flex flex-col justify-center items-center p-1">
-                    <div className="text-xs font-bold">{label}</div>
-                     {widthValue > 10 && ( // Only show prices if the bar is wide enough
+                    <div className="text-xs font-bold text-white/90">{label}</div>
+                     {widthValue > 15 && ( 
                         <div className="text-[10px] font-mono opacity-80 scale-90">
                             <div>${min.toFixed(4)}</div>
                             <div>${max.toFixed(4)}</div>
@@ -117,10 +120,10 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     const PriceMarker: React.FC<{price: number, label: string, color: string, icon?: React.ReactNode}> = ({price, label, color, icon}) => {
          const left = calculatePosition(price);
          return (
-            <div className="absolute top-full mt-2 text-center" style={{ left, transform: 'translateX(-50%)' }}>
+            <div className="absolute top-full mt-3 text-center" style={{ left, transform: 'translateX(-50%)' }}>
                 <div className="relative flex flex-col items-center">
-                    <div className={cn("w-px h-2", color.replace('border-','bg-'))} />
-                    <div className={cn("flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full border", color)}>
+                    <div className={cn("w-px h-3", color.replace('border-','bg-'))} />
+                    <div className={cn("flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full border bg-black/50", color)}>
                         {icon} {label}: ${price.toFixed(4)}
                     </div>
                 </div>
@@ -132,14 +135,13 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
         <div>
             <SectionHeader icon={<Building />} title="Institutional Interest" />
             <SectionWrapper className="font-mono overflow-hidden">
-                <div className="relative h-16 w-full rounded" style={{
-                    background: 'linear-gradient(90deg, rgba(74, 222, 128, 0.1) 0%, rgba(192, 132, 252, 0.1) 50%, rgba(239, 68, 68, 0.1) 100%)'
+                <div className="relative h-20 w-full rounded" style={{
+                    background: 'linear-gradient(90deg, rgba(74, 222, 128, 0.05) 0%, rgba(192, 132, 252, 0.05) 50%, rgba(239, 68, 68, 0.05) 100%)'
                 }}>
-                    <ZoneBar min={demandMin} max={demandMax} label="DEMAND" color="bg-green-500" />
-                    <ZoneBar min={fvgMin} max={fvgMax} label="FVG" color="bg-purple-500" />
-                    <ZoneBar min={supplyMin} max={supplyMax} label="SUPPLY" color="bg-red-500" />
+                    <ZoneBar min={demandMin} max={demandMax} label="DEMAND" color="bg-green-500" glowColor="hsl(142 71% 47% / 0.5)" />
+                    <ZoneBar min={fvgMin} max={fvgMax} label="FVG" color="bg-purple-500" glowColor="hsl(262 83% 58% / 0.5)" />
+                    <ZoneBar min={supplyMin} max={supplyMax} label="SUPPLY" color="bg-red-500" glowColor="hsl(0 84% 60% / 0.5)" />
                     
-                     {/* Live Price Indicator */}
                     {livePrice !== null && (
                         <div 
                             className="absolute top-0 bottom-0 w-0.5 bg-primary transition-all duration-200 ease-linear"
@@ -150,7 +152,7 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
                     )}
                 </div>
                 
-                <div className="relative h-12">
+                <div className="relative h-16">
                      <PriceMarker price={entryPrice} label={isBullish ? 'LONG' : 'SHORT'} color="border-accent text-accent" icon={<ArrowRight size={12}/>} />
                      {livePrice !== null && <PriceMarker price={livePrice} label="LIVE" color="border-primary text-primary" />}
                 </div>
@@ -174,7 +176,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
   const tp2PriceNum = useMemo(() => parseFloat(data.tp2), [data.tp2]);
 
   useEffect(() => {
-    // Reset hit targets when the signal data changes (e.g., new symbol)
     setHitTargets({ entry: false, tp1: false, tp2: false });
   }, [data.symbol, data.entry, data.tp1, data.tp2]);
 
@@ -187,7 +188,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         if (!prev.entry && realtimePrice >= entryPriceNum) newHits.entry = true;
         if (!prev.tp1 && realtimePrice >= tp1PriceNum) newHits.tp1 = true;
         if (!prev.tp2 && realtimePrice >= tp2PriceNum) newHits.tp2 = true;
-      } else { // Bearish
+      } else { 
         if (!prev.entry && realtimePrice <= entryPriceNum) newHits.entry = true;
         if (!prev.tp1 && realtimePrice <= tp1PriceNum) newHits.tp1 = true;
         if (!prev.tp2 && realtimePrice <= tp2PriceNum) newHits.tp2 = true;
@@ -220,8 +221,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     chartPatternName: data.chartPattern.name,
     trendStrength: data.trendStrength.score,
     momentum: data.momentum.score,
-    marketSession: "New York", // This is a placeholder
-    volatilityRegime: "Medium", // This is a placeholder
+    marketSession: "New York", 
+    volatilityRegime: "Medium", 
   }), [data]); 
 
   const oracleInsightData: OracleInsightInput = useMemo(() => ({
@@ -240,7 +241,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     )
   }
 
-  const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; // 0.1% proximity
+  const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; 
   const trendColor = data.isBullish ? 'text-green-400' : 'text-red-400';
   
   const achievedClass = data.isBullish
@@ -365,6 +366,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
       
+      <InstitutionalInterest data={data} livePrice={displayPrice} />
+      
       <ConfidenceBreakdown 
         breakdown={data.confidenceBreakdown} 
         confidence={data.confidence}
@@ -398,10 +401,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </div>
       
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-            <InstitutionalInterest data={data} livePrice={displayPrice} />
-        </div>
+       <div className="grid grid-cols-1">
         <div>
           <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
            <SectionWrapper>
@@ -458,4 +458,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+
+
 
