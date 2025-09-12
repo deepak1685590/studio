@@ -229,6 +229,8 @@ export interface SignalData {
   swingLow: string;
   pivot: string;
   poc: string;
+  vah: string;
+  val: string;
   s1: string;
   r1: string;
   buyVolume: string;
@@ -247,7 +249,7 @@ export interface SignalData {
   fibonacciLevels: FibonacciLevels;
   whaleAlert?: WhaleAlert;
   goldenPullbackZone?: GoldenPullbackZone;
-  goldenReverseZone?: GoldenPullbackZone;
+  goldenReverseZone?: GoldenReverseZone;
   sniperZone?: SniperZone;
   confidenceBreakdown: ConfidenceBreakdown;
   movingAverageAnalysis: MovingAverageAnalysis;
@@ -258,5 +260,3 @@ export interface SignalData {
   multiTimeframeSR: MultiTimeframeSR;
   advancedStrengthDashboard?: AdvancedStrengthDashboardData;
 }
-
-    

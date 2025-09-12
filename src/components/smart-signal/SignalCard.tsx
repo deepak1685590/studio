@@ -18,6 +18,7 @@ import SidewaysMarketAlert from './SidewaysMarketAlert';
 import OracleInsight from './OracleInsight';
 import type { OracleInsightInput } from '@/ai/flows/oracle-insight';
 import KeyLevels from './KeyLevels';
+import QuantumEntryMatrix from './QuantumEntryMatrix';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -297,6 +298,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       
       {isNearEntry && !hitTargets.entry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
 
+      <QuantumEntryMatrix data={data} livePrice={realtimePrice} />
+
       <SectionWrapper>
         <div className="grid grid-cols-1">
             <div className="space-y-1">
@@ -471,7 +474,3 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
-
-    
-
-    
