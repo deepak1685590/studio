@@ -1,6 +1,6 @@
 
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, SmartMoneyConcepts } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -202,6 +202,20 @@ const generateAdvancedStrengthData = (price: number, closes: number[], volumes: 
     else if (isBullish && trendStrengthScore > 25) marketPhase = 'BULLISH TREND';
     else if (!isBullish && trendStrengthScore > 25) marketPhase = 'BEARISH TREND';
 
+    // 8. RSI Status & Stoch RSI
+    const rsiStatus = momentumScore > 70 ? 'OVERBOUGHT' : momentumScore < 30 ? 'OVERSOLD' : 'NEUTRAL';
+    const stochRsiK = pseudoRandom(seed + 'stoch_k') * 100;
+    const stochRsiD = pseudoRandom(seed + 'stoch_d') * 100;
+    let stochSignal: AdvancedStrengthDashboardData['stochRsi']['signal'] = 'NONE';
+    if (stochRsiK > stochRsiD && pseudoRandom(seed + 'stoch_cross') > 0.8) stochSignal = 'BULL_CROSS';
+    if (stochRsiK < stochRsiD && pseudoRandom(seed + 'stoch_cross') < 0.2) stochSignal = 'BEAR_CROSS';
+    
+    // 9. Divergence
+    let divergence: AdvancedStrengthDashboardData['divergence'] = 'NONE';
+    const divergenceSeed = pseudoRandom(seed + 'divergence');
+    if (isBullish && rsiStatus === 'OVERSOLD' && divergenceSeed > 0.85) divergence = 'BULLISH';
+    if (!isBullish && rsiStatus === 'OVERBOUGHT' && divergenceSeed < 0.15) divergence = 'BEARISH';
+
     return {
         marketPhase,
         price: price.toFixed(isCrypto(seed) ? 2 : 4),
@@ -215,9 +229,9 @@ const generateAdvancedStrengthData = (price: number, closes: number[], volumes: 
         volatility: { percent: atr, label: volLabel },
         volumeStatus: { status: volStatus, changePercent: volumeChangePercent },
         volumeValue: latestVolume,
-        rsiStatus: momentumScore > 70 ? 'OVERBOUGHT' : momentumScore < 30 ? 'OVERSOLD' : 'NEUTRAL',
-        divergence: pseudoRandom(seed + 'div') > 0.9 ? 'BULLISH' : pseudoRandom(seed + 'div') < 0.1 ? 'BEARISH' : 'NONE',
-        stochRsi: { k: pseudoRandom(seed + 'k') * 100, d: pseudoRandom(seed + 'd') * 100, signal: 'NONE' }
+        rsiStatus,
+        divergence,
+        stochRsi: { k: stochRsiK, d: stochRsiD, signal: stochSignal }
     };
 };
 
@@ -700,3 +714,5 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         advancedStrengthDashboard,
     };
 };
+
+    

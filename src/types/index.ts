@@ -258,3 +258,5 @@ export interface SignalData {
   multiTimeframeSR: MultiTimeframeSR;
   advancedStrengthDashboard?: AdvancedStrengthDashboardData;
 }
+
+    

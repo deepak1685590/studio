@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown, Gauge, Flame, Snowflake, Volume, BarChartBig, BrainCircuit, Activity, Clock, Waves, Search, Rocket, Zap } from 'lucide-react';
+import { TrendingUp, TrendingDown, Gauge, Flame, Snowflake, Volume, BrainCircuit, Activity, Clock, Waves, Search, Rocket, Zap, GitCommitHorizontal, AlertTriangle } from 'lucide-react';
 import VerticalStrengthMeter from './VerticalStrengthMeter';
 
 interface AdvancedStrengthDashboardProps {
@@ -46,6 +46,18 @@ const MarketPhaseHeader: React.FC<{ phase: AdvancedStrengthDashboardData['market
             </div>
         </div>
     )
+}
+
+const DivergenceAlert: React.FC<{ type: 'BULLISH' | 'BEARISH' }> = ({ type }) => {
+  const isBullish = type === 'BULLISH';
+  const color = isBullish ? 'text-green-400 border-green-400/50 bg-green-900/40' : 'text-red-400 border-red-400/50 bg-red-900/40';
+  const text = isBullish ? 'Bullish Divergence Detected - Potential Reversal Up' : 'Bearish Divergence Detected - Potential Reversal Down';
+  return (
+    <div className={cn("flex items-center gap-2 p-2 rounded-md border text-sm font-bold animate-pulse", color)}>
+      <AlertTriangle size={16} />
+      <span>{text}</span>
+    </div>
+  )
 }
 
 
@@ -96,7 +108,8 @@ const AdvancedStrengthDashboard: React.FC<AdvancedStrengthDashboardProps> = ({ i
     const trendColor = data.priceChangePercent >= 0 ? 'text-green-400' : 'text-red-400';
     const trendIcon = data.priceChangePercent >= 0 ? <TrendingUp className="inline-block" /> : <TrendingDown className="inline-block" />;
     const sentimentColor = data.marketSentiment.score > 0 ? 'text-green-400' : data.marketSentiment.score < 0 ? 'text-red-400' : 'text-yellow-400';
-    
+    const rsiColor = data.rsiStatus === 'OVERBOUGHT' ? 'text-red-400' : data.rsiStatus === 'OVERSOLD' ? 'text-green-400' : 'text-primary/80';
+
     return (
         <div className="space-y-4">
             <MarketPhaseHeader phase={data.marketPhase} />
@@ -108,6 +121,8 @@ const AdvancedStrengthDashboard: React.FC<AdvancedStrengthDashboardProps> = ({ i
             />
             <DashboardRow label="Market Sentiment" value={data.marketSentiment.label} icon={<BrainCircuit />} valueClassName={sentimentColor} />
             
+            {data.divergence !== 'NONE' && <DivergenceAlert type={data.divergence} />}
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
                 <div className="md:col-span-2 space-y-2">
                     <h4 className="font-headline text-lg text-primary">Strength Analysis</h4>
@@ -115,10 +130,11 @@ const AdvancedStrengthDashboard: React.FC<AdvancedStrengthDashboardProps> = ({ i
                     <DashboardRow label="Short Power" value={`${data.shortPower}%`} icon={<Snowflake className="text-red-400"/>} valueClassName="text-red-400" />
 
                     <h4 className="font-headline text-lg text-primary pt-2">Technical Indicators</h4>
-                    <DashboardRow label="Momentum (RSI)" value={`${data.momentum.rsi.toFixed(0)} - ${data.momentum.trend}`} icon={<Gauge />} valueClassName={data.momentum.rsi > 52 ? 'text-green-400' : data.momentum.rsi < 48 ? 'text-red-400' : 'text-yellow-400'}/>
-                    <DashboardRow label="Trend Analysis" value={`${data.trendAnalysis.strength.toFixed(0)}% - ${data.trendAnalysis.momentum}`} icon={<TrendingUp />} valueClassName={data.trendAnalysis.momentum === 'ACCELERATING' ? 'text-green-400' : 'text-primary/80'} />
+                    <DashboardRow label="RSI (14)" value={`${data.momentum.rsi.toFixed(0)} - ${data.rsiStatus}`} icon={<Gauge />} valueClassName={rsiColor}/>
+                    <DashboardRow label="Stoch RSI (K/D)" value={`${data.stochRsi.k.toFixed(0)} / ${data.stochRsi.d.toFixed(0)}`} icon={<GitCommitHorizontal />} valueClassName={data.stochRsi.k > data.stochRsi.d ? 'text-cyan-400' : 'text-orange-400'} />
+                    <DashboardRow label="Trend (ADX)" value={`${data.trendAnalysis.strength.toFixed(0)}% - ${data.trendAnalysis.momentum}`} icon={<TrendingUp />} valueClassName={data.trendAnalysis.momentum === 'ACCELERATING' ? 'text-green-400' : 'text-primary/80'} />
                     <DashboardRow label="Volatility (ATR)" value={`${data.volatility.label} (${data.volatility.percent.toFixed(2)}%)`} icon={<Activity />} valueClassName={data.volatility.label === 'HIGH' || data.volatility.label === 'EXTREME' ? 'text-orange-400' : 'text-primary/80'}/>
-                    <DashboardRow label="Volume Status" value={`${data.volumeStatus.status} (${data.volumeStatus.changePercent > 0 ? '+' : ''}${data.volumeStatus.changePercent.toFixed(0)}%)`} icon={<Volume />} valueClassName={data.volumeStatus.status === 'SPIKE' ? 'text-amber-400' : 'text-primary/80'}/>
+                    <DashboardRow label="Volume (vs 20 MA)" value={`${data.volumeStatus.status} (${data.volumeStatus.changePercent > 0 ? '+' : ''}${data.volumeStatus.changePercent.toFixed(0)}%)`} icon={<Volume />} valueClassName={data.volumeStatus.status === 'SPIKE' ? 'text-amber-400' : 'text-primary/80'}/>
                 </div>
                 <div className="flex items-center justify-center">
                     <VerticalStrengthMeter strength={data.overallStrength} />
@@ -157,3 +173,5 @@ const AdvancedStrengthDashboard: React.FC<AdvancedStrengthDashboardProps> = ({ i
 };
 
 export default AdvancedStrengthDashboard;
+
+    
