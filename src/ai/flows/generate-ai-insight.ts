@@ -120,86 +120,6 @@ const getMarketNews = ai.defineTool(
   }
 );
 
-const primaryGenerator = ai.definePrompt({
-  name: 'generateAiInsightGenerator',
-  input: {schema: GenerateAiInsightInputSchema},
-  output: {schema: GenerateAiInsightOutputSchema},
-  tools: [getMarketNews],
-  model: 'googleai/gemini-1.5-flash-latest',
-  prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for {{{symbol}}}.
-First, use the getMarketNews tool to fetch the latest headlines for {{{symbol}}}.
-Then, synthesize ALL the provided data into the structured JSON format below. Be extremely detailed, professional, and analytical in every section.
-
-## Analysis Parameters
-- Asset: {{{symbol}}}
-- Current Price: \${{{price}}}
-- Analysis Timestamp: {current_datetime}
-- Market Session: {{{marketSession}}}
-- Volatility Regime: {{{volatilityRegime}}}
-
----
-Fill out every field in the following JSON object with detailed, expert-level analysis.
-
-## Executive Summary
-- **primaryBias**: Current price is \${{{price}}}. The primary bias is {{#if isBullish}}bullish{{else}}bearish{{/if}}.
-- **setupStrength**: Based on {{{confluenceCount}}} confluences, the setup strength is rated [calculate a rating out of 10 based on confluenceCount, trendStrength, and momentum].
-- **keyLevels**: Entry: \${{{entry}}}, Stop-Loss: \${{{sl}}}, Targets: \${{{tp1}}} (TP1), \${{{tp2}}} (TP2).
-- **opportunityGrade**: [Assign 'Institutional', 'Professional', or 'Retail' based on the overall quality of the setup].
-- **timeHorizon**: Expected time horizon for trade completion is [e.g., 'Intraday (4-8 hours)', 'Swing (2-5 days)'].
-
-## Predictive Analysis
-- **primaryScenario**: Based on the technicals (pattern, EMAs) and news sentiment, describe the most likely scenario. Example: "Price is expected to consolidate near the entry zone before a volume-supported push towards TP1. News sentiment provides tailwinds, suggesting conviction."
-- **predictedTarget**: Based on the pattern, volume, and momentum, predict the most likely next major price target. This should align with TP1 or TP2. Example: "$72,500".
-- **timeframe**: Estimate the time to reach this target. Example: "8-12 hours".
-- **successProbability**: Assign a probability percentage for this prediction succeeding. Example: "85%".
-- **invalidationLevel**: State the price level that would invalidate this prediction. This should be beyond the SL. Example: "$67,800".
-- **keyCatalysts**: List the primary triggers. Example: "A break and hold above the current micro-resistance at $X, combined with increasing buy-side volume."
-- **alternativeScenario**: Describe what happens if the invalidationLevel is hit. Example: "If the invalidation level is breached, a deeper correction towards the major support at $Y is likely, as this would indicate a failure of the current bullish structure."
-
-## Technical Analysis Deep Dive
-- **multiTimeframe**: Provide a detailed breakdown of Weekly, Daily, 4H, and 1H structures based on the provided multiTimeframeAnalysis data. Assess cross-timeframe confluence.
-- **volumeProfile**: Analyze the volumeImbalance data. Infer potential POC, VAP levels, and accumulation/distribution zones.
-- **marketMicrostructure**: Based on volume and momentum, infer the order flow dynamics, bid/ask pressure, and potential liquidity pools.
-
-## Risk Management Matrix
-- **positionSizing**: Recommend conservative (1-2%), moderate (2-3%), and aggressive (3-5%) position sizing based on the opportunity grade.
-- **dynamicLevels**: Detail the initial stop-loss reasoning. Suggest a trailing stop strategy and break-even adjustment points.
-
-## Sentiment & Flow Analysis
-- **onChainMetrics**: For crypto, analyze the news headlines for sentiment. Infer potential exchange flows and whale activity.
-- **marketSentiment**: Synthesize news sentiment with market momentum ({{momentum}}) and trend strength ({{trendStrength}}) to create a holistic sentiment score.
-
-## Probability Assessment
-- **successMatrix**: Estimate a win probability based on the setup strength. Calculate the risk-reward ratio to TP2.
-- **alternativeScenarios**: Detail the bullish invalidation level (stop-loss). Describe what would happen in a sideways consolidation scenario.
-
-## Advanced Confluence Factors
-- **indicators**: Discuss how the trend (EMAs), momentum (RSI), and volume indicators are confluent.
-- **patterns**: Elaborate on the identified '{{{chartPatternName}}}' and its implications in the current market structure.
-
-## Institutional Behavior Analysis
-- **smartMoney**: Analyze the demandZone and fvg (Fair Value Gap) as areas of institutional interest.
-- **correlation**: Briefly mention how {{{symbol}}} might be correlated to the broader market (e.g., S&P 500, DXY).
-
-## Execution Strategy
-- **entryTactics**: Recommend optimal entry triggers (e.g., "Wait for a pullback to the demand zone"). Discuss market vs. limit orders.
-- **exitStrategy**: Outline a clear exit strategy using the provided TP1 and TP2 levels for partial profit-taking.
-
-## Market Context & Catalysts
-- **macroFactors**: Mention any potential impact from major economic news based on the fetched headlines.
-- **technicalCatalysts**: Identify key technical events that could trigger the trade, such as breaking a key level or pattern completion.
-
-## Performance Tracking
-- **tradeManagementKPIs**: Suggest key KPIs to track for this trade, such as hold time and risk-adjusted return.
-- **learningMetrics**: Suggest what can be learned from this trade's outcome, regardless of win or loss.
-
-## Alert System Configuration
-- **preEntry**: Recommend alerts to set for price approaching the entry zone and for volume confirmation.
-- **inTrade**: Recommend alerts for target approaches and stop-loss proximity.
----
-`,
-});
-
 const generateAiInsightFlow = ai.defineFlow(
   {
     name: 'generateAiInsightFlow',
@@ -208,7 +128,31 @@ const generateAiInsightFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      const { output } = await primaryGenerator(input);
+      const { output } = await ai.generate({
+        model: 'googleai/gemini-1.5-flash-latest',
+        tools: [getMarketNews],
+        output: {
+            format: 'json',
+            schema: GenerateAiInsightOutputSchema,
+        },
+        prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for ${input.symbol}.
+        First, use the getMarketNews tool to fetch the latest headlines for ${input.symbol}.
+        Then, synthesize ALL the provided data into the structured JSON format below. Be extremely detailed, professional, and analytical in every section.
+
+        ## Analysis Parameters
+        - Asset: ${input.symbol}
+        - Current Price: $${input.price}
+        - Analysis Timestamp: ${new Date().toISOString()}
+        - Market Session: ${input.marketSession}
+        - Volatility Regime: ${input.volatilityRegime}
+
+        ---
+        Fill out every field in the following JSON object with detailed, expert-level analysis based on this data:
+        ${JSON.stringify(input, null, 2)}
+        ---
+        `,
+      });
+
       if (!output) {
         throw new Error('AI model failed to produce a valid output. The response was empty.');
       }
