@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -6,7 +7,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit } from 'lucide-react';
+import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -17,47 +18,6 @@ import type { GenerateAiInsightInput } from '@/ai/flows/generate-ai-insight';
 import SidewaysMarketAlert from './SidewaysMarketAlert';
 import OracleInsight from './OracleInsight';
 import type { OracleInsightInput } from '@/ai/flows/oracle-insight';
-
-const NeonBullIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        stroke="currentColor" 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        {...props}
-        style={{ filter: 'drop-shadow(0 0 5px currentColor)' }}
-    >
-        <path d="M16 8a4 4 0 1 1-8 0"/>
-        <path d="M4 12c0-2.66 4-4 8-4s8 1.34 8 4"/>
-        <path d="M12 12v4"/>
-        <path d="M18.5 16a2.5 2.5 0 1 0-5 0"/>
-        <path d="M5.5 16a2.5 2.5 0 1 1 5 0"/>
-    </svg>
-);
-
-const NeonBearIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        stroke="currentColor" 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        {...props}
-        style={{ filter: 'drop-shadow(0 0 5px currentColor)' }}
-    >
-        <path d="M16 12a4 4 0 1 0-8 0"/>
-        <path d="M4 12c0 2.66 4 4 8 4s8-1.34 8-4"/>
-        <path d="M12 12V8"/>
-        <path d="M18.5 8a2.5 2.5 0 1 1-5 0"/>
-        <path d="M5.5 8a2.5 2.5 0 1 0 5 0"/>
-    </svg>
-);
-
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -107,6 +67,86 @@ const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isB
     );
 };
 
+const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | null }> = ({ data, livePrice }) => {
+    const { supplyZone, demandZone, fvg, isBullish, entry } = data;
+    const supplyMin = parseFloat(supplyZone[0]);
+    const supplyMax = parseFloat(supplyZone[1]);
+    const demandMin = parseFloat(demandZone[0]);
+    const demandMax = parseFloat(demandZone[1]);
+    const fvgMin = parseFloat(fvg[0]);
+    const fvgMax = parseFloat(fvg[1]);
+    
+    const entryPrice = parseFloat(entry);
+
+    const allPrices = [supplyMin, supplyMax, demandMin, demandMax, fvgMin, fvgMax, entryPrice];
+    if (livePrice !== null) {
+        allPrices.push(livePrice);
+    }
+    const fullRangeMin = Math.min(...allPrices) * 0.995;
+    const fullRangeMax = Math.max(...allPrices) * 1.005;
+    const fullRange = fullRangeMax - fullRangeMin;
+
+    const calculatePosition = (price: number) => {
+        if (fullRange === 0) return 50;
+        const position = ((fullRangeMax - price) / fullRange) * 100;
+        return Math.max(0, Math.min(100, position));
+    };
+
+    const strongZone = isBullish ? 'DEMAND' : 'SUPPLY';
+
+    const ZoneBox = ({ range, title, color, isStrong }: { range: [number, number], title: string, color: string, isStrong: boolean }) => (
+        <div className={cn(
+            "p-3 rounded-lg border-2 text-center transition-all duration-500",
+            isStrong ? `${color} shadow-[0_0_25px]` : `border-primary/20 bg-black/30`,
+            isStrong ? color.replace('border-', 'shadow-') : ''
+        )}>
+            <h5 className={cn("font-headline text-lg", isStrong ? 'text-white' : 'text-primary/80')}>{isStrong ? `STRONG ${title}` : title}</h5>
+            <p className="font-mono text-xl text-white">${range[1].toFixed(4)} - ${range[0].toFixed(4)}</p>
+        </div>
+    );
+
+    return (
+        <div>
+            <SectionHeader icon={<Building />} title="Institutional Interest" />
+            <div className="relative p-4 bg-black/30 rounded-lg border border-primary/30 space-y-2">
+                
+                <ZoneBox range={[supplyMin, supplyMax]} title="SUPPLY ZONE" color="border-red-500 bg-red-500/20" isStrong={strongZone === 'SUPPLY'} />
+                
+                <div className="relative h-20">
+                     {/* Live Price Line */}
+                    {livePrice !== null && (
+                        <div 
+                            className="absolute w-full h-0.5 bg-primary transition-all duration-200 ease-linear z-10"
+                            style={{ top: `${calculatePosition(livePrice)}%`, boxShadow: '0 0 10px hsl(var(--primary))' }}
+                        >
+                            <div className="absolute right-0 -top-3 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded">
+                                LIVE: ${livePrice.toFixed(4)}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* FVG Zone */}
+                    <div className="absolute w-full" style={{ top: `${calculatePosition(fvgMax)}%`, height: `${calculatePosition(fvgMin) - calculatePosition(fvgMax)}%`}}>
+                        <div className="h-full w-full bg-purple-500/20 border-y-2 border-purple-500/50 flex items-center justify-center">
+                             <div className="text-center">
+                                <h5 className="font-headline text-purple-300">FVG</h5>
+                                <p className="font-mono text-xs text-purple-300/80">${fvgMax.toFixed(4)} - ${fvgMin.toFixed(4)}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <ZoneBox range={[demandMin, demandMax]} title="DEMAND ZONE" color="border-green-500 bg-green-500/20" isStrong={strongZone === 'DEMAND'} />
+
+                 <div className="text-center text-sm text-foreground/80 pt-2">
+                    {data.volumeImbalance}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
 
@@ -117,7 +157,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
   const tp2PriceNum = useMemo(() => parseFloat(data.tp2), [data.tp2]);
 
   useEffect(() => {
-    // Reset hit targets when the signal data changes (e.g., new symbol)
     setHitTargets({ entry: false, tp1: false, tp2: false });
   }, [data.symbol, data.entry, data.tp1, data.tp2]);
 
@@ -130,7 +169,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         if (!prev.entry && realtimePrice >= entryPriceNum) newHits.entry = true;
         if (!prev.tp1 && realtimePrice >= tp1PriceNum) newHits.tp1 = true;
         if (!prev.tp2 && realtimePrice >= tp2PriceNum) newHits.tp2 = true;
-      } else { // Bearish
+      } else { 
         if (!prev.entry && realtimePrice <= entryPriceNum) newHits.entry = true;
         if (!prev.tp1 && realtimePrice <= tp1PriceNum) newHits.tp1 = true;
         if (!prev.tp2 && realtimePrice <= tp2PriceNum) newHits.tp2 = true;
@@ -163,8 +202,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     chartPatternName: data.chartPattern.name,
     trendStrength: data.trendStrength.score,
     momentum: data.momentum.score,
-    marketSession: "New York", // This is a placeholder
-    volatilityRegime: "Medium", // This is a placeholder
+    marketSession: "New York", 
+    volatilityRegime: "Medium", 
   }), [data]); 
 
   const oracleInsightData: OracleInsightInput = useMemo(() => ({
@@ -183,19 +222,21 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     )
   }
 
-  const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; // 0.1% proximity
+  const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; 
   const trendColor = data.isBullish ? 'text-green-400' : 'text-red-400';
   
   const achievedClass = data.isBullish
     ? "bg-green-500/20 text-green-300 shadow-[0_0_15px_theme(colors.green.400)]"
     : "bg-red-500/20 text-red-300 shadow-[0_0_15px_theme(colors.red.500)]";
 
-  const LevelRow = ({ label, value, isHit }: { label: string; value: string; isHit: boolean }) => (
+  const LevelRow = ({ label, value, isHit, isConfluence }: { label: string; value: string; isHit: boolean; isConfluence?: boolean; }) => (
     <div className={cn("flex justify-between items-center text-lg my-2 p-2 rounded-md border transition-all duration-300", 
       isHit ? achievedClass : "border-transparent"
     )}>
       <span className="text-foreground/80 text-base flex items-center gap-2">
-        {isHit && <Check size={16} />} {label}:
+        {isHit && <Check size={16} />} 
+        {isConfluence && <CheckCircle2 size={14} className="text-primary/70" title="Confluence Price" />}
+        {label}:
       </span>
       <span className={cn("font-mono font-bold text-xl", trendColor)}>${value}</span>
     </div>
@@ -213,7 +254,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <div className="flex justify-between items-center">
           <div className='flex items-center gap-3'>
             <div className={cn("flex items-center justify-center w-12 h-12 rounded-full", data.isBullish ? 'bg-green-500/20' : 'bg-red-500/20')}>
-              {data.isBullish ? <NeonBullIcon className="w-8 h-8 text-green-400" /> : <NeonBearIcon className="w-8 h-8 text-red-400" />}
+              {data.isBullish ? <TrendingUp className="w-8 h-8 text-green-400" /> : <TrendingDown className="w-8 h-8 text-red-400" />}
             </div>
             <div>
               <h3 className="font-headline text-2xl text-foreground">{data.symbol}</h3>
@@ -256,23 +297,35 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                     </span>
                 </div>
 
-                <LevelRow label={data.isBullish ? 'Long Entry' : 'Short Entry'} value={data.entry} isHit={hitTargets.entry} />
+                <LevelRow label={data.isBullish ? 'Long Entry' : 'Short Entry'} value={data.entry} isHit={hitTargets.entry} isConfluence={mode === '4'} />
                 
                 <div className="flex justify-between text-base"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-yellow-400">${data.sl}</span></div>
 
-                <LevelRow label="Take-Profit 1" value={data.tp1} isHit={hitTargets.tp1} />
-                <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} />
+                <LevelRow label="Take-Profit 1" value={data.tp1} isHit={hitTargets.tp1} isConfluence={mode === '4'} />
+                <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} isConfluence={mode === '4'} />
                 
                 <div className="flex justify-between text-base pt-1"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono">1 : {data.riskReward.toFixed(1)}</span></div>
             </div>
         </div>
       </SectionWrapper>
 
+      {mode === '4' && data.sniperZone && (
+        <Alert className="border-primary bg-gradient-to-br from-primary/20 via-black to-accent/20 text-primary shadow-[0_0_25px_hsl(var(--primary)_/_0.6)] scanner-glow">
+            <Crosshair className="h-5 w-5 text-primary" />
+            <AlertTitle className="font-headline text-lg text-primary">
+                Quantum Sniper Zone ({data.isBullish ? "Long" : "Short"})
+            </AlertTitle>
+            <AlertDescription className="font-mono text-xl mt-1 text-white/90">
+                ${data.sniperZone.min} - ${data.sniperZone.max}
+            </AlertDescription>
+        </Alert>
+      )}
+
       {data.goldenPullbackZone && (
         <Alert className="border-amber-400 bg-gradient-to-br from-yellow-900/40 to-black text-amber-300 shadow-[0_0_15px_hsl(38_92%_50%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(38_92%_50%_/_0.8)]">
             <Target className="h-5 w-5 text-amber-300" />
             <AlertTitle className="font-headline text-lg text-amber-300">
-                Golden Re-Entry Zone
+                Golden {data.isBullish ? "Long" : "Short"} Re-Entry Zone
             </AlertTitle>
             <AlertDescription className="font-mono text-xl mt-1 text-white/90">
                 ${data.goldenPullbackZone.min} - ${data.goldenPullbackZone.max}
@@ -284,7 +337,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <Alert className="border-purple-400 bg-gradient-to-br from-purple-900/40 to-black text-purple-300 shadow-[0_0_15px_hsl(271_76%_53%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(271_76%_53%_/_0.8)]">
             <ShieldAlert className="h-5 w-5 text-purple-300" />
             <AlertTitle className="font-headline text-lg text-purple-300">
-                Golden Reverse Zone
+                Golden {data.isBullish ? "Short" : "Long"} Reverse Zone
             </AlertTitle>
             <AlertDescription className="font-mono text-xl mt-1 text-white/90">
                 ${data.goldenReverseZone.min} - ${data.goldenReverseZone.max}
@@ -294,6 +347,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
       
+      <InstitutionalInterest data={data} livePrice={displayPrice} />
+
       <ConfidenceBreakdown 
         breakdown={data.confidenceBreakdown} 
         confidence={data.confidence}
@@ -320,47 +375,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 <ChecklistItem label={`R/R > 1.5 (${data.riskReward.toFixed(1)})`} passed={data.tradersChecklist.riskRewardPass} />
                 <ChecklistItem label="HTF Alignment" passed={data.tradersChecklist.mtfAlignmentPass} />
                 <ChecklistItem label="Volume Confirmation" passed={data.tradersChecklist.volumeConfirmationPass} />
-                <ChecklistItem label="Entry in Zone" passed={data.tradersChecklist.entryInZonePass} />
+                <ChecklistItem label="Momentum Alignment" passed={data.tradersChecklist.momentumAlignmentPass} />
+                <ChecklistItem label="Smart Money Entry" passed={data.tradersChecklist.smartMoneyEntryPass} />
               </div>
           </SectionWrapper>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <SectionHeader icon={<GitCommitHorizontal />} title="Fibonacci Levels" />
-          <SectionWrapper>
-              <div className="space-y-1 font-mono">
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Aggressive (38.2%):</span><span>${data.fibonacciLevels.level_382}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Standard (50.0%):</span><span>${data.fibonacciLevels.level_500}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Conservative (61.8%):</span><span>${data.fibonacciLevels.level_618}</span></div>
-              </div>
-          </SectionWrapper>
-        </div>
-        <div>
-          <SectionHeader icon={<Scaling />} title="Key Levels" />
-          <SectionWrapper>
-               <div className="space-y-1 font-mono">
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Swing High:</span><span>${data.swingHigh}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Swing Low:</span><span>${data.swingLow}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Daily Pivot:</span><span>${data.pivot}</span></div>
-              </div>
-           </SectionWrapper>
-        </div>
-      </div>
-      
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <SectionHeader icon={<Building />} title="Institutional Interest" />
-           <SectionWrapper>
-               <div className="space-y-1 font-mono">
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Demand Zone:</span><span>${data.demandZone[0]} - ${data.demandZone[1]}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Supply Zone:</span><span>${data.supplyZone[0]} - ${data.supplyZone[1]}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Fair Value Gap:</span><span>${data.fvg[0]} - ${data.fvg[1]}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-foreground/70">Volume Imbalance:</span><span className="font-sans">{data.volumeImbalance}</span></div>
-              </div>
-           </SectionWrapper>
-        </div>
+       <div className="grid grid-cols-1">
         <div>
           <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
            <SectionWrapper>
@@ -369,6 +391,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 <p className="text-xs text-foreground/70 pt-1">{data.liquidity.description}</p>
                 <div className="flex justify-between text-sm pt-1 font-mono"><span className="text-foreground/70 font-sans">Break of Structure:</span><span>${data.smartMoneyConcepts.bos}</span></div>
                 <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">Change of Character:</span><span>${data.smartMoneyConcepts.choch}</span></div>
+                <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">Entry Zone:</span><span>${data.smartMoneyConcepts.entry}</span></div>
+                <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">Confirmed {data.isBullish ? 'Long' : 'Short'} Entry:</span><span className={cn('font-bold', trendColor)}>${data.smartMoneyConcepts.confirmedEntry}</span></div>
               </div>
            </SectionWrapper>
         </div>
@@ -387,12 +411,11 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </SectionWrapper>
       </div>
 
-      {mode === '3' && (
+      {(mode === '3' || mode === '4') && (
         <div>
-            <SectionHeader icon={<BrainCircuit />} title="AI Analysis Suite" />
             <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
                 <EliteAiInsight data={eliteAiInsightData} />
-                <OracleInsight data={oracleInsightData} />
+                {mode === '4' && <OracleInsight data={oracleInsightData} />}
             </div>
         </div>
       )}
@@ -416,3 +439,12 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+
+
+
+
+
+
+
+
+

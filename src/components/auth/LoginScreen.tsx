@@ -73,11 +73,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ initialStatus, revocationReas
         </div>
 
         {/* Login Card */}
-        <div className="w-full max-w-md p-8 space-y-4 border-2 border-primary rounded-xl bg-black/70 backdrop-blur-sm text-center shadow-[0_0_25px_rgba(0,230,230,0.5)] z-10 mt-12">
-            <h1 className="font-headline text-6xl text-primary animate-flicker" style={{ textShadow: '0 0 5px var(--primary), 0 0 15px var(--primary)' }}>
+        <div className="w-full max-w-md p-6 md:p-8 space-y-4 border-2 border-primary rounded-xl bg-black/70 backdrop-blur-sm text-center shadow-[0_0_25px_rgba(0,230,230,0.5)] z-10 mt-12">
+            <h1 className="font-headline text-5xl md:text-6xl text-primary animate-flicker" style={{ textShadow: '0 0 5px var(--primary), 0 0 15px var(--primary)' }}>
             NEXUS·AI
             </h1>
-            <h2 className="text-xl flex items-center justify-center gap-2 text-primary/80 font-code">
+            <h2 className="text-lg md:text-xl flex items-center justify-center gap-2 text-primary/80 font-code">
             <KeyRound /> System Access
             </h2>
             
@@ -100,7 +100,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ initialStatus, revocationReas
             />
             </div>
             
-            <Button onClick={handleAuth} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">
+            <Button onClick={handleAuth} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300 scanner-glow">
             <LogIn className="mr-2" /> Authenticate
             </Button>
             

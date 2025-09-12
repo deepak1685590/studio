@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -67,7 +68,7 @@ const AdminDashboard = () => {
         <div className="space-y-4">
           <Input type="text" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} placeholder="Username" className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]" />
           <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Password" className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]" />
-          <Button onClick={handleCreateUser} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300">Create User</Button>
+          <Button onClick={handleCreateUser} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300 scanner-glow">Create User</Button>
         </div>
       </div>
 

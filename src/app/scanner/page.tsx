@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -9,8 +10,10 @@ import LiveNewsWidget from '@/components/news/LiveNewsWidget';
 import { useAuth } from '@/hooks/useAuth';
 import LoginScreen from '@/components/auth/LoginScreen';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, AreaChart } from 'lucide-react';
+import { ArrowLeft, AreaChart, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ErrorLogTool from '@/components/tools/ErrorLogTool';
 
 export default function ScannerPage() {
   const router = useRouter();
@@ -43,17 +46,26 @@ export default function ScannerPage() {
     <div className="p-4 pb-16">
       <ProfileBar />
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between bg-black/50 border-2 border-primary/50 rounded-lg p-3 px-4 mb-4">
-            <div className="flex items-center gap-2">
-                <AreaChart className="text-primary" />
-                <h3 className="font-headline text-xl text-primary">Market Scanner</h3>
-            </div>
+        <div className="flex items-center justify-end bg-black/50 border-2 border-primary/50 rounded-lg p-3 px-4 mb-4">
             <Button variant="ghost" size="sm" onClick={() => router.push('/')}>
                 <ArrowLeft size={16} className="mr-2"/>
                 Back to Dashboard
             </Button>
         </div>
-        <MarketScanner onSelectSymbol={handleSelectSymbol} />
+        
+        <Tabs defaultValue="market-scanner" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="market-scanner" className="font-headline"><AreaChart size={16} className="mr-2"/>Market Scanner</TabsTrigger>
+                <TabsTrigger value="ai-tools" className="font-headline"><Bug size={16} className="mr-2"/>AI Tools</TabsTrigger>
+            </TabsList>
+            <TabsContent value="market-scanner">
+                <MarketScanner onSelectSymbol={handleSelectSymbol} />
+            </TabsContent>
+            <TabsContent value="ai-tools">
+                <ErrorLogTool />
+            </TabsContent>
+        </Tabs>
+        
       </div>
       <Chatbot />
       <LiveNewsWidget />

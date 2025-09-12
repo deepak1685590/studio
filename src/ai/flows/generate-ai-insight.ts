@@ -48,6 +48,15 @@ const GenerateAiInsightOutputSchema = z.object({
     opportunityGrade: z.enum(['Institutional', 'Professional', 'Retail']),
     timeHorizon: z.string(),
   }),
+  predictiveAnalysis: z.object({
+    primaryScenario: z.string().describe("A detailed description of the most likely price action scenario over the specified timeframe."),
+    predictedTarget: z.string().describe("The AI's primary price target based on the primary scenario."),
+    timeframe: z.string().describe("The estimated time it will take to reach the predicted target."),
+    successProbability: z.string().describe("The AI's confidence in the primary scenario, as a percentage."),
+    invalidationLevel: z.string().describe("The price level at which the primary scenario would be considered invalid."),
+    keyCatalysts: z.string().describe("The key technical or fundamental catalysts that could trigger the predicted move."),
+    alternativeScenario: z.string().describe("A brief description of a plausible alternative scenario if the primary prediction is invalidated.")
+  }),
   technicalAnalysis: z.object({
     multiTimeframe: z.string(),
     volumeProfile: z.string(),
@@ -110,11 +119,12 @@ const getMarketNews = ai.defineTool(
   }
 );
 
-const prompt = ai.definePrompt({
-  name: 'generateAiInsightPrompt',
+const primaryGenerator = ai.definePrompt({
+  name: 'generateAiInsightGenerator',
   input: {schema: GenerateAiInsightInputSchema},
   output: {schema: GenerateAiInsightOutputSchema},
   tools: [getMarketNews],
+  model: 'googleai/gemini-1.5-flash-latest',
   prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for {{{symbol}}}.
 First, use the getMarketNews tool to fetch the latest headlines for {{{symbol}}}.
 Then, synthesize ALL the provided data into the structured JSON format below. Be extremely detailed, professional, and analytical in every section.
@@ -135,6 +145,15 @@ Fill out every field in the following JSON object with detailed, expert-level an
 - **keyLevels**: Entry: \${{{entry}}}, Stop-Loss: \${{{sl}}}, Targets: \${{{tp1}}} (TP1), \${{{tp2}}} (TP2).
 - **opportunityGrade**: [Assign 'Institutional', 'Professional', or 'Retail' based on the overall quality of the setup].
 - **timeHorizon**: Expected time horizon for trade completion is [e.g., 'Intraday (4-8 hours)', 'Swing (2-5 days)'].
+
+## Predictive Analysis
+- **primaryScenario**: Based on the technicals (pattern, EMAs) and news sentiment, describe the most likely scenario. Example: "Price is expected to consolidate near the entry zone before a volume-supported push towards TP1. News sentiment provides tailwinds, suggesting conviction."
+- **predictedTarget**: Based on the pattern, volume, and momentum, predict the most likely next major price target. This should align with TP1 or TP2. Example: "$72,500".
+- **timeframe**: Estimate the time to reach this target. Example: "8-12 hours".
+- **successProbability**: Assign a probability percentage for this prediction succeeding. Example: "85%".
+- **invalidationLevel**: State the price level that would invalidate this prediction. This should be beyond the SL. Example: "$67,800".
+- **keyCatalysts**: List the primary triggers. Example: "A break and hold above the current micro-resistance at $X, combined with increasing buy-side volume."
+- **alternativeScenario**: Describe what happens if the invalidationLevel is hit. Example: "If the invalidation level is breached, a deeper correction towards the major support at $Y is likely, as this would indicate a failure of the current bullish structure."
 
 ## Technical Analysis Deep Dive
 - **multiTimeframe**: Provide a detailed breakdown of Weekly, Daily, 4H, and 1H structures based on the provided multiTimeframeAnalysis data. Assess cross-timeframe confluence.
@@ -180,14 +199,125 @@ Fill out every field in the following JSON object with detailed, expert-level an
 `,
 });
 
+const fallbackGenerator = ai.definePrompt({
+    name: 'fallbackAiInsightGenerator',
+    input: { schema: GenerateAiInsightInputSchema },
+    output: { schema: z.object({ executiveSummary: z.string() }) },
+    model: 'googleai/gemini-1.5-flash-latest',
+    prompt: `You are a backup financial analyst AI. The primary analysis model is unavailable.
+    Your task is to provide a concise, single-paragraph executive summary based on the provided data for {{{symbol}}}.
+    
+    Data:
+    - Bias: {{#if isBullish}}Bullish{{else}}Bearish{{/if}}
+    - Key Levels: Entry=\${{{entry}}}, SL=\${{{sl}}}, TP1=\${{{tp1}}}
+    - Pattern: {{{chartPatternName}}}
+    - Confluences: {{{confluenceCount}}}
+    - HTF Trend: The 4H trend is {{{multiTimeframeAnalysis.4H}}} and the Daily trend is {{{multiTimeframeAnalysis.Daily}}}.
+
+    Synthesize this into a professional, clear paragraph. Start with the primary bias and setup strength, mention the key levels and pattern, and comment on the higher-timeframe alignment.
+    `,
+});
+
+async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 2, delay = 500): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries > 0) {
+      await new Promise(res => setTimeout(res, delay));
+      return retryWithBackoff(fn, retries - 1, delay * 2);
+    }
+    throw error;
+  }
+}
+
 const generateAiInsightFlow = ai.defineFlow(
   {
     name: 'generateAiInsightFlow',
     inputSchema: GenerateAiInsightInputSchema,
     outputSchema: GenerateAiInsightOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input) => {
+    try {
+      const { output } = await retryWithBackoff(() => primaryGenerator(input));
+      if (!output) {
+        throw new Error('Primary AI model failed to produce a valid output.');
+      }
+      return output;
+    } catch (error) {
+      console.error('Primary AI flow failed. Attempting fallback.', error);
+      
+      try {
+        const fallbackResult = await fallbackGenerator(input);
+        const fallbackSummary = fallbackResult.output?.executiveSummary || "Fallback summary could not be generated.";
+        
+        return {
+            executiveSummary: {
+                primaryBias: "Summary (Fallback Model)",
+                setupStrength: "N/A",
+                keyLevels: "N/A",
+                opportunityGrade: "Retail",
+                timeHorizon: fallbackSummary,
+            },
+            predictiveAnalysis: { 
+                primaryScenario: "Unavailable",
+                predictedTarget: "Unavailable", 
+                timeframe: "Unavailable", 
+                successProbability: "Unavailable", 
+                invalidationLevel: "Unavailable",
+                keyCatalysts: "Unavailable",
+                alternativeScenario: "Unavailable"
+            },
+            technicalAnalysis: { multiTimeframe: "Unavailable due to high model demand.", volumeProfile: "Unavailable", marketMicrostructure: "Unavailable" },
+            riskManagement: { positionSizing: "Unavailable", dynamicLevels: "Unavailable" },
+            sentimentAndFlow: { onChainMetrics: "Unavailable", marketSentiment: "Unavailable" },
+            probabilityAssessment: { successMatrix: "Unavailable", alternativeScenarios: "Unavailable" },
+            advancedConfluence: { indicators: "Unavailable", patterns: "Unavailable" },
+            institutionalBehavior: { smartMoney: "Unavailable", correlation: "Unavailable" },
+            executionStrategy: { entryTactics: "Unavailable", exitStrategy: "Unavailable" },
+            marketContext: { macroFactors: "Unavailable", technicalCatalysts: "Unavailable" },
+            performanceTracking: { tradeManagementKPIs: "Unavailable", learningMetrics: "Unavailable" },
+            alertSystem: { preEntry: "Unavailable", inTrade: "Unavailable" },
+        };
+      } catch (fallbackError) {
+         console.error('Fallback AI flow also failed:', fallbackError);
+         
+         let errorMessage = "An unexpected error occurred in both primary and fallback AI models.";
+         const errorString = String(fallbackError);
+         if (errorString.includes("429") || errorString.toLowerCase().includes("quota")) {
+            errorMessage = "The AI model is experiencing high demand and the daily usage quota has been exceeded. The service will be available again tomorrow. Please try again later."
+         } else if (fallbackError instanceof Error) {
+            errorMessage = `Primary model failed and fallback also failed. Error: ${fallbackError.message}`;
+         }
+
+         return {
+            executiveSummary: {
+              primaryBias: "Error",
+              setupStrength: "N/A",
+              keyLevels: "N/A",
+              opportunityGrade: "Retail",
+              timeHorizon: errorMessage,
+            },
+            predictiveAnalysis: { 
+                primaryScenario: "Unavailable",
+                predictedTarget: "Unavailable", 
+                timeframe: "Unavailable", 
+                successProbability: "Unavailable", 
+                invalidationLevel: "Unavailable",
+                keyCatalysts: "Unavailable",
+                alternativeScenario: "Unavailable"
+            },
+            technicalAnalysis: { multiTimeframe: "Unavailable", volumeProfile: "Unavailable", marketMicrostructure: "Unavailable" },
+            riskManagement: { positionSizing: "Unavailable", dynamicLevels: "Unavailable" },
+            sentimentAndFlow: { onChainMetrics: "Unavailable", marketSentiment: "Unavailable" },
+            probabilityAssessment: { successMatrix: "Unavailable", alternativeScenarios: "Unavailable" },
+            advancedConfluence: { indicators: "Unavailable", patterns: "Unavailable" },
+            institutionalBehavior: { smartMoney: "Unavailable", correlation: "Unavailable" },
+            executionStrategy: { entryTactics: "Unavailable", exitStrategy: "Unavailable" },
+            marketContext: { macroFactors: "Unavailable", technicalCatalysts: "Unavailable" },
+            performanceTracking: { tradeManagementKPIs: "Unavailable", learningMetrics: "Unavailable" },
+            alertSystem: { preEntry: "Unavailable", inTrade: "Unavailable" },
+         };
+      }
+    }
   }
 );

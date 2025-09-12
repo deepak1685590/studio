@@ -6,11 +6,25 @@ import MatrixBackground from '@/components/MatrixBackground';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import { Orbitron, Space_Mono } from 'next/font/google';
 
 export const metadata: Metadata = {
   title: 'NexusAI',
   description: 'Quantum Analysis Engine',
 };
+
+// Font optimization with next/font
+const orbitron = Orbitron({
+  subsets: ['latin'],
+  weight: '700',
+  variable: '--font-orbitron',
+});
+
+const spaceMono = Space_Mono({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-space-mono',
+});
 
 export default function RootLayout({
   children,
@@ -19,12 +33,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto+Mono:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-      </head>
-      <body className={cn("font-body antialiased min-h-screen")}>
+      <body className={cn(
+        "font-body antialiased min-h-screen",
+        orbitron.variable,
+        spaceMono.variable
+      )}>
         <ThemeProvider>
           <AuthProvider>
               <MatrixBackground />

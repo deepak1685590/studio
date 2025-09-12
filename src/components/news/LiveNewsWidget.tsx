@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -7,6 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { getNews, NewsItem } from '@/app/actions/getNews';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
 
 const LiveNewsWidget = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -41,7 +43,7 @@ const LiveNewsWidget = () => {
       <SheetTrigger asChild>
         <div className="fixed bottom-8 left-8 z-50">
           <Button 
-            className="rounded-full w-16 h-16 bg-accent text-accent-foreground shadow-[0_0_15px_var(--accent),_0_0_30px_var(--accent)] hover:scale-110 transition-transform"
+            className={cn("rounded-full w-16 h-16 bg-accent text-accent-foreground shadow-[0_0_15px_var(--accent),_0_0_30px_var(--accent)] hover:scale-110 transition-transform", "scanner-glow")}
           >
             <Rss size={32} />
           </Button>

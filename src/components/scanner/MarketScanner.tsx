@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +50,15 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
     
     const isMounted = useIsMounted();
     const { toast } = useToast();
+    const animationFrameId = useRef<number>();
+
+    useEffect(() => {
+        return () => {
+            if (animationFrameId.current) {
+                cancelAnimationFrame(animationFrameId.current);
+            }
+        };
+    }, []);
 
     const handleScan = async (assetList: string[]) => {
         if (isScanning) return;
@@ -64,8 +73,10 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
         });
 
         const allResults: Opportunity[] = [];
+        const totalAssets = assetList.length;
 
-        const promises = assetList.map(async (symbol) => {
+        for (let i = 0; i < totalAssets; i++) {
+            const symbol = assetList[i];
             try {
                 const data = await getSignalData(symbol, '2', '15m');
                 const opportunityData = {
@@ -83,27 +94,28 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                 allResults.push(opportunityData);
             } catch (error) {
                 console.warn(`Could not scan ${symbol}:`, error);
-            } finally {
-                if (isMounted.current) {
-                    setProgress(prev => prev + (100 / assetList.length));
-                }
             }
-        });
+            
+            if (isMounted.current) {
+                const newProgress = ((i + 1) / totalAssets) * 100;
+                animationFrameId.current = requestAnimationFrame(() => setProgress(newProgress));
+            }
+        }
         
-        await Promise.all(promises);
-
         if (isMounted.current) {
-            let finalOpportunities = [...allResults].sort((a,b) => b.confidenceBreakdown.overall - a.confidenceBreakdown.overall);
+            let filteredOpportunities = allResults;
 
             if (filterHighConfidence) {
-                finalOpportunities = finalOpportunities.filter(op => op.confidenceBreakdown.overall >= 75);
+                filteredOpportunities = filteredOpportunities.filter(op => op.confidenceBreakdown.overall >= 75);
             }
             if (filterGoldenZone) {
-                finalOpportunities = finalOpportunities.filter(op => !!op.goldenPullbackZone);
+                filteredOpportunities = filteredOpportunities.filter(op => !!op.goldenPullbackZone);
             }
             if (filterWhaleAlerts) {
-                finalOpportunities = finalOpportunities.filter(op => !!op.whaleAlert);
+                filteredOpportunities = filteredOpportunities.filter(op => !!op.whaleAlert);
             }
+            
+            const finalOpportunities = filteredOpportunities.sort((a,b) => b.confidenceBreakdown.overall - a.confidenceBreakdown.overall);
             
             setOpportunities(finalOpportunities);
 
@@ -112,7 +124,6 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                 description: `Found ${finalOpportunities.length} setups matching your criteria.`,
             });
             setIsScanning(false);
-            setProgress(100);
         }
     };
 
@@ -261,7 +272,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                     </div>
                  </div>
             )}
-             {!isScanning && opportunities.length === 0 && progress === 100 && (
+             {!isScanning && opportunities.length === 0 && progress >= 100 && (
                 <div className="text-center p-6 bg-black/20 rounded-lg">
                     <p className="font-headline text-primary">No setups found matching your criteria.</p>
                     <p className="text-sm text-foreground/70 mt-1">Try adjusting the filters or scanning a different asset list.</p>

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -6,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSignalData } from '@/lib/technical-analysis';
-import type { SignalData } from '@/types';
+import type { SignalData, BookTicker } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
-import { Rocket, BrainCircuit, Upload } from 'lucide-react';
+import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Layers } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timeframe, LiveTradeData } from '@/types';
 import jsPDF from 'jspdf';
@@ -20,6 +21,9 @@ import { Skeleton } from '../ui/skeleton';
 import ChartAnalysisModal from './ChartAnalysisModal';
 import TradingSimulator from './TradingSimulator';
 import TrendRibbon from './TrendRibbon';
+import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
+import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -37,10 +41,12 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   const [realtimePrice, setRealtimePrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
   const [liveTradeData, setLiveTradeData] = useState<LiveTradeData | null>(null);
+  const [bookTicker, setBookTicker] = useState<BookTicker | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [chartImage, setChartImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [showChart, setShowChart] = useState(true);
 
 
   const { toast } = useToast();
@@ -62,6 +68,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     setSignalData(null);
     setRealtimePrice(null);
     setLiveTradeData(null);
+    setBookTicker(null);
     setPriceDirection('neutral');
     previousPriceRef.current = null;
     
@@ -89,44 +96,54 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
         
         if (isSupportedCrypto) {
           const wsSymbol = data.symbol.toLowerCase() + 'usdt';
-          const socket = new WebSocket(`wss://stream.binance.com:9443/ws/${wsSymbol}@trade`);
+          const streams = `${wsSymbol}@trade/${wsSymbol}@bookTicker`;
+          const socket = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
           ws.current = socket;
 
-          socket.onopen = () => console.log(`WebSocket connected for ${wsSymbol}`);
+          socket.onopen = () => console.log(`WebSocket connected for ${streams}`);
           socket.onmessage = (event) => {
-            const messageData = JSON.parse(event.data);
-            
-            if (messageData.s.toLowerCase() !== (currentSymbolRef.current.toLowerCase() + 'usdt')) {
+            const message = JSON.parse(event.data);
+            const stream = message.stream;
+            const messageData = message.data;
+
+            if (messageData.s.toLowerCase() !== wsSymbol) {
               return;
             }
             
-            const newPrice = parseFloat(messageData.p);
-            const newQuantity = parseFloat(messageData.q);
-            
-            setRealtimePrice(newPrice);
-            
-            let direction: 'up' | 'down' | 'neutral' = 'neutral';
-            if (previousPriceRef.current !== null) {
-              if (newPrice > previousPriceRef.current) {
-                direction = 'up';
-              } else if (newPrice < previousPriceRef.current) {
-                direction = 'down';
-              }
-            }
-            setPriceDirection(direction);
-            
-            setLiveTradeData({
-                volume: newQuantity,
-                side: direction === 'up' ? 'Buy' : direction === 'down' ? 'Sell' : 'Neutral'
-            });
+            if (stream.endsWith('@trade')) {
+                const newPrice = parseFloat(messageData.p);
+                const newQuantity = parseFloat(messageData.q);
+                
+                setRealtimePrice(newPrice);
+                
+                let direction: 'up' | 'down' | 'neutral' = 'neutral';
+                if (previousPriceRef.current !== null) {
+                  if (newPrice > previousPriceRef.current) {
+                    direction = 'up';
+                  } else if (newPrice < previousPriceRef.current) {
+                    direction = 'down';
+                  }
+                }
+                setPriceDirection(direction);
+                
+                setLiveTradeData({
+                    volume: newQuantity,
+                    side: direction === 'up' ? 'Buy' : direction === 'down' ? 'Sell' : 'Neutral'
+                });
 
-            previousPriceRef.current = newPrice;
+                previousPriceRef.current = newPrice;
+            } else if (stream.endsWith('@bookTicker')) {
+                setBookTicker({
+                    bidPrice: parseFloat(messageData.b),
+                    askPrice: parseFloat(messageData.a)
+                });
+            }
           };
           socket.onerror = (error) => {
             console.error('WebSocket Error:', error);
           };
           socket.onclose = () => {
-            console.log(`WebSocket disconnected for ${wsSymbol}`);
+            console.log(`WebSocket disconnected for ${streams}`);
             if (ws.current === socket) {
               ws.current = null;
             }
@@ -270,7 +287,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       "smartsignal-widget w-full border-2 rounded-xl overflow-hidden shadow-[0_0_30px_var(--tw-shadow-color)] bg-black/70 backdrop-blur-sm transition-all duration-500",
       borderColor
     )}>
-      <header className="widget-header p-4 text-center font-headline text-2xl bg-black/50">
+      <header className="widget-header p-4 text-center font-headline text-xl md:text-2xl bg-black/50">
          <h3 className="animate-flicker text-primary" style={{ textShadow: '0 0 5px var(--primary), 0 0 15px var(--primary)' }}>
             SmartSignal Pro - Quantum Analysis Engine
         </h3>
@@ -278,16 +295,25 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             CREATOR: <span className="animate-neon-purple">DG143</span>
         </div>
       </header>
-      <div className="widget-controls p-6 space-y-4">
-        <div>
-          <label htmlFor="symbolInput" className="text-sm font-bold text-primary/80">Enter asset (e.g., BTC, EUR/USD, NIFTY)</label>
-          <Input 
-            id="symbolInput"
-            value={symbol}
-            onChange={handleSymbolInputChange}
-            placeholder="e.g. BTC, EUR/USD, NIFTY"
-            className={cn("bg-input text-foreground", inputColor)}
-          />
+      <div className="widget-controls p-4 md:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div className='flex-grow'>
+                <label htmlFor="symbolInput" className="text-sm font-bold text-primary/80">Enter asset (e.g., BTC, EUR/USD, NIFTY)</label>
+                <Input 
+                    id="symbolInput"
+                    value={symbol}
+                    onChange={handleSymbolInputChange}
+                    placeholder="e.g. BTC, EUR/USD, NIFTY"
+                    className={cn("bg-input text-foreground", inputColor)}
+                />
+            </div>
+            <div className="flex items-center space-x-2 shrink-0">
+                <Switch id="show-chart" checked={showChart} onCheckedChange={setShowChart} />
+                <Label htmlFor="show-chart" className="flex items-center gap-1 font-bold text-primary/80">
+                    {showChart ? <Eye size={16} /> : <EyeOff size={16} />}
+                    Show Chart
+                </Label>
+            </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -301,6 +327,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
                     <SelectItem value="1">1 - Quick Pulse</SelectItem>
                     <SelectItem value="2">2 - Pro Signal</SelectItem>
                     <SelectItem value="3">3 - Elite Mode (AI-Powered)</SelectItem>
+                    <SelectItem value="4">4 - Multi-Layer Confirmation</SelectItem>
                   </SelectContent>
                 </Select>
             </div>
@@ -321,15 +348,15 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             </div>
         </div>
 
-        <Button onClick={() => handleGenerateSignal(symbol)} disabled={loading} className={cn("w-full font-headline uppercase border-2 transition-all duration-300", buttonColor)}>
+        <Button onClick={() => handleGenerateSignal(symbol)} disabled={loading} className={cn("w-full font-headline uppercase border-2 transition-all duration-300 text-base py-6 scanner-glow", buttonColor)}>
           {loading ? (
             <>
-              <BrainCircuit className="mr-2 h-4 w-4 animate-spin" />
+              <BrainCircuit className="mr-2 h-5 w-5 animate-spin" />
               Analyzing Market Vectors...
             </>
           ) : (
             <>
-              <Rocket className="mr-2 h-4 w-4" />
+              <Rocket className="mr-2 h-5 w-5" />
               Engage Quantum Analysis
             </>
           )}
@@ -338,12 +365,14 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 
       {signalData && !loading && <TrendRibbon isBullish={signalData.isBullish} symbol={signalData.symbol} />}
 
-      <div className="widget-body p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="widget-body p-4 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {loading ? <LoadingSkeleton /> : (
           <div className="space-y-6">
-            <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
-              <TradingViewWidget symbol={signalData?.symbol || initialSymbol} timeframe={timeframe} />
-            </div>
+            {showChart && (
+                <div className="h-[300px] md:h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
+                    <TradingViewWidget symbol={signalData?.symbol || initialSymbol} timeframe={timeframe} />
+                </div>
+            )}
             
             <div className="bg-black/30 rounded-lg border border-accent/50 p-4 space-y-3">
                  <h4 className="font-headline text-lg text-accent text-center">AI Chart Vision</h4>
@@ -354,14 +383,21 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
                     onChange={handleFileChange}
                     className="bg-input text-foreground border-accent/50 file:text-accent file:font-bold"
                 />
-                <Button onClick={handleAnalyzeChart} disabled={isAnalyzing || !uploadedFile} className="w-full bg-accent/20 border-accent border hover:bg-accent hover:text-accent-foreground font-headline">
+                <Button onClick={handleAnalyzeChart} disabled={isAnalyzing || !uploadedFile} className="w-full bg-accent/20 border-accent border hover:bg-accent hover:text-accent-foreground font-headline scanner-glow">
                     <Upload className="mr-2" />
                     {isAnalyzing ? 'Analyzing...' : 'Analyze Chart Image'}
                 </Button>
             </div>
 
+            {signalData && (
+                <div className="bg-black/30 rounded-lg border border-primary/20 p-4 space-y-3">
+                     <h3 className="font-headline text-xl text-primary flex items-center gap-2"><Layers /> Quantum Pivots Matrix</h3>
+                     <QuantumPivotsMatrix data={signalData.multiTimeframeSR} livePrice={realtimePrice} />
+                </div>
+            )}
+            
             {signalData && <TradingSimulator signalData={signalData} livePrice={realtimePrice} />}
-            {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} />}
+            {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} bookTicker={bookTicker} />}
           </div>
         )}
         

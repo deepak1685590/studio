@@ -18,6 +18,11 @@ export interface LiveTradeData {
   side: 'Buy' | 'Sell' | 'Neutral';
 }
 
+export interface BookTicker {
+  bidPrice: number;
+  askPrice: number;
+}
+
 export interface Position {
   symbol: string;
   entryPrice: number;
@@ -56,6 +61,8 @@ export interface TradersChecklist {
     mtfAlignmentPass: boolean;
     volumeConfirmationPass: boolean;
     entryInZonePass: boolean;
+    momentumAlignmentPass: boolean;
+    smartMoneyEntryPass: boolean;
 }
 
 export interface FibonacciLevels {
@@ -65,6 +72,11 @@ export interface FibonacciLevels {
 }
 
 export interface GoldenPullbackZone {
+    min: string;
+    max: string;
+}
+
+export interface SniperZone {
     min: string;
     max: string;
 }
@@ -109,8 +121,10 @@ export interface LiquidityInfo {
 }
 
 export interface SmartMoneyConcepts {
+    entry: string;
     bos: string;
     choch: string;
+    confirmedEntry: string;
 }
 
 export interface SidewaysMarket {
@@ -118,11 +132,15 @@ export interface SidewaysMarket {
     range: [string, string];
 }
 
+export type VolumeSignal = 'Strong Buy' | 'Buy' | 'Strong Sell' | 'Sell' | 'Neutral';
+
 export interface VolumeTimeframeData {
     totalVolume: number;
     buyVolume: number;
     sellVolume: number;
     dominantSide: 'Buy' | 'Sell' | 'Neutral';
+    buySellRatio: number;
+    signal: VolumeSignal;
 }
 
 export interface VolumeAnalysis {
@@ -131,6 +149,64 @@ export interface VolumeAnalysis {
     '1H': VolumeTimeframeData;
     '4H': VolumeTimeframeData;
     '1D': VolumeTimeframeData;
+    summary: {
+      totalBuyVolume: number;
+      totalSellVolume: number;
+      overallSignal: VolumeSignal;
+    };
+}
+
+export interface SupportResistanceLevel {
+    S1: number;
+    S2: number;
+    S3: number;
+    R1: number;
+    R2: number;
+    R3: number;
+    probableTarget: 'S1' | 'S2' | 'S3' | 'R1' | 'R2' | 'R3';
+}
+
+export interface MultiTimeframeSR {
+    '5m': SupportResistanceLevel;
+    '15m': SupportResistanceLevel;
+    '1H': SupportResistanceLevel;
+}
+
+export interface AdvancedStrengthDashboardData {
+    marketPhase: 'BREAKOUT' | 'BREAKDOWN' | 'CONSOLIDATION' | 'BULLISH TREND' | 'BEARISH TREND' | 'NEUTRAL';
+    price: string;
+    priceChangePercent: number;
+    marketSentiment: {
+        score: number;
+        label: string;
+    };
+    momentum: {
+        rsi: number;
+        trend: 'UP' | 'DOWN' | 'NEUTRAL';
+    };
+    longPower: number;
+    shortPower: number;
+    overallStrength: number;
+    trendAnalysis: {
+        strength: number;
+        momentum: 'ACCELERATING' | 'DECELERATING' | 'STABLE';
+    };
+    volatility: {
+        percent: number;
+        label: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW';
+    };
+    volumeStatus: {
+        status: 'SPIKE' | 'DRY' | 'HIGH' | 'NORMAL' | 'LOW';
+        changePercent: number;
+    };
+    volumeValue: number;
+    rsiStatus: 'OVERBOUGHT' | 'OVERSOLD' | 'NEUTRAL';
+    divergence: 'BULLISH' | 'BEARISH' | 'NONE';
+    stochRsi: {
+        k: number;
+        d: number;
+        signal: 'BULL_CROSS' | 'BEAR_CROSS' | 'NONE';
+    };
 }
 
 
@@ -171,10 +247,13 @@ export interface SignalData {
   whaleAlert?: WhaleAlert;
   goldenPullbackZone?: GoldenPullbackZone;
   goldenReverseZone?: GoldenPullbackZone;
+  sniperZone?: SniperZone;
   confidenceBreakdown: ConfidenceBreakdown;
   movingAverageAnalysis: MovingAverageAnalysis;
   trendStrength: TrendStrength;
   momentum: Momentum;
   sidewaysMarket?: SidewaysMarket;
   volumeAnalysis: VolumeAnalysis;
+  multiTimeframeSR: MultiTimeframeSR;
+  advancedStrengthDashboard?: AdvancedStrengthDashboardData;
 }

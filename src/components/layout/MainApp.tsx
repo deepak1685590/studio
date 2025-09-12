@@ -10,11 +10,11 @@ import Chatbot from '@/components/chatbot/Chatbot';
 import ProfileBar from './ProfileBar';
 import LiveNewsWidget from '../news/LiveNewsWidget';
 import { Button } from '../ui/button';
-import { AreaChart, BrainCircuit, Bug } from 'lucide-react';
+import { AreaChart, BrainCircuit, Gauge } from 'lucide-react';
 import LiveClock from './LiveClock';
 import MarketSessions from '../info/MarketSessions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ErrorLogTool from '../tools/ErrorLogTool';
+import AdvancedStrengthDashboard from '../tools/AdvancedStrengthDashboard';
 
 interface MainAppProps {
   initialSymbol?: string;
@@ -41,7 +41,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
           <div className="flex items-center justify-between bg-black/50 border-2 border-primary/50 rounded-lg p-3 px-4 mb-6">
             <TabsList>
               <TabsTrigger value="quantum-engine" className="font-headline"><BrainCircuit size={16} className="mr-2"/>Quantum Engine</TabsTrigger>
-              <TabsTrigger value="error-log-tool" className="font-headline"><Bug size={16} className="mr-2"/>Error Log Tool</TabsTrigger>
+              <TabsTrigger value="strength-dashboard" className="font-headline"><Gauge size={16} className="mr-2"/>Strength Dashboard</TabsTrigger>
             </TabsList>
             <Button variant="ghost" size="sm" onClick={() => router.push('/scanner')}>
                 <AreaChart size={16} className="mr-2"/>
@@ -57,9 +57,14 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
             />
           </TabsContent>
           
-          <TabsContent value="error-log-tool">
-            <ErrorLogTool />
+          <TabsContent value="strength-dashboard">
+            <AdvancedStrengthDashboard 
+               key={`adv-${selectedSymbol}`}
+               initialSymbol={selectedSymbol}
+               setSelectedSymbol={setSelectedSymbol}
+            />
           </TabsContent>
+
         </Tabs>
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
