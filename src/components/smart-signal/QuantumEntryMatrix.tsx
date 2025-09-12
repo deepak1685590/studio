@@ -4,7 +4,7 @@
 import React from 'react';
 import { SignalData } from '@/types';
 import { cn } from '@/lib/utils';
-import { Target, TrendingUp, TrendingDown, Crosshair } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, Crosshair, ArrowRight } from 'lucide-react';
 
 interface QuantumEntryMatrixProps {
   data: SignalData;
@@ -68,7 +68,18 @@ const QuantumEntryMatrix: React.FC<QuantumEntryMatrixProps> = ({ data, livePrice
           
           {/* Exact Entry Price Line */}
           <div className="absolute w-full h-0.5 bg-accent/80" style={{ top: getPricePosition(entryNum), boxShadow: '0 0 8px hsl(var(--accent))' }} />
-
+          
+          {/* Target Direction Line */}
+            <div className="absolute w-full" style={{ top: getPricePosition(entryNum), height: `calc(100% - ${getPricePosition(entryNum)})` }}>
+                <div 
+                    className={cn(
+                        "absolute left-1/2 -translate-x-1/2 w-0.5 border-dashed border-l-2",
+                        isBullish ? "border-green-400 bottom-0 h-full" : "border-red-400 top-0 h-full"
+                    )}
+                    style={isBullish ? { top: 'auto', bottom: '2px', height: `calc(${getPricePosition(entryNum)} - ${getPricePosition(vahNum)})` } : { top: '2px', bottom: 'auto', height: `calc(${getPricePosition(valNum)} - ${getPricePosition(entryNum)})` }}
+                />
+                <ArrowRight className={cn("absolute left-1/2 -translate-x-1/2 w-4 h-4", isBullish ? "text-green-400 -top-5 rotate-270" : "text-red-400 -bottom-5 rotate-90")} />
+            </div>
 
           {/* Live Price Indicator */}
           {livePrice !== null && (
