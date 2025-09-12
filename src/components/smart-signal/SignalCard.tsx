@@ -82,121 +82,66 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     if (livePrice !== null) {
         allPrices.push(livePrice);
     }
-    const fullRangeMin = Math.min(...allPrices) * 0.998;
-    const fullRangeMax = Math.max(...allPrices) * 1.002;
+    const fullRangeMin = Math.min(...allPrices) * 0.995;
+    const fullRangeMax = Math.max(...allPrices) * 1.005;
     const fullRange = fullRangeMax - fullRangeMin;
 
     const calculatePosition = (price: number) => {
         if (fullRange === 0) return 50;
-        const position = ((price - fullRangeMin) / fullRange) * 100;
+        const position = ((fullRangeMax - price) / fullRange) * 100;
         return Math.max(0, Math.min(100, position));
     };
 
-    const ZoneBar: React.FC<{min: number, max: number, label: string, color: string, glowColor: string, isStrongZone?: boolean}> = ({min, max, label, color, glowColor, isStrongZone = false}) => {
-        const left = `${calculatePosition(min)}%`;
-        const widthValue = Math.max(0.5, ((max - min) / fullRange) * 100);
-        const width = `${widthValue}%`;
-        
-        return (
-             <div className="absolute top-0 bottom-0 text-center flex flex-col justify-center" style={{ left, width }}>
-                <div 
-                    className={cn(
-                        "h-full opacity-40 rounded", 
-                        color,
-                        isStrongZone && "opacity-80 border-2"
-                    )} 
-                    style={{
-                        borderColor: isStrongZone ? glowColor : 'transparent',
-                        boxShadow: `inset 0 0 10px ${glowColor}, 0 0 ${isStrongZone ? '12px' : '8px'} ${glowColor}`
-                    }}
-                />
-                <div className="absolute inset-0 flex flex-col justify-center items-center p-1 text-white font-bold" style={{textShadow: '0 0 3px black'}}>
-                    <div className={cn("text-xs", isStrongZone && "font-extrabold")}>{isStrongZone ? `STRONG ${label}`: label}</div>
-                     {widthValue > 15 && ( 
-                        <div className="text-[10px] font-mono opacity-80">
-                            ${min.toFixed(4)} - ${max.toFixed(4)}
-                        </div>
-                     )}
-                </div>
-            </div>
-        )
-    };
-    
-    const PriceMarker: React.FC<{price: number, label: string, color: string, icon?: React.ReactNode, align: 'top' | 'bottom'}> = ({price, label, color, icon, align}) => {
-        const left = `${calculatePosition(price)}%`;
-        let top, bottom;
-        if (align === 'top') {
-            top = '-4.5rem';
-        } else {
-            bottom = '-4.5rem';
-        }
-
-        return (
-            <div className="absolute text-center" style={{ left, top, bottom, transform: 'translateX(-50%)' }}>
-                <div className="relative flex flex-col items-center">
-                    {align === 'bottom' && <div className={cn("w-px h-6", color.replace('border-','bg-'))} />}
-                    <div className={cn("flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full border bg-black/70", color)} style={{textShadow: '0 0 5px currentColor'}}>
-                        {icon} <span className="mr-1">{label}:</span> ${price.toFixed(4)}
-                    </div>
-                    {align === 'top' && <div className={cn("w-px h-6", color.replace('border-','bg-'))} />}
-                </div>
-            </div>
-        )
-    }
-
-    let liveMarkerAlign: 'top' | 'bottom' = 'top';
-    let entryMarkerAlign: 'top' | 'bottom' = 'bottom';
-    
-    if (livePrice !== null) {
-        const livePos = calculatePosition(livePrice);
-        const entryPos = calculatePosition(entryPrice);
-        const proximity = Math.abs(livePos - entryPos);
-
-        if (proximity < 20) { 
-            if (livePos < entryPos) {
-                liveMarkerAlign = 'top';
-                entryMarkerAlign = 'bottom';
-            } else {
-                liveMarkerAlign = 'bottom';
-                entryMarkerAlign = 'top';
-            }
-        }
-    }
-    
     const strongZone = isBullish ? 'DEMAND' : 'SUPPLY';
+
+    const ZoneBox = ({ range, title, color, isStrong }: { range: [number, number], title: string, color: string, isStrong: boolean }) => (
+        <div className={cn(
+            "p-3 rounded-lg border-2 text-center transition-all duration-500",
+            isStrong ? `${color} shadow-[0_0_25px]` : `border-primary/20 bg-black/30`,
+            isStrong ? color.replace('border-', 'shadow-') : ''
+        )}>
+            <h5 className={cn("font-headline text-lg", isStrong ? 'text-white' : 'text-primary/80')}>{isStrong ? `STRONG ${title}` : title}</h5>
+            <p className="font-mono text-xl text-white">${range[1].toFixed(4)} - ${range[0].toFixed(4)}</p>
+        </div>
+    );
 
     return (
         <div>
             <SectionHeader icon={<Building />} title="Institutional Interest" />
-            <SectionWrapper className="font-mono overflow-visible">
-                 <div className="relative h-28 w-full mt-12 mb-12">
-                    {/* Price Markers */}
-                    <PriceMarker price={entryPrice} label={isBullish ? 'LONG' : 'SHORT'} color="border-accent text-accent" icon={<ArrowRight size={12}/>} align={entryMarkerAlign} />
-                    {livePrice !== null && <PriceMarker price={livePrice} label="LIVE" color="border-primary text-primary" icon={<Crosshair size={12}/>} align={liveMarkerAlign} />}
-                    
-                    {/* Central Track */}
-                    <div className='absolute w-full h-12 top-1/2 -translate-y-1/2 rounded-lg bg-black/50 border border-primary/20 backdrop-blur-sm'>
-                        {/* Zones */}
-                        <ZoneBar min={demandMin} max={demandMax} label="DEMAND" color="bg-green-500" glowColor="hsl(142 71% 47% / 0.7)" isStrongZone={strongZone === 'DEMAND'} />
-                        <ZoneBar min={fvgMin} max={fvgMax} label="FVG" color="bg-purple-500" glowColor="hsl(262 83% 58% / 0.7)" />
-                        <ZoneBar min={supplyMin} max={supplyMax} label="SUPPLY" color="bg-red-500" glowColor="hsl(0 84% 60% / 0.7)" isStrongZone={strongZone === 'SUPPLY'} />
-                        
-                        {/* Live Price Line */}
-                        {livePrice !== null && (
-                            <div 
-                                className="absolute top-0 bottom-0 w-0.5 bg-primary transition-all duration-200 ease-linear"
-                                style={{ left: `${calculatePosition(livePrice)}%`, boxShadow: '0 0 10px hsl(var(--primary))' }}
-                            >
-                                <div className="absolute top-1/2 -translate-y-1/2 -left-1 w-2.5 h-2.5 rounded-full bg-primary animate-pulse border-2 border-background"></div>
+            <div className="relative p-4 bg-black/30 rounded-lg border border-primary/30 space-y-2">
+                
+                <ZoneBox range={[supplyMin, supplyMax]} title="SUPPLY ZONE" color="border-red-500 bg-red-500/20" isStrong={strongZone === 'SUPPLY'} />
+                
+                <div className="relative h-20">
+                     {/* Live Price Line */}
+                    {livePrice !== null && (
+                        <div 
+                            className="absolute w-full h-0.5 bg-primary transition-all duration-200 ease-linear z-10"
+                            style={{ top: `${calculatePosition(livePrice)}%`, boxShadow: '0 0 10px hsl(var(--primary))' }}
+                        >
+                            <div className="absolute right-0 -top-3 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded">
+                                LIVE: ${livePrice.toFixed(4)}
                             </div>
-                        )}
+                        </div>
+                    )}
+
+                    {/* FVG Zone */}
+                    <div className="absolute w-full" style={{ top: `${calculatePosition(fvgMax)}%`, height: `${calculatePosition(fvgMin) - calculatePosition(fvgMax)}%`}}>
+                        <div className="h-full w-full bg-purple-500/20 border-y-2 border-purple-500/50 flex items-center justify-center">
+                             <div className="text-center">
+                                <h5 className="font-headline text-purple-300">FVG</h5>
+                                <p className="font-mono text-xs text-purple-300/80">${fvgMax.toFixed(4)} - ${fvgMin.toFixed(4)}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div className="text-center text-sm text-foreground/80 mt-2">
+                <ZoneBox range={[demandMin, demandMax]} title="DEMAND ZONE" color="border-green-500 bg-green-500/20" isStrong={strongZone === 'DEMAND'} />
+
+                 <div className="text-center text-sm text-foreground/80 pt-2">
                     {data.volumeImbalance}
                 </div>
-            </SectionWrapper>
+            </div>
         </div>
     );
 };
@@ -494,6 +439,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+
 
 
 
