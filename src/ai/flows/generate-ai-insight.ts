@@ -120,26 +120,6 @@ const getMarketNews = ai.defineTool(
   }
 );
 
-const fallbackGenerator = ai.definePrompt({
-  name: 'fallbackGenerator',
-  model: 'googleai/gemini-pro',
-  tools: [getMarketNews],
-  prompt: `You are ELITE-AI, a world-class institutional trading strategist. The primary analysis model is currently unavailable. 
-  Your task is to provide a condensed, single-paragraph executive summary for {{{symbol}}}.
-  First, use the getMarketNews tool to fetch the latest headlines.
-  Then, synthesize all the provided data into a professional, high-level summary paragraph.
-  
-  ## Analysis Parameters
-  - Asset: {{{symbol}}}
-  - Current Price: $${'{{{price}}}'}
-  - Trend: {{{isBullish}}}
-  - Chart Pattern: {{{chartPatternName}}}
-  - Momentum Score: {{{momentum}}}
-  - Trend Strength: {{{trendStrength}}}
-  - Key Levels: Entry: {{{entry}}}, SL: {{{sl}}}, TP1: {{{tp1}}}
-  `,
-});
-
 const generateAiInsightFlow = ai.defineFlow(
   {
     name: 'generateAiInsightFlow',
@@ -149,7 +129,7 @@ const generateAiInsightFlow = ai.defineFlow(
   async (input) => {
     try {
       const { output } = await ai.generate({
-        model: 'googleai/gemini-1.5-flash-latest',
+        model: 'googleai/gemini-pro',
         tools: [getMarketNews],
         output: {
             format: 'json',
@@ -170,64 +150,28 @@ const generateAiInsightFlow = ai.defineFlow(
       });
 
       if (!output) {
-        throw new Error('Primary AI model failed to produce a valid output. The response was empty.');
+        throw new Error('AI model failed to produce a valid output.');
       }
       return output;
     } catch (error) {
-       console.error("Primary AI Generation Error. Attempting fallback:", error);
+       console.error("AI Generation Error:", error);
+       const errorMessage = error instanceof Error ? error.message : "An unknown internal error occurred.";
        
-       try {
-         const fallbackResponse = await fallbackGenerator(input);
-         const fallbackText = fallbackResponse.text;
-         
-         const fallbackPayload: GenerateAiInsightOutput = {
-           executiveSummary: {
-             primaryBias: "Summary (Fallback Model)",
-             setupStrength: "N/A",
-             keyLevels: "N/A",
-             opportunityGrade: "Retail",
-             timeHorizon: fallbackText,
-           },
-           predictiveAnalysis: { primaryScenario: "N/A", predictedTarget: "N/A", timeframe: "N/A", successProbability: "N/A", invalidationLevel: "N/A", keyCatalysts: "N/A", alternativeScenario: "N/A" },
-           technicalAnalysis: { multiTimeframe: "N/A", volumeProfile: "N/A", marketMicrostructure: "N/A" },
-           riskManagement: { positionSizing: "N/A", dynamicLevels: "N/A" },
-           sentimentAndFlow: { onChainMetrics: "N/A", marketSentiment: "N/A" },
-           probabilityAssessment: { successMatrix: "N/A", alternativeScenarios: "N/A" },
-           advancedConfluence: { indicators: "N/A", patterns: "N/A" },
-           institutionalBehavior: { smartMoney: "N/A", correlation: "N/A" },
-           executionStrategy: { entryTactics: "N/A", exitStrategy: "N/A" },
-           marketContext: { macroFactors: "N/A", technicalCatalysts: "N/A" },
-           performanceTracking: { tradeManagementKPIs: "N/A", learningMetrics: "N/A" },
-           alertSystem: { preEntry: "N/A", inTrade: "N/A" }
-         };
-         return fallbackPayload;
-         
-       } catch (fallbackError) {
-           console.error("Fallback AI Generation Error:", fallbackError);
-           const errorMessage = error instanceof Error ? error.message : "An unknown internal error occurred.";
-           
-           const errorPayload: GenerateAiInsightOutput = {
-             executiveSummary: {
-               primaryBias: "Error",
-               setupStrength: "N/A",
-               keyLevels: "N/A",
-               opportunityGrade: "Retail",
-               timeHorizon: `The AI model encountered an error: ${errorMessage}`
-             },
-             predictiveAnalysis: { primaryScenario: "N/A", predictedTarget: "N/A", timeframe: "N/A", successProbability: "N/A", invalidationLevel: "N/A", keyCatalysts: "N/A", alternativeScenario: "N/A" },
-             technicalAnalysis: { multiTimeframe: "N/A", volumeProfile: "N/A", marketMicrostructure: "N/A" },
-             riskManagement: { positionSizing: "N/A", dynamicLevels: "N/A" },
-             sentimentAndFlow: { onChainMetrics: "N/A", marketSentiment: "N/A" },
-             probabilityAssessment: { successMatrix: "N/A", alternativeScenarios: "N/A" },
-             advancedConfluence: { indicators: "N/A", patterns: "N/A" },
-             institutionalBehavior: { smartMoney: "N/A", correlation: "N/A" },
-             executionStrategy: { entryTactics: "N/A", exitStrategy: "N/A" },
-             marketContext: { macroFactors: "N/A", technicalCatalysts: "N/A" },
-             performanceTracking: { tradeManagementKPIs: "N/A", learningMetrics: "N/A" },
-             alertSystem: { preEntry: "N/A", inTrade: "N/A" }
-           };
-           return errorPayload;
-       }
+       const errorPayload: GenerateAiInsightOutput = {
+         executiveSummary: { primaryBias: "Error", setupStrength: "N/A", keyLevels: "N/A", opportunityGrade: "Retail", timeHorizon: `The AI model encountered an error: ${errorMessage}` },
+         predictiveAnalysis: { primaryScenario: "N/A", predictedTarget: "N/A", timeframe: "N/A", successProbability: "N/A", invalidationLevel: "N/A", keyCatalysts: "N/A", alternativeScenario: "N/A" },
+         technicalAnalysis: { multiTimeframe: "N/A", volumeProfile: "N/A", marketMicrostructure: "N/A" },
+         riskManagement: { positionSizing: "N/A", dynamicLevels: "N/A" },
+         sentimentAndFlow: { onChainMetrics: "N/A", marketSentiment: "N/A" },
+         probabilityAssessment: { successMatrix: "N/A", alternativeScenarios: "N/A" },
+         advancedConfluence: { indicators: "N/A", patterns: "N/A" },
+         institutionalBehavior: { smartMoney: "N/A", correlation: "N/A" },
+         executionStrategy: { entryTactics: "N/A", exitStrategy: "N/A" },
+         marketContext: { macroFactors: "N/A", technicalCatalysts: "N/A" },
+         performanceTracking: { tradeManagementKPIs: "N/A", learningMetrics: "N/A" },
+         alertSystem: { preEntry: "N/A", inTrade: "N/A" }
+       };
+       return errorPayload;
     }
   }
 );
