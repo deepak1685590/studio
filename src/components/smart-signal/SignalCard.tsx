@@ -88,13 +88,13 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     const fullRange = fullRangeMax - fullRangeMin;
 
     const calculatePosition = (price: number) => {
-        if (fullRange === 0) return '50%';
+        if (fullRange === 0) return 50;
         const position = ((price - fullRangeMin) / fullRange) * 100;
-        return `${Math.max(0, Math.min(100, position))}%`;
+        return Math.max(0, Math.min(100, position));
     };
 
     const ZoneBar: React.FC<{min: number, max: number, label: string, color: string, glowColor: string}> = ({min, max, label, color, glowColor}) => {
-        const left = calculatePosition(min);
+        const left = `${calculatePosition(min)}%`;
         const widthValue = ((max - min) / fullRange) * 100;
         const width = `${widthValue}%`;
         
@@ -117,24 +117,41 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
         )
     };
     
-    const PriceMarker: React.FC<{price: number, label: string, color: string, icon?: React.ReactNode}> = ({price, label, color, icon}) => {
-         const left = calculatePosition(price);
+    const PriceMarker: React.FC<{price: number, label: string, color: string, icon?: React.ReactNode, verticalOffset?: number}> = ({price, label, color, icon, verticalOffset = 0}) => {
+         const left = `${calculatePosition(price)}%`;
+         const top = `${3 + verticalOffset}rem`;
          return (
-            <div className="absolute top-full mt-3 text-center" style={{ left, transform: 'translateX(-50%)' }}>
+            <div className="absolute text-center" style={{ left, top, transform: 'translateX(-50%)' }}>
                 <div className="relative flex flex-col items-center">
-                    <div className={cn("w-px h-3", color.replace('border-','bg-'))} />
+                    <div className={cn("w-px h-3", color.replace('border-','bg-'))} style={{ height: `${12 + (verticalOffset * 16)}px`}} />
                     <div className={cn("flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full border bg-black/50", color)}>
-                        {icon} {label}: ${price.toFixed(4)}
+                        {icon} <span className="mr-1">{label}:</span> ${price.toFixed(4)}
                     </div>
                 </div>
             </div>
          )
     }
+    
+    let liveMarkerOffset = 0;
+    let entryMarkerOffset = 0;
+    if (livePrice !== null) {
+        const livePos = calculatePosition(livePrice);
+        const entryPos = calculatePosition(entryPrice);
+        const proximity = Math.abs(livePos - entryPos);
+
+        if (proximity < 20) { // 20% proximity threshold on the bar
+            if (livePos > entryPos) {
+                liveMarkerOffset = 2.5; // push live marker down
+            } else {
+                entryMarkerOffset = 2.5; // push entry marker down
+            }
+        }
+    }
 
     return (
         <div>
             <SectionHeader icon={<Building />} title="Institutional Interest" />
-            <SectionWrapper className="font-mono overflow-hidden">
+            <SectionWrapper className="font-mono overflow-visible">
                 <div className="relative h-20 w-full rounded" style={{
                     background: 'linear-gradient(90deg, rgba(74, 222, 128, 0.05) 0%, rgba(192, 132, 252, 0.05) 50%, rgba(239, 68, 68, 0.05) 100%)'
                 }}>
@@ -145,16 +162,16 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
                     {livePrice !== null && (
                         <div 
                             className="absolute top-0 bottom-0 w-0.5 bg-primary transition-all duration-200 ease-linear"
-                            style={{ left: calculatePosition(livePrice), boxShadow: '0 0 8px hsl(var(--primary))' }}
+                            style={{ left: `${calculatePosition(livePrice)}%`, boxShadow: '0 0 8px hsl(var(--primary))' }}
                         >
                              <div className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-2 rounded-full bg-primary animate-pulse"></div>
                         </div>
                     )}
                 </div>
                 
-                <div className="relative h-16">
-                     <PriceMarker price={entryPrice} label={isBullish ? 'LONG' : 'SHORT'} color="border-accent text-accent" icon={<ArrowRight size={12}/>} />
-                     {livePrice !== null && <PriceMarker price={livePrice} label="LIVE" color="border-primary text-primary" />}
+                <div className="relative h-32">
+                     <PriceMarker price={entryPrice} label={isBullish ? 'LONG' : 'SHORT'} color="border-accent text-accent" icon={<ArrowRight size={12}/>} verticalOffset={entryMarkerOffset} />
+                     {livePrice !== null && <PriceMarker price={livePrice} label="LIVE" color="border-primary text-primary" verticalOffset={liveMarkerOffset} />}
                 </div>
 
                 <div className="text-center text-xs text-foreground/60 mt-2">
@@ -458,6 +475,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+
 
 
 
