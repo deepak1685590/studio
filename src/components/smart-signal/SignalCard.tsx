@@ -7,7 +7,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
+import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -83,63 +83,68 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     const fullRangeMax = Math.max(demandMax, fvgMax, supplyMax);
     const fullRange = fullRangeMax - fullRangeMin;
 
-    const calculateTop = (price: number) => {
+    const calculatePosition = (price: number) => {
         if (fullRange === 0) return '50%';
         const position = ((price - fullRangeMin) / fullRange) * 100;
-        return `${100 - position}%`;
+        return `${Math.max(0, Math.min(100, position))}%`;
     };
 
-    const Zone: React.FC<{min: number, max: number, label: string, color: string}> = ({min, max, label, color}) => {
-        const top = calculateTop(max);
-        const height = `${((max - min) / fullRange) * 100}%`;
+    const ZoneBar: React.FC<{min: number, max: number, label: string, color: string}> = ({min, max, label, color}) => {
+        const left = calculatePosition(min);
+        const width = `${((max - min) / fullRange) * 100}%`;
         
         return (
-            <div 
-                className={cn("absolute w-full border-y border-dashed", color)}
-                style={{ top, height, boxShadow: `inset 0 0 15px hsl(var(--${color.split(' ')[0].replace('border-', '')}-500)/0.2)` }}
-            >
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-right">
+             <div className="absolute top-0 bottom-0 text-center flex flex-col justify-center" style={{ left, width }}>
+                <div className={cn("h-full opacity-20", color)} />
+                <div className="absolute inset-0 flex flex-col justify-center items-center">
                     <div className="text-xs font-bold">{label}</div>
-                    <div className="text-sm font-mono">${min.toFixed(4)} - ${max.toFixed(4)}</div>
+                    <div className="text-[10px] font-mono opacity-80">${min.toFixed(4)} - ${max.toFixed(4)}</div>
                 </div>
             </div>
         )
     };
+    
+    const PriceMarker: React.FC<{price: number, label: string, color: string, icon?: React.ReactNode}> = ({price, label, color, icon}) => {
+         const left = calculatePosition(price);
+         return (
+            <div className="absolute top-full mt-1 text-center" style={{ left, transform: 'translateX(-50%)' }}>
+                <div className="relative">
+                    <div className={cn("absolute bottom-full mb-2 w-px h-4", color)} />
+                    <div className={cn("flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full border", color)}>
+                        {icon} {label}: ${price.toFixed(4)}
+                    </div>
+                </div>
+            </div>
+         )
+    }
 
     return (
         <div>
             <SectionHeader icon={<Building />} title="Institutional Interest" />
             <div className="p-4 bg-black/30 rounded-lg border border-primary/30 font-mono">
-                <div className="relative h-56 w-full overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-red-500/10 via-transparent to-green-500/10" />
-                    <div className="price-scanner" />
+                <div className="relative h-12 w-full rounded" style={{
+                    background: 'linear-gradient(90deg, rgba(74, 222, 128, 0.1) 0%, rgba(192, 132, 252, 0.1) 50%, rgba(239, 68, 68, 0.1) 100%)'
+                }}>
+                    <ZoneBar min={demandMin} max={demandMax} label="DEMAND" color="bg-green-500" />
+                    <ZoneBar min={fvgMin} max={fvgMax} label="FVG" color="bg-purple-500" />
+                    <ZoneBar min={supplyMin} max={supplyMax} label="SUPPLY" color="bg-red-500" />
                     
-                    <Zone min={supplyMin} max={supplyMax} label="SUPPLY" color="border-red-500/50 text-red-300" />
-                    <Zone min={fvgMin} max={fvgMax} label="FVG" color="border-purple-400/50 text-purple-300" />
-                    <Zone min={demandMin} max={demandMax} label="DEMAND" color="border-green-400/50 text-green-300" />
-                    
-                    {/* Entry Price Line */}
-                    <div 
-                        className="absolute left-0 right-0 h-px bg-accent/80 transition-all duration-300" 
-                        style={{ top: calculateTop(entryPrice), boxShadow: '0 0 8px hsl(var(--accent))' }}
-                    >
-                        <div className="absolute left-0 -translate-y-1/2 flex items-center gap-1 text-xs font-bold bg-accent text-accent-foreground px-1 py-0.5 rounded">
-                           <ArrowRight size={12}/> {isBullish ? 'LONG' : 'SHORT'} ENTRY: ${entryPrice.toFixed(4)}
-                        </div>
-                    </div>
-                    
-                    {/* Live Price Line */}
+                     {/* Live Price Indicator */}
                     {livePrice !== null && (
                         <div 
-                            className="absolute left-0 right-0 h-0.5 bg-primary transition-all duration-200 ease-linear"
-                            style={{ top: calculateTop(livePrice), boxShadow: '0 0 8px hsl(var(--primary))' }}
+                            className="absolute top-0 bottom-0 w-0.5 bg-primary transition-all duration-200 ease-linear"
+                            style={{ left: calculatePosition(livePrice), boxShadow: '0 0 8px hsl(var(--primary))' }}
                         >
-                             <div className="absolute right-full mr-2 -translate-y-1/2 text-xs text-primary whitespace-nowrap bg-background px-1 rounded">
-                                LIVE
-                            </div>
+                             <div className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-2 rounded-full bg-primary animate-pulse"></div>
                         </div>
                     )}
                 </div>
+                
+                <div className="relative h-12">
+                     <PriceMarker price={entryPrice} label={isBullish ? 'LONG' : 'SHORT'} color="border-accent text-accent" icon={<ArrowRight size={12}/>} />
+                     {livePrice !== null && <PriceMarker price={livePrice} label="LIVE" color="border-primary text-primary" />}
+                </div>
+
                 <div className="text-center text-xs text-foreground/60 mt-2">
                     {data.volumeImbalance}
                 </div>
