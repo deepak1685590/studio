@@ -2,55 +2,109 @@
 "use client";
 
 import React from 'react';
-import { MultiTimeframeSR, SupportResistanceLevel } from '@/types';
+import { MultiTimeframeSR } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 
 interface QuantumPivotsMatrixProps {
   data: MultiTimeframeSR;
+  livePrice: number | null;
 }
 
-const QuantumPivotsMatrix: React.FC<QuantumPivotsMatrixProps> = ({ data }) => {
+const QuantumPivotsMatrix: React.FC<QuantumPivotsMatrixProps> = ({ data, livePrice }) => {
     const timeframes: (keyof MultiTimeframeSR)[] = ['5m', '15m', '1H'];
 
     const formatPrice = (price: number) => {
         return price < 10 ? price.toFixed(4) : price.toFixed(2);
     }
   
-    const LevelCell: React.FC<{ label: string; value: number; type: 'support' | 'resistance'; isTarget: boolean }> = ({ label, value, type, isTarget }) => (
-        <div className={cn(
-            "text-center p-2 rounded-md transition-all duration-300",
-            isTarget && (type === 'support' ? 'bg-green-500/10 shadow-[0_0_15px_rgba(74,222,128,0.6)]' : 'bg-red-500/10 shadow-[0_0_15px_rgba(239,68,68,0.6)]')
-        )}>
+    const LevelCell: React.FC<{ value: number; type: 'support' | 'resistance'; livePrice: number | null }> = ({ value, type, livePrice }) => {
+        const isNear = livePrice !== null && Math.abs(livePrice - value) / value < 0.0005; // 0.05% proximity
+        const glowClass = type === 'support' 
+            ? 'shadow-[0_0_15px_rgba(74,222,128,0.7)] bg-green-500/10'
+            : 'shadow-[0_0_15px_rgba(239,68,68,0.7)] bg-red-500/10';
+
+        return (
             <div className={cn(
-                "font-mono font-bold text-lg",
-                type === 'support' ? "text-green-400" : "text-red-400"
+                "font-mono font-bold text-center transition-all duration-300 p-1 rounded-md",
+                type === 'support' ? "text-green-400" : "text-red-400",
+                isNear && glowClass
             )}>
                 ${formatPrice(value)}
             </div>
-            <div className="text-xs text-foreground/60">{label}</div>
-        </div>
-    );
+        );
+    };
+
+    const LivePriceIndicator: React.FC<{ level: number, rangeMin: number, rangeMax: number }> = ({ level, rangeMin, rangeMax }) => {
+        if (livePrice === null) return null;
+        
+        const isPriceHere = livePrice >= rangeMin && livePrice < rangeMax;
+        if (!isPriceHere) return <div className="h-8"></div>;
+
+        const priceIsRising = livePrice > level;
+
+        return (
+            <div className={cn(
+                "h-8 flex items-center justify-center font-bold font-mono text-lg animate-pulse",
+                priceIsRising ? 'text-green-300' : 'text-red-300'
+            )}>
+                 <div className="flex items-center gap-1" style={{ textShadow: '0 0 8px currentColor' }}>
+                    {priceIsRising ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                    <span>${formatPrice(livePrice)}</span>
+                 </div>
+            </div>
+        )
+    }
+
+    const levelOrder: (keyof MultiTimeframeSR['5m'])[] = ['R3', 'R2', 'R1', 'S1', 'S2', 'S3'];
 
   return (
-    <div className="space-y-4">
-      {timeframes.map(tf => (
-        <div key={tf} className="bg-black/40 p-3 rounded-lg border border-primary/20">
-          <h4 className="font-headline text-lg text-primary text-center mb-2">{tf.toUpperCase()} Levels</h4>
-          <div className="grid grid-cols-3 gap-2">
-            <LevelCell label="Support 1" value={data[tf].S1} type="support" isTarget={data[tf].probableTarget === 'S1'} />
-            <LevelCell label="Support 2" value={data[tf].S2} type="support" isTarget={data[tf].probableTarget === 'S2'} />
-            <LevelCell label="Support 3" value={data[tf].S3} type="support" isTarget={data[tf].probableTarget === 'S3'} />
-          </div>
-          <hr className="my-2 border-primary/20 border-dashed" />
-          <div className="grid grid-cols-3 gap-2">
-            <LevelCell label="Resistance 1" value={data[tf].R1} type="resistance" isTarget={data[tf].probableTarget === 'R1'} />
-            <LevelCell label="Resistance 2" value={data[tf].R2} type="resistance" isTarget={data[tf].probableTarget === 'R2'} />
-            <LevelCell label="Resistance 3" value={data[tf].R3} type="resistance" isTarget={data[tf].probableTarget === 'R3'} />
-          </div>
-        </div>
-      ))}
-    </div>
+    <Table>
+        <TableHeader>
+            <TableRow>
+                <TableHead className="w-1/4 text-primary">Level</TableHead>
+                {timeframes.map(tf => (
+                    <TableHead key={tf} className="text-center text-primary">{tf.toUpperCase()}</TableHead>
+                ))}
+                <TableHead className="w-1/4 text-center text-primary">Live Price</TableHead>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            {levelOrder.map(levelKey => {
+                const type = levelKey.startsWith('R') ? 'resistance' : 'support';
+                const levelData = timeframes.map(tf => data[tf][levelKey]);
+
+                // Define the price range for the live indicator for this row
+                let rangeMin: number, rangeMax: number;
+                const currentLevelIndex = levelOrder.indexOf(levelKey);
+                
+                if (type === 'resistance') {
+                    rangeMin = levelData[0]; // The price of the current R level
+                    rangeMax = currentLevelIndex > 0 ? data['5m'][levelOrder[currentLevelIndex - 1]] : Infinity;
+                } else { // Support
+                    rangeMax = levelData[0]; // The price of the current S level
+                    rangeMin = currentLevelIndex < levelOrder.length - 1 ? data['5m'][levelOrder[currentLevelIndex + 1]] : -Infinity;
+                }
+
+                return (
+                    <TableRow key={levelKey}>
+                        <TableCell className={cn("font-bold", type === 'support' ? "text-green-400/80" : "text-red-400/80")}>
+                            {levelKey}
+                        </TableCell>
+                        {levelData.map((levelValue, index) => (
+                            <TableCell key={timeframes[index]} className="text-center">
+                                <LevelCell value={levelValue} type={type} livePrice={livePrice} />
+                            </TableCell>
+                        ))}
+                        <TableCell className="text-center relative">
+                            <LivePriceIndicator level={levelData[0]} rangeMin={rangeMin} rangeMax={rangeMax} />
+                        </TableCell>
+                    </TableRow>
+                );
+            })}
+        </TableBody>
+    </Table>
   );
 };
 

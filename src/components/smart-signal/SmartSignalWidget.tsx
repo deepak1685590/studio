@@ -392,7 +392,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             {signalData && (
                 <div className="bg-black/30 rounded-lg border border-primary/20 p-4 space-y-3">
                      <h3 className="font-headline text-xl text-primary flex items-center gap-2"><Layers /> Quantum Pivots Matrix</h3>
-                     <QuantumPivotsMatrix data={signalData.multiTimeframeSR} />
+                     <QuantumPivotsMatrix data={signalData.multiTimeframeSR} livePrice={realtimePrice} />
                 </div>
             )}
             
