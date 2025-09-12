@@ -200,37 +200,6 @@ Fill out every field in the following JSON object with detailed, expert-level an
 `,
 });
 
-const fallbackGenerator = ai.definePrompt({
-    name: 'fallbackAiInsightGenerator',
-    input: { schema: GenerateAiInsightInputSchema },
-    output: { schema: z.object({ executiveSummary: z.string() }) },
-    model: 'googleai/gemini-1.5-flash-latest',
-    prompt: `You are a backup financial analyst AI. The primary analysis model is unavailable.
-    Your task is to provide a concise, single-paragraph executive summary based on the provided data for {{{symbol}}}.
-    
-    Data:
-    - Bias: {{#if isBullish}}Bullish{{else}}Bearish{{/if}}
-    - Key Levels: Entry=\${{{entry}}}, SL=\${{{sl}}}, TP1=\${{{tp1}}}
-    - Pattern: {{{chartPatternName}}}
-    - Confluences: {{{confluenceCount}}}
-    - HTF Trend: The 4H trend is {{{multiTimeframeAnalysis.4H}}} and the Daily trend is {{{multiTimeframeAnalysis.Daily}}}.
-
-    Synthesize this into a professional, clear paragraph. Start with the primary bias and setup strength, mention the key levels and pattern, and comment on the higher-timeframe alignment.
-    `,
-});
-
-async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 2, delay = 500): Promise<T> {
-  try {
-    return await fn();
-  } catch (error) {
-    if (retries > 0) {
-      await new Promise(res => setTimeout(res, delay));
-      return retryWithBackoff(fn, retries - 1, delay * 2);
-    }
-    throw error;
-  }
-}
-
 const generateAiInsightFlow = ai.defineFlow(
   {
     name: 'generateAiInsightFlow',
@@ -239,60 +208,29 @@ const generateAiInsightFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      const { output } = await retryWithBackoff(() => primaryGenerator(input));
+      const { output } = await primaryGenerator(input);
       if (!output) {
-        throw new Error('Primary AI model failed to produce a valid output.');
+        throw new Error('AI model failed to produce a valid output. The response was empty.');
       }
       return output;
     } catch (error) {
-      console.error('Primary AI flow failed. Attempting fallback.', error);
-      
-      try {
-        const fallbackResult = await fallbackGenerator(input);
-        const fallbackSummary = fallbackResult.output?.executiveSummary || "Fallback summary could not be generated.";
-        
-        return {
-            executiveSummary: {
-                primaryBias: "Summary (Fallback Model)",
-                setupStrength: "N/A",
-                keyLevels: "N/A",
-                opportunityGrade: "Retail",
-                timeHorizon: fallbackSummary,
-            },
-            predictiveAnalysis: { 
-                primaryScenario: "Unavailable",
-                predictedTarget: "Unavailable", 
-                timeframe: "Unavailable", 
-                successProbability: "Unavailable", 
-                invalidationLevel: "Unavailable",
-                keyCatalysts: "Unavailable",
-                alternativeScenario: "Unavailable"
-            },
-            technicalAnalysis: { multiTimeframe: "Unavailable due to high model demand.", volumeProfile: "Unavailable", marketMicrostructure: "Unavailable" },
-            riskManagement: { positionSizing: "Unavailable", dynamicLevels: "Unavailable" },
-            sentimentAndFlow: { onChainMetrics: "Unavailable", marketSentiment: "Unavailable" },
-            probabilityAssessment: { successMatrix: "Unavailable", alternativeScenarios: "Unavailable" },
-            advancedConfluence: { indicators: "Unavailable", patterns: "Unavailable" },
-            institutionalBehavior: { smartMoney: "Unavailable", correlation: "Unavailable" },
-            executionStrategy: { entryTactics: "Unavailable", exitStrategy: "Unavailable" },
-            marketContext: { macroFactors: "Unavailable", technicalCatalysts: "Unavailable" },
-            performanceTracking: { tradeManagementKPIs: "Unavailable", learningMetrics: "Unavailable" },
-            alertSystem: { preEntry: "Unavailable", inTrade: "Unavailable" },
-        };
-      } catch (fallbackError) {
-         console.error('Fallback AI flow also failed:', fallbackError);
-         
-         let errorMessage = "An unexpected error occurred in both primary and fallback AI models.";
-         const errorString = String(fallbackError).toLowerCase();
-         if (errorString.includes("429") || errorString.includes("quota")) {
-            errorMessage = "The AI model is experiencing high demand and the daily usage quota has been exceeded. The service will be available again tomorrow. Please try again later."
-         } else if (errorString.includes("api key not valid")) {
-            errorMessage = "The Google AI API key is not valid. Please check your .env file and ensure it is configured correctly."
-         } else if (fallbackError instanceof Error) {
-            errorMessage = `Primary model failed and fallback also failed. Error: ${fallbackError.message}`;
-         }
+        console.error('AI Insight Generation Error:', error);
 
-         return {
+        let errorMessage = "An unexpected error occurred while generating the AI analysis.";
+        const errorString = String(error).toLowerCase();
+
+        if (errorString.includes("api key not valid")) {
+            errorMessage = "The Google AI API key is not valid. Please check your .env file and ensure it is configured correctly with NEXT_PUBLIC_GEMINI_API_KEY.";
+        } else if (errorString.includes("429") || errorString.includes("quota")) {
+            errorMessage = "The AI model is experiencing high demand or the daily usage quota has been exceeded. This service may be temporarily unavailable. Please try again later.";
+        } else if (errorString.includes("safety") || errorString.includes("blocked")) {
+            errorMessage = "The AI response was blocked by content safety filters. The query may have been too sensitive.";
+        } else if (error instanceof Error) {
+            errorMessage = `A system error occurred: ${error.message}`;
+        }
+
+        // Return a structured error object that matches the expected output schema
+        return {
             executiveSummary: {
               primaryBias: "Error",
               setupStrength: "N/A",
@@ -320,7 +258,6 @@ const generateAiInsightFlow = ai.defineFlow(
             performanceTracking: { tradeManagementKPIs: "Unavailable", learningMetrics: "Unavailable" },
             alertSystem: { preEntry: "Unavailable", inTrade: "Unavailable" },
          };
-      }
     }
   }
 );
