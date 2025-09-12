@@ -7,7 +7,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp } from 'lucide-react';
+import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp, Layers } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -18,6 +18,7 @@ import type { GenerateAiInsightInput } from '@/ai/flows/generate-ai-insight';
 import SidewaysMarketAlert from './SidewaysMarketAlert';
 import OracleInsight from './OracleInsight';
 import type { OracleInsightInput } from '@/ai/flows/oracle-insight';
+import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -67,95 +68,68 @@ const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isB
     );
 };
 
-const KeyLevels: React.FC<{ data: SignalData }> = ({ data }) => {
-    const LevelRow = ({ label, value, colorClass }: { label: string; value: string; colorClass: string; }) => (
-        <div className="flex justify-between items-center text-sm">
-            <span className="text-foreground/70">{label}</span>
-            <span className={cn("font-mono font-bold", colorClass)}>${value}</span>
-        </div>
-    );
-
-    return (
-        <div>
-            <SectionHeader icon={<GitCommitHorizontal />} title="Key Technical Levels" />
-            <SectionWrapper>
-                <div className="space-y-2">
-                    <LevelRow label="Swing High" value={data.swingHigh} colorClass="text-red-400" />
-                    <LevelRow label="Pivot Point" value={data.pivot} colorClass="text-amber-400" />
-                    <LevelRow label="Swing Low" value={data.swingLow} colorClass="text-green-400" />
-                    <hr className="border-primary/20 my-2" />
-                    <LevelRow label="Resistance 1 (R1)" value={data.r1} colorClass="text-red-400/80" />
-                    <LevelRow label="Support 1 (S1)" value={data.s1} colorClass="text-green-400/80" />
-                </div>
-            </SectionWrapper>
-        </div>
-    );
-};
-
-
 const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | null }> = ({ data, livePrice }) => {
-    const { supplyZone, demandZone, fvg, isBullish, entry } = data;
-    const supplyMin = parseFloat(supplyZone[0]);
-    const supplyMax = parseFloat(supplyZone[1]);
-    const demandMin = parseFloat(demandZone[0]);
-    const demandMax = parseFloat(demandZone[1]);
-    const fvgMin = parseFloat(fvg[0]);
-    const fvgMax = parseFloat(fvg[1]);
-    
-    const strongZone = isBullish ? 'DEMAND' : 'SUPPLY';
+  const { supplyZone, demandZone, fvg, isBullish, entry } = data;
+  const supplyMin = parseFloat(supplyZone[0]);
+  const supplyMax = parseFloat(supplyZone[1]);
+  const demandMin = parseFloat(demandZone[0]);
+  const demandMax = parseFloat(demandZone[1]);
+  const fvgMin = parseFloat(fvg[0]);
+  const fvgMax = parseFloat(fvg[1]);
+  
+  const strongZone = isBullish ? 'DEMAND' : 'SUPPLY';
 
-    const ZoneBox = ({ range, title, color, isStrong }: { range: [number, number], title: string, color: string, isStrong: boolean }) => (
-        <div className={cn(
-            "p-3 rounded-lg border-2 text-center transition-all duration-500",
-            isStrong ? `${color} shadow-[0_0_25px]` : `border-primary/20 bg-black/30`,
-            isStrong ? color.replace('border-', 'shadow-') : ''
-        )}>
-            <h5 className={cn("font-headline text-lg", isStrong ? 'text-white' : 'text-primary/80')}>{isStrong ? `STRONG ${title}` : title}</h5>
-            <p className="font-mono text-xl text-white">${range[1].toFixed(4)} - ${range[0].toFixed(4)}</p>
-        </div>
-    );
+  const ZoneBox = ({ range, title, color, isStrong, className }: { range: [number, number], title: string, color: string, isStrong: boolean, className?: string }) => (
+    <div className={cn(
+        "p-3 rounded-lg border-2 text-center transition-all duration-500",
+        isStrong ? `${color} shadow-[0_0_25px]` : `border-primary/20 bg-black/30`,
+        isStrong ? color.replace('border-', 'shadow-') : '',
+        className
+    )}>
+      <h5 className={cn("font-headline text-lg", isStrong ? 'text-white' : 'text-primary/80')}>{isStrong ? `STRONG ${title}` : title}</h5>
+      <p className="font-mono text-xl text-white">${range[1].toFixed(4)} - ${range[0].toFixed(4)}</p>
+    </div>
+  );
 
-    return (
-        <div>
-            <SectionHeader icon={<Building />} title="Institutional Interest" />
-            <div className="relative p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
-                
-                <ZoneBox range={[supplyMin, supplyMax]} title="SUPPLY ZONE" color="border-red-500 bg-red-500/20" isStrong={strongZone === 'SUPPLY'} />
-                
-                <div className="relative h-20 flex items-center justify-center">
-                    {/* FVG Zone */}
-                    <div className="h-full w-full bg-purple-500/20 border-y-2 border-purple-500/50 flex items-center justify-center">
-                         <div className="text-center">
-                            <h5 className="font-headline text-purple-300">FVG</h5>
-                            <p className="font-mono text-xs text-purple-300/80">${fvgMax.toFixed(4)} - ${fvgMin.toFixed(4)}</p>
+  return (
+    <div>
+        <SectionHeader icon={<Building />} title="Institutional Interest" />
+        <div className="relative p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
+            <ZoneBox range={[supplyMin, supplyMax]} title="SUPPLY ZONE" color="border-red-500 bg-red-500/20" isStrong={strongZone === 'SUPPLY'} />
+            
+            <div className="relative h-20 flex items-center justify-center">
+                {/* FVG Zone */}
+                <div className="h-full w-full bg-purple-500/20 border-y-2 border-purple-500/50 flex items-center justify-center">
+                     <div className="text-center">
+                        <h5 className="font-headline text-purple-300">FVG</h5>
+                        <p className="font-mono text-xs text-purple-300/80">${fvgMax.toFixed(4)} - ${fvgMin.toFixed(4)}</p>
+                    </div>
+                </div>
+                {/* Live Price Line */}
+                {livePrice !== null && (
+                    <div 
+                        className="absolute w-full h-0.5 bg-primary transition-all duration-200 ease-linear z-10"
+                        style={{ 
+                            top: `${( (supplyMin - livePrice) / (supplyMin - demandMax) ) * 100}%`,
+                            boxShadow: '0 0 10px hsl(var(--primary))' 
+                        }}
+                    >
+                        <div className="absolute right-0 -top-3 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded">
+                            LIVE: ${livePrice.toFixed(4)}
                         </div>
                     </div>
-                    {/* Live Price Line */}
-                    {livePrice !== null && (
-                        <div 
-                            className="absolute w-full h-0.5 bg-primary transition-all duration-200 ease-linear z-10"
-                            style={{ 
-                                top: `${( (supplyMin - livePrice) / (supplyMin - demandMax) ) * 100}%`,
-                                boxShadow: '0 0 10px hsl(var(--primary))' 
-                            }}
-                        >
-                            <div className="absolute right-0 -top-3 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded">
-                                LIVE: ${livePrice.toFixed(4)}
-                            </div>
-                        </div>
-                    )}
-                </div>
+                )}
+            </div>
 
-                <ZoneBox range={[demandMin, demandMax]} title="DEMAND ZONE" color="border-green-500 bg-green-500/20" isStrong={strongZone === 'DEMAND'} />
+            <ZoneBox range={[demandMin, demandMax]} title="DEMAND ZONE" color="border-green-500 bg-green-500/20" isStrong={strongZone === 'DEMAND'} />
 
-                 <div className="text-center text-sm text-foreground/80 pt-2">
-                    {data.volumeImbalance}
-                </div>
+             <div className="text-center text-sm text-foreground/80 pt-2">
+                {data.volumeImbalance}
             </div>
         </div>
-    );
+    </div>
+  );
 };
-
 
 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
@@ -320,7 +294,12 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </SectionWrapper>
       
-      <KeyLevels data={data} />
+      <div>
+        <SectionHeader icon={<Layers />} title="Quantum Pivots Matrix" />
+        <SectionWrapper>
+            <QuantumPivotsMatrix data={data.multiTimeframeSR} livePrice={realtimePrice} />
+        </SectionWrapper>
+      </div>
 
       {mode === '4' && data.sniperZone && (
         <Alert className="border-primary bg-gradient-to-br from-primary/20 via-black to-accent/20 text-primary shadow-[0_0_25px_hsl(var(--primary)_/_0.6)] scanner-glow">
