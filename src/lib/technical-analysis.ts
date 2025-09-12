@@ -466,13 +466,14 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             movingAverageAnalysis,
             trendStrength,
             momentum: { score: 50, rating: 'Neutral' },
+            sidewaysMarket,
             volumeAnalysis,
             multiTimeframeSR,
             advancedStrengthDashboard,
         };
     }
 
-    let entry, sl, tp1, tp2, confirmedEntry;
+    let entry, sl, tp1, tp2;
     const action = isBullish ? "Buy on Pullback" : "Sell on Rally";
 
     // --- Mode-Specific Calculation Logic ---
@@ -506,7 +507,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
     // Volatility-aware confirmed entry to avoid fakeouts
     const confirmationOffset = atr * 0.1; // Require price to move 10% of ATR beyond entry
-    confirmedEntry = (isBullish ? parseFloat(entry) + confirmationOffset : parseFloat(entry) - confirmationOffset).toFixed(4);
+    const confirmedEntry = (isBullish ? parseFloat(entry) + confirmationOffset : parseFloat(entry) - confirmationOffset).toFixed(4);
     
     const risk = Math.abs(parseFloat(entry) - parseFloat(sl));
     const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
@@ -591,21 +592,17 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         smartMoneyEntryPass: pseudoRandom(analysisSeed + 'sm_entry') > 0.3,
     };
     
-    let goldenPullbackZone: GoldenPullbackZone | undefined = undefined;
-    
     const fib618 = parseFloat(fibonacciLevels.level_618);
-    const shouldShowGoldenZone = pseudoRandom(analysisSeed + 'golden_zone_chance') > 0.7; // 30% chance to force a golden zone setup
+    const goldenPullbackZone: GoldenPullbackZone = {
+        min: Math.min(fib618, pivot).toFixed(4),
+        max: Math.max(fib618, pivot).toFixed(4),
+    };
 
-    const isEntryInGoldenZone = isBullish
-      ? parseFloat(entry) <= Math.max(fib618, pivot) && parseFloat(entry) >= Math.min(fib618, pivot)
-      : parseFloat(entry) >= Math.min(fib618, pivot) && parseFloat(entry) <= Math.max(fib618, pivot);
-
-    if (shouldShowGoldenZone || isEntryInGoldenZone) {
-         goldenPullbackZone = {
-            min: Math.min(fib618, pivot).toFixed(4),
-            max: Math.max(fib618, pivot).toFixed(4),
-        };
-        confluenceFactors.push(`✅ Entry within Golden Zone`);
+    if (
+      (isBullish && parseFloat(entry) <= goldenPullbackZone.max && parseFloat(entry) >= goldenPullbackZone.min) ||
+      (!isBullish && parseFloat(entry) >= goldenPullbackZone.min && parseFloat(entry) <= goldenPullbackZone.max)
+    ) {
+      confluenceFactors.push(`✅ Entry within Golden Zone`);
     }
 
     const reverseMin = isBullish ? swingLow * 0.99 : swingHigh * 1.01;
@@ -676,7 +673,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             entry,
             bos: bosLevel,
             choch: isBullish ? (swingLow * 0.998).toFixed(4) : (swingHigh * 1.002).toFixed(4),
-            confirmedEntry,
+            confirmedEntry: confirmedEntry.toFixed(4),
         },
         marketStructure,
         multiTimeframeAnalysis,
@@ -692,6 +689,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         movingAverageAnalysis,
         trendStrength,
         momentum,
+        sidewaysMarket,
         volumeAnalysis,
         multiTimeframeSR,
         advancedStrengthDashboard,
