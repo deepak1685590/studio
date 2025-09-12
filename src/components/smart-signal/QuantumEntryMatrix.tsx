@@ -4,7 +4,7 @@
 import React from 'react';
 import { SignalData } from '@/types';
 import { cn } from '@/lib/utils';
-import { Target, TrendingUp, TrendingDown } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, Crosshair } from 'lucide-react';
 
 interface QuantumEntryMatrixProps {
   data: SignalData;
@@ -19,11 +19,12 @@ const LevelRow: React.FC<{ label: string; value: string; className?: string }> =
 );
 
 const QuantumEntryMatrix: React.FC<QuantumEntryMatrixProps> = ({ data, livePrice }) => {
-  const { isBullish, poc, vah, val } = data;
+  const { isBullish, poc, vah, val, entry } = data;
   
   const vahNum = parseFloat(vah);
   const valNum = parseFloat(val);
   const pocNum = parseFloat(poc);
+  const entryNum = parseFloat(entry);
   const totalRange = vahNum - valNum;
 
   const getPricePosition = (price: number) => {
@@ -46,13 +47,14 @@ const QuantumEntryMatrix: React.FC<QuantumEntryMatrixProps> = ({ data, livePrice
   const icon = isBullish ? <TrendingUp size={20} className="text-green-400" /> : <TrendingDown size={20} className="text-red-400" />;
   const title = isBullish ? "Long Entry Zone" : "Short Entry Zone";
   const entryZoneColor = isBullish ? 'bg-green-500/20 border-green-500/50' : 'bg-red-500/20 border-red-500/50';
+  const entryPriceColor = isBullish ? 'text-green-300' : 'text-red-300';
 
   return (
     <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
       <h4 className="font-headline text-lg text-primary mb-3 flex items-center gap-2">
         <Target /> Quantum VAP Entry Matrix
       </h4>
-      <div className="flex gap-4 h-48">
+      <div className="flex gap-4 h-56">
         <div className="relative flex-shrink-0 w-16 bg-black rounded-lg border-2 border-primary/20 overflow-hidden">
           {/* VAH/VAL Lines */}
           <div className="absolute w-full h-px bg-red-500/50" style={{ top: getPricePosition(vahNum) }} />
@@ -63,6 +65,10 @@ const QuantumEntryMatrix: React.FC<QuantumEntryMatrixProps> = ({ data, livePrice
           
           {/* Entry Zone */}
           <div className={cn("absolute w-full", entryZoneColor)} style={entryZoneStyle} />
+          
+          {/* Exact Entry Price Line */}
+          <div className="absolute w-full h-0.5 bg-accent/80" style={{ top: getPricePosition(entryNum), boxShadow: '0 0 8px hsl(var(--accent))' }} />
+
 
           {/* Live Price Indicator */}
           {livePrice !== null && (
@@ -79,12 +85,22 @@ const QuantumEntryMatrix: React.FC<QuantumEntryMatrixProps> = ({ data, livePrice
         </div>
         <div className="flex-1 flex flex-col justify-between">
           <LevelRow label="VAH" value={`$${vah}`} className="text-red-400" />
-          <div className={cn("p-2 text-center rounded-lg border-2", entryZoneColor)}>
-            <div className="flex items-center justify-center gap-1 font-headline text-base text-white">
-                {icon} {title}
+          <div className="space-y-2">
+            <div className={cn("p-2 text-center rounded-lg border", entryZoneColor)}>
+                <div className="flex items-center justify-center gap-1 font-headline text-sm text-white/80">
+                    {icon} {title}
+                </div>
+                <div className="font-mono text-base text-white/70">
+                    ${entryZoneBottom.toFixed(4)} - ${entryZoneTop.toFixed(4)}
+                </div>
             </div>
-            <div className="font-mono text-lg text-white/90">
-                ${entryZoneBottom.toFixed(4)} - ${entryZoneTop.toFixed(4)}
+            <div className="p-2 text-center rounded-lg border-2 border-accent bg-accent/20 shadow-[0_0_15px_hsl(var(--accent)_/_0.5)]">
+                <div className="flex items-center justify-center gap-1 font-headline text-base text-accent">
+                    <Crosshair /> Exact Entry Price
+                </div>
+                <div className={cn("font-mono text-2xl font-bold", entryPriceColor)} style={{textShadow: '0 0 8px currentColor'}}>
+                    ${entry}
+                </div>
             </div>
           </div>
           <LevelRow label="POC" value={`$${poc}`} className="text-amber-400" />
