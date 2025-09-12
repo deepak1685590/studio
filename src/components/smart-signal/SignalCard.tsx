@@ -100,11 +100,11 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
         return (
              <div className="absolute top-0 bottom-0 text-center flex flex-col justify-center" style={{ left, width }}>
                 <div 
-                    className={cn("h-full opacity-30 rounded", color)} 
+                    className={cn("h-full opacity-40 rounded", color)} 
                     style={{boxShadow: `inset 0 0 10px ${glowColor}, 0 0 8px ${glowColor}`}}
                 />
-                <div className="absolute inset-0 flex flex-col justify-center items-center p-1 text-white" style={{textShadow: '0 0 3px black'}}>
-                    <div className="text-xs font-bold">{label}</div>
+                <div className="absolute inset-0 flex flex-col justify-center items-center p-1 text-white font-bold" style={{textShadow: '0 0 3px black'}}>
+                    <div className="text-xs">{label}</div>
                      {widthValue > 15 && ( 
                         <div className="text-[10px] font-mono opacity-80">
                             ${min.toFixed(4)} - ${max.toFixed(4)}
@@ -123,7 +123,7 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
             <div className="absolute text-center" style={{ left, top, transform: 'translateX(-50%)' }}>
                 <div className="relative flex flex-col items-center">
                     {align === 'bottom' && <div className={cn("w-px h-6", color.replace('border-','bg-'))} />}
-                    <div className={cn("flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full border bg-black/70", color)}>
+                    <div className={cn("flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full border bg-black/70", color)} style={{textShadow: '0 0 5px currentColor'}}>
                         {icon} <span className="mr-1">{label}:</span> ${price.toFixed(4)}
                     </div>
                     {align === 'top' && <div className={cn("w-px h-6", color.replace('border-','bg-'))} />}
@@ -157,8 +157,8 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
             <SectionWrapper className="font-mono overflow-visible">
                  <div className="relative h-28 w-full">
                     {/* Price Markers rendered first to be behind the track */}
-                    <PriceMarker price={entryPrice} label={isBullish ? 'ENTRY' : 'ENTRY'} color="border-accent text-accent" icon={<ArrowRight size={12}/>} align={entryMarkerAlign} />
-                    {livePrice !== null && <PriceMarker price={livePrice} label="LIVE" color="border-primary text-primary" align={liveMarkerAlign} />}
+                    <PriceMarker price={entryPrice} label={isBullish ? 'LONG' : 'SHORT'} color="border-accent text-accent" icon={<ArrowRight size={12}/>} align={entryMarkerAlign} />
+                    {livePrice !== null && <PriceMarker price={livePrice} label="LIVE" color="border-primary text-primary" icon={<Crosshair size={12}/>} align={liveMarkerAlign} />}
                     
                     {/* Central Track */}
                     <div className='absolute w-full h-12 top-1/2 -translate-y-1/2 rounded-lg bg-black/50 border border-primary/20 backdrop-blur-sm'>
@@ -389,7 +389,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
       
       <InstitutionalInterest data={data} livePrice={displayPrice} />
-      
+
       <ConfidenceBreakdown 
         breakdown={data.confidenceBreakdown} 
         confidence={data.confidence}
@@ -480,6 +480,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+
 
 
 
