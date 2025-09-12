@@ -21,15 +21,21 @@ const LiquidityLevelBar: React.FC<{ level: number; volume: number; maxVolume: nu
   const isBuy = type === 'buy';
   
   return (
-    <div className={cn("flex items-center gap-2", isBuy ? "flex-row-reverse" : "flex-row")}>
-      <div className="w-24 text-center font-mono text-sm">{level.toFixed(2)}</div>
-      <div className={cn("flex-1 h-6 rounded-sm relative overflow-hidden", isBuy ? "bg-green-500/10" : "bg-red-500/10")}>
+    <div className={cn("flex items-center gap-2 my-1", isBuy ? "flex-row" : "flex-row-reverse")}>
+      <div className={cn("w-24 text-center font-mono text-sm", isBuy ? "text-green-400" : "text-red-400")}>{level.toFixed(2)}</div>
+      <div className={cn("flex-1 h-6 rounded-sm relative group overflow-hidden", isBuy ? "bg-green-900/40" : "bg-red-900/40")}>
         <div 
-          className={cn("absolute top-0 h-full", isBuy ? "right-0 bg-green-500/50" : "left-0 bg-red-500/50")}
+          className={cn(
+            "absolute top-0 h-full transition-all duration-300 ease-out", 
+            isBuy ? "left-0 bg-gradient-to-r from-green-500/50 to-green-500/80" : "right-0 bg-gradient-to-l from-red-500/50 to-red-500/80"
+          )}
           style={{ width: `${widthPercent}%` }}
         ></div>
-         <span className="absolute inset-0 flex items-center px-2 text-xs font-bold text-white/80">
-          {isBuy ? '' : `${(volume / 1_000_000).toFixed(1)}M`}
+         <span className={cn(
+            "absolute inset-0 flex items-center px-2 text-xs font-bold text-white/90 transition-all duration-300",
+            isBuy ? "justify-start" : "justify-end"
+          )}>
+          ${(volume / 1_000_000).toFixed(1)}M
         </span>
       </div>
     </div>
@@ -89,9 +95,9 @@ const SubspaceLiquidityMatrix: React.FC<SubspaceLiquidityMatrixProps> = ({ initi
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sell-Side Liquidity */}
-        <div className="space-y-2">
-            <h4 className="font-headline text-lg text-red-400 flex items-center gap-2"><TrendingDown /> Sell-Side Liquidity</h4>
-            {sellSide.map(level => (
+        <div className="space-y-1">
+            <h4 className="font-headline text-lg text-red-400 flex items-center justify-end gap-2"><TrendingDown /> Sell-Side Liquidity</h4>
+            {[...sellSide].sort((a,b) => b.price - a.price).map(level => (
                 <LiquidityLevelBar key={level.price} level={level.price} volume={level.volume} maxVolume={maxVolume} type="sell" />
             ))}
         </div>
@@ -113,9 +119,9 @@ const SubspaceLiquidityMatrix: React.FC<SubspaceLiquidityMatrixProps> = ({ initi
         </div>
 
         {/* Buy-Side Liquidity */}
-        <div className="space-y-2">
-            <h4 className="font-headline text-lg text-green-400 flex items-center justify-end gap-2"><TrendingUp /> Buy-Side Liquidity</h4>
-            {buySide.map(level => (
+        <div className="space-y-1">
+            <h4 className="font-headline text-lg text-green-400 flex items-center gap-2"><TrendingUp /> Buy-Side Liquidity</h4>
+             {[...buySide].sort((a,b) => b.price - a.price).map(level => (
                 <LiquidityLevelBar key={level.price} level={level.price} volume={level.volume} maxVolume={maxVolume} type="buy" />
             ))}
         </div>
@@ -150,3 +156,5 @@ const SubspaceLiquidityMatrix: React.FC<SubspaceLiquidityMatrixProps> = ({ initi
 };
 
 export default SubspaceLiquidityMatrix;
+
+    
