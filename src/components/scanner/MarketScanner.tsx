@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +50,15 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
     
     const isMounted = useIsMounted();
     const { toast } = useToast();
+    const animationFrameId = useRef<number>();
+
+    useEffect(() => {
+        return () => {
+            if (animationFrameId.current) {
+                cancelAnimationFrame(animationFrameId.current);
+            }
+        };
+    }, []);
 
     const handleScan = async (assetList: string[]) => {
         if (isScanning) return;
@@ -85,26 +94,28 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                 allResults.push(opportunityData);
             } catch (error) {
                 console.warn(`Could not scan ${symbol}:`, error);
-            } finally {
-                if (isMounted.current) {
-                    const newProgress = ((i + 1) / totalAssets) * 100;
-                    requestAnimationFrame(() => setProgress(newProgress));
-                }
+            }
+
+            if (isMounted.current) {
+                const newProgress = ((i + 1) / totalAssets) * 100;
+                animationFrameId.current = requestAnimationFrame(() => setProgress(newProgress));
             }
         }
         
         if (isMounted.current) {
-            let finalOpportunities = [...allResults].sort((a,b) => b.confidenceBreakdown.overall - a.confidenceBreakdown.overall);
+            let filteredOpportunities = [...allResults];
 
             if (filterHighConfidence) {
-                finalOpportunities = finalOpportunities.filter(op => op.confidenceBreakdown.overall >= 75);
+                filteredOpportunities = filteredOpportunities.filter(op => op.confidenceBreakdown.overall >= 75);
             }
             if (filterGoldenZone) {
-                finalOpportunities = finalOpportunities.filter(op => !!op.goldenPullbackZone);
+                filteredOpportunities = filteredOpportunities.filter(op => !!op.goldenPullbackZone);
             }
             if (filterWhaleAlerts) {
-                finalOpportunities = finalOpportunities.filter(op => !!op.whaleAlert);
+                filteredOpportunities = filteredOpportunities.filter(op => !!op.whaleAlert);
             }
+            
+            const finalOpportunities = filteredOpportunities.sort((a,b) => b.confidenceBreakdown.overall - a.confidenceBreakdown.overall);
             
             setOpportunities(finalOpportunities);
 
