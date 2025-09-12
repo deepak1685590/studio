@@ -161,7 +161,7 @@ const generateAiInsightFlow = ai.defineFlow(
 
         ## Analysis Parameters
         - Asset: {{{symbol}}}
-        - Current Price: $${input.price}
+        - Current Price: $${'{{price}}'}
         - Analysis Timestamp: ${new Date().toISOString()}
         - Market Session: {{{marketSession}}}
         - Volatility Regime: {{{volatilityRegime}}}
@@ -231,7 +231,3 @@ const generateAiInsightFlow = ai.defineFlow(
     }
   }
 );
-
-    
-
-  
