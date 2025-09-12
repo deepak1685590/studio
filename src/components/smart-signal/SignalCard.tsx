@@ -79,8 +79,12 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     
     const entryPrice = parseFloat(entry);
 
-    const fullRangeMin = Math.min(demandMin, fvgMin, supplyMin);
-    const fullRangeMax = Math.max(demandMax, fvgMax, supplyMax);
+    const allPrices = [supplyMin, supplyMax, demandMin, demandMax, fvgMin, fvgMax, entryPrice];
+    if (livePrice !== null) {
+        allPrices.push(livePrice);
+    }
+    const fullRangeMin = Math.min(...allPrices);
+    const fullRangeMax = Math.max(...allPrices);
     const fullRange = fullRangeMax - fullRangeMin;
 
     const calculatePosition = (price: number) => {
@@ -91,14 +95,20 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
 
     const ZoneBar: React.FC<{min: number, max: number, label: string, color: string}> = ({min, max, label, color}) => {
         const left = calculatePosition(min);
-        const width = `${((max - min) / fullRange) * 100}%`;
+        const widthValue = ((max - min) / fullRange) * 100;
+        const width = `${widthValue}%`;
         
         return (
              <div className="absolute top-0 bottom-0 text-center flex flex-col justify-center" style={{ left, width }}>
                 <div className={cn("h-full opacity-20", color)} />
-                <div className="absolute inset-0 flex flex-col justify-center items-center">
+                <div className="absolute inset-0 flex flex-col justify-center items-center p-1">
                     <div className="text-xs font-bold">{label}</div>
-                    <div className="text-[10px] font-mono opacity-80">${min.toFixed(4)} - ${max.toFixed(4)}</div>
+                     {widthValue > 10 && ( // Only show prices if the bar is wide enough
+                        <div className="text-[10px] font-mono opacity-80 scale-90">
+                            <div>${min.toFixed(4)}</div>
+                            <div>${max.toFixed(4)}</div>
+                        </div>
+                     )}
                 </div>
             </div>
         )
@@ -107,9 +117,9 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     const PriceMarker: React.FC<{price: number, label: string, color: string, icon?: React.ReactNode}> = ({price, label, color, icon}) => {
          const left = calculatePosition(price);
          return (
-            <div className="absolute top-full mt-1 text-center" style={{ left, transform: 'translateX(-50%)' }}>
-                <div className="relative">
-                    <div className={cn("absolute bottom-full mb-2 w-px h-4", color)} />
+            <div className="absolute top-full mt-2 text-center" style={{ left, transform: 'translateX(-50%)' }}>
+                <div className="relative flex flex-col items-center">
+                    <div className={cn("w-px h-2", color.replace('border-','bg-'))} />
                     <div className={cn("flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full border", color)}>
                         {icon} {label}: ${price.toFixed(4)}
                     </div>
@@ -121,8 +131,8 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     return (
         <div>
             <SectionHeader icon={<Building />} title="Institutional Interest" />
-            <div className="p-4 bg-black/30 rounded-lg border border-primary/30 font-mono">
-                <div className="relative h-12 w-full rounded" style={{
+            <SectionWrapper className="font-mono overflow-hidden">
+                <div className="relative h-16 w-full rounded" style={{
                     background: 'linear-gradient(90deg, rgba(74, 222, 128, 0.1) 0%, rgba(192, 132, 252, 0.1) 50%, rgba(239, 68, 68, 0.1) 100%)'
                 }}>
                     <ZoneBar min={demandMin} max={demandMax} label="DEMAND" color="bg-green-500" />
@@ -148,7 +158,7 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
                 <div className="text-center text-xs text-foreground/60 mt-2">
                     {data.volumeImbalance}
                 </div>
-            </div>
+            </SectionWrapper>
         </div>
     );
 };
@@ -448,3 +458,4 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+
