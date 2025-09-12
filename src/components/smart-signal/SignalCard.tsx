@@ -6,7 +6,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp, Layers, MoveVertical } from 'lucide-react';
+import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp, Layers, MoveVertical, GitBranch, GitPullRequest, Replace } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -68,27 +68,16 @@ const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isB
 };
 
 const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | null }> = ({ data, livePrice }) => {
-    const { supplyZone, demandZone, fvg, isBullish } = data;
+    const { supplyZone, demandZone, fvg } = data;
     
-    const strongZone = isBullish ? 'DEMAND' : 'SUPPLY';
-
-    const ZoneBox: React.FC<{ range: [string, string], title: string, color: string, isStrong: boolean }> = ({ range, title, color, isStrong }) => (
-        <div className={cn(
-            "p-3 rounded-lg border-2 text-center transition-all duration-500",
-            isStrong ? `${color} shadow-[0_0_25px]` : `border-primary/20 bg-black/30`,
-            isStrong ? color.replace('border-', 'shadow-') : '',
-        )}>
-            <h5 className={cn("font-headline text-lg", isStrong ? 'text-white' : 'text-primary/80')}>{isStrong ? `STRONG ${title}` : title}</h5>
-            <p className="font-mono text-xl text-white/90">${range[1]} - ${range[0]}</p>
-        </div>
-    );
-
     return (
         <div>
             <SectionHeader icon={<Building />} title="Institutional Interest" />
             <div className="relative p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
-                
-                <ZoneBox range={supplyZone} title="SUPPLY ZONE" color="border-red-500 bg-red-500/20" isStrong={strongZone === 'SUPPLY'} />
+                <div className="p-3 rounded-lg border-2 text-center bg-red-500/20 border-red-500 shadow-[0_0_15px_theme(colors.red.500)]">
+                    <h5 className="font-headline text-lg text-white">SUPPLY ZONE</h5>
+                    <p className="font-mono text-xl text-white/90">${supplyZone[1]} - ${supplyZone[0]}</p>
+                </div>
 
                 <div className="relative h-20 flex items-center justify-center">
                     <div className="h-full w-full bg-purple-500/20 border-y-2 border-dashed border-purple-500/50 flex items-center justify-center">
@@ -112,7 +101,10 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
                     )}
                 </div>
                 
-                <ZoneBox range={demandZone} title="DEMAND ZONE" color="border-green-500 bg-green-500/20" isStrong={strongZone === 'DEMAND'} />
+                <div className="p-3 rounded-lg border-2 text-center bg-green-500/20 border-green-500 shadow-[0_0_15px_theme(colors.green.500)]">
+                    <h5 className="font-headline text-lg text-white">DEMAND ZONE</h5>
+                    <p className="font-mono text-xl text-white/90">${demandZone[1]} - ${demandZone[0]}</p>
+                </div>
 
                 <div className="text-center text-sm text-foreground/80 pt-2">
                     {data.volumeImbalance}
@@ -121,6 +113,59 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
         </div>
     );
 };
+
+const SmartMoneyConcepts: React.FC<{ data: SignalData, trendColor: string }> = ({ data, trendColor }) => {
+  const { liquidity, smartMoneyConcepts, isBullish } = data;
+
+  const SMC_Item = ({ icon, title, level, description }: { icon: React.ReactNode, title: string, level: string, description: string }) => (
+    <div className="flex items-start gap-3">
+      <div className="p-2 bg-black rounded-full border border-primary/50 mt-1">
+        {icon}
+      </div>
+      <div>
+        <h5 className="font-headline text-primary">{title} <span className="font-mono text-base">${level}</span></h5>
+        <p className="text-xs text-foreground/70">{description}</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
+      <SectionWrapper>
+        <div className="space-y-4">
+            <SMC_Item 
+                icon={<GitPullRequest size={20} />} 
+                title="Liquidity Grab" 
+                level={liquidity.level}
+                description={liquidity.description}
+            />
+            <SMC_Item 
+                icon={<GitBranch size={20} />} 
+                title="Break of Structure (BOS)" 
+                level={smartMoneyConcepts.bos}
+                description={isBullish ? "Confirmation of upward trend continuation." : "Confirmation of downward trend continuation."}
+            />
+            <SMC_Item 
+                icon={<Replace size={20} />} 
+                title="Change of Character (CHOCH)" 
+                level={smartMoneyConcepts.choch}
+                description="Indicates a potential trend reversal has occurred."
+            />
+            <div className={cn(
+                "mt-4 p-3 rounded-lg border-2 text-center animate-pulse",
+                isBullish ? "border-green-400 bg-green-900/40 shadow-[0_0_15px_theme(colors.green.400)]" : "border-red-500 bg-red-900/40 shadow-[0_0_15px_theme(colors.red.500)]"
+            )}>
+                <h5 className="font-headline text-lg text-white">Confirmed {isBullish ? "Long" : "Short"} Entry</h5>
+                <p className={cn("font-mono text-2xl font-bold", trendColor)} style={{ textShadow: `0 0 10px currentColor` }}>
+                    ${smartMoneyConcepts.confirmedEntry}
+                </p>
+            </div>
+        </div>
+      </SectionWrapper>
+    </div>
+  );
+}
 
 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
@@ -382,21 +427,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </div>
       
-       <div className="grid grid-cols-1">
-        <div>
-          <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
-           <SectionWrapper>
-               <div className="space-y-1">
-                <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">{data.liquidity.type}:</span><span>${data.liquidity.level}</span></div>
-                <p className="text-xs text-foreground/70 pt-1">{data.liquidity.description}</p>
-                <div className="flex justify-between text-sm pt-1 font-mono"><span className="text-foreground/70 font-sans">Break of Structure:</span><span>${data.smartMoneyConcepts.bos}</span></div>
-                <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">Change of Character:</span><span>${data.smartMoneyConcepts.choch}</span></div>
-                <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">Entry Zone:</span><span>${data.smartMoneyConcepts.entry}</span></div>
-                <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">Confirmed {data.isBullish ? 'Long' : 'Short'} Entry:</span><span className={cn('font-bold', trendColor)}>${data.smartMoneyConcepts.confirmedEntry}</span></div>
-              </div>
-           </SectionWrapper>
-        </div>
-      </div>
+      <SmartMoneyConcepts data={data} trendColor={trendColor} />
 
       <div>
         <SectionHeader icon={<Zap />} title={`Signals Detected (${data.confluenceCount})`} />
@@ -439,5 +470,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+
+    
 
     
