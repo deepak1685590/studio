@@ -166,7 +166,7 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     const strongZone = isBullish ? 'DEMAND' : 'SUPPLY';
 
     return (
-        <div className='py-8'>
+        <div>
             <SectionHeader icon={<Building />} title="Institutional Interest" />
             <SectionWrapper className="font-mono overflow-visible">
                  <div className="relative h-28 w-full mt-12 mb-12">
@@ -494,6 +494,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+
 
 
 
