@@ -29,7 +29,7 @@ interface SmartSignalWidgetProps {
   setSelectedSymbol: (symbol: string) => void;
 }
 
-const cryptoAssetsForWebsocket = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'DOGE'];
+const cryptoAssetsForWebsocket = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC'];
 
 const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = 'BTC', setSelectedSymbol }) => {
   const [symbol, setSymbol] = useState(initialSymbol);
@@ -104,9 +104,10 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             const message = JSON.parse(event.data);
             const stream = message.stream;
             const messageData = message.data;
-
-            if (messageData.s.toLowerCase() !== wsSymbol) {
-              return;
+            
+            // Ensure the message is for the current symbol before updating state
+            if (currentSymbolRef.current.toLowerCase() !== messageData.s.replace('usdt', '')) {
+                return;
             }
             
             if (stream.endsWith('@trade')) {
@@ -417,3 +418,5 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 };
 
 export default SmartSignalWidget;
+
+    
