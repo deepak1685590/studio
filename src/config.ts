@@ -2,4 +2,4 @@
 // In a real production app, use environment variables.
 
 export const NEWS_API_KEY = process.env.NEXT_PUBLIC_NEWS_API_KEY || "aabf2117cf664958b876ef4b035e3abf";
-export const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+export const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "af8910cdeeac491fb12dd68925be5dbd";
