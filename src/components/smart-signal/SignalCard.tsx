@@ -19,47 +19,6 @@ import SidewaysMarketAlert from './SidewaysMarketAlert';
 import OracleInsight from './OracleInsight';
 import type { OracleInsightInput } from '@/ai/flows/oracle-insight';
 
-const NeonBullIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        stroke="currentColor" 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        {...props}
-        style={{ filter: 'drop-shadow(0 0 5px currentColor)' }}
-    >
-        <path d="M16 8a4 4 0 1 1-8 0"/>
-        <path d="M4 12c0-2.66 4-4 8-4s8 1.34 8 4"/>
-        <path d="M12 12v4"/>
-        <path d="M18.5 16a2.5 2.5 0 1 0-5 0"/>
-        <path d="M5.5 16a2.5 2.5 0 1 1 5 0"/>
-    </svg>
-);
-
-const NeonBearIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        stroke="currentColor" 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        {...props}
-        style={{ filter: 'drop-shadow(0 0 5px currentColor)' }}
-    >
-        <path d="M16 12a4 4 0 1 0-8 0"/>
-        <path d="M4 12c0 2.66 4 4 8 4s8-1.34 8-4"/>
-        <path d="M12 12V8"/>
-        <path d="M18.5 8a2.5 2.5 0 1 1-5 0"/>
-        <path d="M5.5 8a2.5 2.5 0 1 0 5 0"/>
-    </svg>
-);
-
-
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
 );
@@ -134,14 +93,10 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
         const top = calculateTop(max);
         const height = `${((max - min) / fullRange) * 100}%`;
         
-        const colorNameMatch = color.match(/border-([a-z]+-\d+)/);
-        if (!colorNameMatch) return null;
-        const colorName = colorNameMatch[1];
-        
         return (
             <div 
                 className={cn("absolute w-full border-y border-dashed", color)}
-                style={{ top, height, boxShadow: `inset 0 0 15px hsl(var(--${colorName}) / 0.2)` }}
+                style={{ top, height, boxShadow: `inset 0 0 15px hsl(var(--${color.split(' ')[0].replace('border-', '')}) / 0.2)` }}
             >
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 text-right">
                     <div className="text-xs font-bold">{label}</div>
@@ -302,7 +257,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <div className="flex justify-between items-center">
           <div className='flex items-center gap-3'>
             <div className={cn("flex items-center justify-center w-12 h-12 rounded-full", data.isBullish ? 'bg-green-500/20' : 'bg-red-500/20')}>
-              {data.isBullish ? <NeonBullIcon className="w-8 h-8 text-green-400" /> : <NeonBearIcon className="w-8 h-8 text-red-400" />}
+              {data.isBullish ? <TrendingUp className="w-8 h-8 text-green-400" /> : <TrendingDown className="w-8 h-8 text-red-400" />}
             </div>
             <div>
               <h3 className="font-headline text-2xl text-foreground">{data.symbol}</h3>
@@ -440,6 +395,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 <p className="text-xs text-foreground/70 pt-1">{data.liquidity.description}</p>
                 <div className="flex justify-between text-sm pt-1 font-mono"><span className="text-foreground/70 font-sans">Break of Structure:</span><span>${data.smartMoneyConcepts.bos}</span></div>
                 <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">Change of Character:</span><span>${data.smartMoneyConcepts.choch}</span></div>
+                <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">Entry Zone:</span><span>${data.smartMoneyConcepts.entry}</span></div>
                 <div className="flex justify-between text-sm font-mono"><span className="text-foreground/70 font-sans">Confirmed {data.isBullish ? 'Long' : 'Short'} Entry:</span><span className={cn('font-bold', trendColor)}>${data.smartMoneyConcepts.confirmedEntry}</span></div>
               </div>
            </SectionWrapper>
@@ -461,7 +417,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
       {(mode === '3' || mode === '4') && (
         <div>
-            <SectionHeader icon={<BrainCircuit />} title="AI Analysis Suite" />
             <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
                 <EliteAiInsight data={eliteAiInsightData} />
                 {mode === '4' && <OracleInsight data={oracleInsightData} />}

@@ -1,6 +1,6 @@
 
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, SmartMoneyConcepts } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -232,7 +232,6 @@ const isCrypto = (symbol: string): boolean => {
 
 export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, forceMock = false): Promise<SignalData> => {
     let price, klines: any[], symbolWithUSDT = symbol.toUpperCase().replace('/', '') + (isCrypto(symbol) ? "USDT" : "");
-    // The analysis seed should be consistent regardless of mode.
     const analysisSeed = `${symbol}-${timeframe}`;
     
     const timeframeToInterval = {
@@ -244,7 +243,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     };
     const apiInterval = timeframeToInterval[timeframe] || '15m';
 
-    // Forex and Indian markets currently do not have a live data source, so we force mock data for them.
     const useMockData = forceMock || !isCrypto(symbol);
 
     if (useMockData) {
@@ -457,7 +455,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             supplyZone,
             fvg,
             liquidity: { type: 'Range-Bound', level: 'N/A', description: 'Liquidity is building on both sides of the range.' },
-            smartMoneyConcepts: { bos: 'N/A', choch: 'N/A', confirmedEntry: 'N/A' },
+            smartMoneyConcepts: { entry: 'N/A', bos: 'N/A', choch: 'N/A', confirmedEntry: 'N/A' },
             marketStructure: "Consolidating",
             multiTimeframeAnalysis: {},
             reversalConfirmed: false,
@@ -489,7 +487,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         sl = (isBullish ? (swingLow - atr * 0.5) : (swingHigh + atr * 0.5)).toFixed(4);
         tp1 = (isBullish ? multiTimeframeSR[timeframe].R1 : multiTimeframeSR[timeframe].S1).toFixed(4);
         tp2 = (isBullish ? multiTimeframeSR[timeframe].R2 : multiTimeframeSR[timeframe].S2).toFixed(4);
-        confirmedEntry = (confluencePrice * (isBullish ? 1.0005 : 0.9995)).toFixed(4);
     } else { // Original Logic for Elite Mode and others
         const timeframeMultipliers = {
             '5m': { atr: 1.5 },
@@ -505,8 +502,11 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         sl = (isBullish ? parseFloat(entry) - atr * atrMultiplier : parseFloat(entry) + atr * atrMultiplier).toFixed(4);
         tp1 = (isBullish ? parseFloat(entry) + atr * atrMultiplier : parseFloat(entry) - atr * atrMultiplier).toFixed(4);
         tp2 = (isBullish ? parseFloat(entry) + atr * (atrMultiplier * 2) : parseFloat(entry) - atr * (atrMultiplier * 2)).toFixed(4);
-        confirmedEntry = (parseFloat(entry) * (isBullish ? 1.0005 : 0.9995)).toFixed(4);
     }
+
+    // Volatility-aware confirmed entry to avoid fakeouts
+    const confirmationOffset = atr * 0.1; // Require price to move 10% of ATR beyond entry
+    confirmedEntry = (isBullish ? parseFloat(entry) + confirmationOffset : parseFloat(entry) - confirmationOffset).toFixed(4);
     
     const risk = Math.abs(parseFloat(entry) - parseFloat(sl));
     const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
@@ -673,6 +673,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             description: `A significant pool of liquidity is resting ${isBullish ? 'above' : 'below'} this level, acting as a price magnet.`
         },
         smartMoneyConcepts: {
+            entry,
             bos: bosLevel,
             choch: isBullish ? (swingLow * 0.998).toFixed(4) : (swingHigh * 1.002).toFixed(4),
             confirmedEntry,
