@@ -120,6 +120,19 @@ const getMarketNews = ai.defineTool(
   }
 );
 
+// Fallback prompt for a simpler, faster model if the main one fails
+const fallbackGenerator = ai.definePrompt({
+    name: 'fallbackInsightPrompt',
+    input: { schema: GenerateAiInsightInputSchema },
+    output: { schema: z.object({ summary: z.string() }) },
+    prompt: `You are a high-speed market analysis AI. The primary analysis model has failed. Provide a condensed, single-paragraph executive summary based on the following data for {{{symbol}}}.
+    
+    Data: {{{json input}}}
+    
+    Focus on the primary bias, the identified pattern, and the key entry/exit levels. Keep it concise and professional.`,
+});
+
+
 const generateAiInsightFlow = ai.defineFlow(
   {
     name: 'generateAiInsightFlow',
@@ -127,9 +140,24 @@ const generateAiInsightFlow = ai.defineFlow(
     outputSchema: GenerateAiInsightOutputSchema,
   },
   async (input) => {
+    const errorPayload: GenerateAiInsightOutput = {
+        executiveSummary: { primaryBias: "Error", setupStrength: "N/A", keyLevels: "N/A", opportunityGrade: "Retail", timeHorizon: "The AI model encountered an unrecoverable error." },
+        predictiveAnalysis: { primaryScenario: "N/A", predictedTarget: "N/A", timeframe: "N/A", successProbability: "N/A", invalidationLevel: "N/A", keyCatalysts: "N/A", alternativeScenario: "N/A" },
+        technicalAnalysis: { multiTimeframe: "N/A", volumeProfile: "N/A", marketMicrostructure: "N/A" },
+        riskManagement: { positionSizing: "N/A", dynamicLevels: "N/A" },
+        sentimentAndFlow: { onChainMetrics: "N/A", marketSentiment: "N/A" },
+        probabilityAssessment: { successMatrix: "N/A", alternativeScenarios: "N/A" },
+        advancedConfluence: { indicators: "N/A", patterns: "N/A" },
+        institutionalBehavior: { smartMoney: "N/A", correlation: "N/A" },
+        executionStrategy: { entryTactics: "N/A", exitStrategy: "N/A" },
+        marketContext: { macroFactors: "N/A", technicalCatalysts: "N/A" },
+        performanceTracking: { tradeManagementKPIs: "N/A", learningMetrics: "N/A" },
+        alertSystem: { preEntry: "N/A", inTrade: "N/A" }
+    };
+
     try {
       const { output } = await ai.generate({
-        model: 'googleai/gemini-pro',
+        model: 'googleai/gemini-1.5-flash-latest',
         tools: [getMarketNews],
         output: {
             format: 'json',
@@ -150,28 +178,37 @@ const generateAiInsightFlow = ai.defineFlow(
       });
 
       if (!output) {
-        throw new Error('AI model failed to produce a valid output.');
+        throw new Error('Primary AI model failed to produce a valid output.');
       }
       return output;
+
     } catch (error) {
-       console.error("AI Generation Error:", error);
-       const errorMessage = error instanceof Error ? error.message : "An unknown internal error occurred.";
+       console.error("Primary AI Generation Error:", error);
        
-       const errorPayload: GenerateAiInsightOutput = {
-         executiveSummary: { primaryBias: "Error", setupStrength: "N/A", keyLevels: "N/A", opportunityGrade: "Retail", timeHorizon: `The AI model encountered an error: ${errorMessage}` },
-         predictiveAnalysis: { primaryScenario: "N/A", predictedTarget: "N/A", timeframe: "N/A", successProbability: "N/A", invalidationLevel: "N/A", keyCatalysts: "N/A", alternativeScenario: "N/A" },
-         technicalAnalysis: { multiTimeframe: "N/A", volumeProfile: "N/A", marketMicrostructure: "N/A" },
-         riskManagement: { positionSizing: "N/A", dynamicLevels: "N/A" },
-         sentimentAndFlow: { onChainMetrics: "N/A", marketSentiment: "N/A" },
-         probabilityAssessment: { successMatrix: "N/A", alternativeScenarios: "N/A" },
-         advancedConfluence: { indicators: "N/A", patterns: "N/A" },
-         institutionalBehavior: { smartMoney: "N/A", correlation: "N/A" },
-         executionStrategy: { entryTactics: "N/A", exitStrategy: "N/A" },
-         marketContext: { macroFactors: "N/A", technicalCatalysts: "N/A" },
-         performanceTracking: { tradeManagementKPIs: "N/A", learningMetrics: "N/A" },
-         alertSystem: { preEntry: "N/A", inTrade: "N/A" }
-       };
-       return errorPayload;
+       try {
+            console.log("Attempting to use fallback model...");
+            const { output: fallbackOutput } = await fallbackGenerator(input);
+            if (!fallbackOutput) {
+                 throw new Error("Fallback model also failed.");
+            }
+            
+            // Populate the error payload with the summary from the fallback model
+            const fallbackPayload = { ...errorPayload }; // Create a copy
+            fallbackPayload.executiveSummary = {
+                primaryBias: "Summary (Fallback Model)",
+                setupStrength: "Condensed Analysis",
+                keyLevels: "Refer to signal card",
+                opportunityGrade: "Retail",
+                timeHorizon: fallbackOutput.summary, // Main content from fallback
+            };
+            return fallbackPayload;
+
+       } catch (fallbackError) {
+            console.error("Fallback AI Generation Error:", fallbackError);
+            const errorMessage = error instanceof Error ? error.message : "An unknown internal error occurred.";
+            errorPayload.executiveSummary.timeHorizon = `The AI model encountered an error: ${errorMessage}`;
+            return errorPayload;
+       }
     }
   }
 );
