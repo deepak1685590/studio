@@ -507,7 +507,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
     // Volatility-aware confirmed entry to avoid fakeouts
     const confirmationOffset = atr * 0.1; // Require price to move 10% of ATR beyond entry
-    const confirmedEntry = (isBullish ? parseFloat(entry) + confirmationOffset : parseFloat(entry) - confirmationOffset).toFixed(4);
+    const confirmedEntry = (isBullish ? parseFloat(entry) + confirmationOffset : parseFloat(entry) - confirmationOffset);
     
     const risk = Math.abs(parseFloat(entry) - parseFloat(sl));
     const reward = Math.abs(parseFloat(tp2) - parseFloat(entry));
