@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { generateAiInsight, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import { Button } from '@/components/ui/button';
-import { Copy, Target } from 'lucide-react';
+import { Copy, BrainCircuit, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
@@ -170,8 +170,8 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
   return (
     <div className="p-5 bg-gradient-to-br from-blue-900/30 to-purple-900/30 border-2 border-primary rounded-xl shadow-[0_0_20px_var(--primary)]">
       <div className="flex items-center justify-between mb-4">
-        <h4 className="font-headline text-lg text-primary">
-          Elite AI Analysis Report
+        <h4 className="font-headline text-lg text-primary flex items-center gap-2">
+          <BrainCircuit /> Elite AI Analysis Report
         </h4>
         {insight && insight.executiveSummary.primaryBias !== "Error" && insight.executiveSummary.primaryBias !== "Summary (Fallback Model)" && (
             <Button onClick={copyToClipboard} variant="outline" size="sm" className="gap-2 border-primary/50 hover:bg-primary/20" disabled={!insight}>
