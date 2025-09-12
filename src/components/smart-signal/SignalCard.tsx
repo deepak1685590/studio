@@ -7,7 +7,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight } from 'lucide-react';
+import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -96,7 +96,7 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
         return (
             <div 
                 className={cn("absolute w-full border-y border-dashed", color)}
-                style={{ top, height, boxShadow: `inset 0 0 15px hsl(var(--${color.split(' ')[0].replace('border-', '')}) / 0.2)` }}
+                style={{ top, height, boxShadow: `inset 0 0 15px hsl(var(--${color.split(' ')[0].replace('border-', '')}-500)/0.2)` }}
             >
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 text-right">
                     <div className="text-xs font-bold">{label}</div>
