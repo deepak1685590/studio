@@ -209,6 +209,26 @@ export interface AdvancedStrengthDashboardData {
     };
 }
 
+export interface LiquidityLevel {
+    price: number;
+    volume: number;
+    type: 'POOL' | 'STOP_HUNT';
+}
+
+export interface LiquidityPrediction {
+    targetPrice: number;
+    confidence: 'High' | 'Medium' | 'Low';
+    timeframe: string;
+    reason: string;
+}
+
+export interface LiquidityMatrixData {
+    buySide: LiquidityLevel[];
+    sellSide: LiquidityLevel[];
+    prediction: LiquidityPrediction;
+    currentPrice: number;
+}
+
 
 export interface SignalData {
   symbol: string;
@@ -249,7 +269,7 @@ export interface SignalData {
   fibonacciLevels: FibonacciLevels;
   whaleAlert?: WhaleAlert;
   goldenPullbackZone?: GoldenPullbackZone;
-  goldenReverseZone?: GoldenReverseZone;
+  goldenReverseZone?: GoldenPullbackZone;
   sniperZone?: SniperZone;
   confidenceBreakdown: ConfidenceBreakdown;
   movingAverageAnalysis: MovingAverageAnalysis;
@@ -258,5 +278,6 @@ export interface SignalData {
   sidewaysMarket?: SidewaysMarket;
   volumeAnalysis: VolumeAnalysis;
   multiTimeframeSR: MultiTimeframeSR;
+  liquidityMatrix?: LiquidityMatrixData;
   advancedStrengthDashboard?: AdvancedStrengthDashboardData;
 }

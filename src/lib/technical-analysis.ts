@@ -1,6 +1,6 @@
 
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -66,6 +66,61 @@ const pseudoRandom = (seedStr: string): number => {
     h4 = Math.imul(h2 ^ (h4 >>> 19), 2869860233);
     return ((h1^h2^h3^h4)>>>0) / 4294967296;
 }
+
+const generateLiquidityMatrixData = (price: number, swingHigh: number, swingLow: number, isBullish: boolean, seed: string): LiquidityMatrixData => {
+    const buySide: LiquidityLevel[] = [];
+    const sellSide: LiquidityLevel[] = [];
+    
+    // Generate sell-side liquidity (above current price)
+    for (let i = 1; i <= 5; i++) {
+        sellSide.push({
+            price: price * (1 + 0.005 * i * pseudoRandom(seed + 'sell' + i)),
+            volume: pseudoRandom(seed + 'sell_vol' + i) * 50_000_000 + 10_000_000, // $10M - $60M
+            type: 'POOL'
+        });
+    }
+    sellSide.push({ price: swingHigh, volume: pseudoRandom(seed + 'sell_swing') * 100_000_000 + 50_000_000, type: 'STOP_HUNT' });
+
+    // Generate buy-side liquidity (below current price)
+     for (let i = 1; i <= 5; i++) {
+        buySide.push({
+            price: price * (1 - 0.005 * i * pseudoRandom(seed + 'buy' + i)),
+            volume: pseudoRandom(seed + 'buy_vol' + i) * 50_000_000 + 10_000_000,
+            type: 'POOL'
+        });
+    }
+    buySide.push({ price: swingLow, volume: pseudoRandom(seed + 'buy_swing') * 100_000_000 + 50_000_000, type: 'STOP_HUNT' });
+
+    // AI Prediction Logic
+    const highestBuySide = [...buySide].sort((a, b) => b.volume - a.volume)[0];
+    const highestSellSide = [...sellSide].sort((a, b) => b.volume - a.volume)[0];
+
+    let prediction: LiquidityPrediction;
+    if (isBullish) {
+        // In a bullish trend, market might pull back to take buy-side liquidity before continuing up.
+        prediction = {
+            targetPrice: highestBuySide.price,
+            confidence: 'High',
+            timeframe: '1-4 Hours',
+            reason: 'Predicting a sweep of buy-side liquidity at a key support level before the next leg up.'
+        };
+    } else {
+        // In a bearish trend, market might rally to take sell-side liquidity before continuing down.
+         prediction = {
+            targetPrice: highestSellSide.price,
+            confidence: 'High',
+            timeframe: '1-4 Hours',
+            reason: 'Predicting a hunt on sell-side liquidity at a key resistance level before continuation.'
+        };
+    }
+
+    return {
+        buySide: buySide.sort((a, b) => b.price - a.price),
+        sellSide: sellSide.sort((a, b) => b.price - a.price),
+        prediction,
+        currentPrice: price
+    };
+};
 
 const generateVolumeAnalysis = (seed: string): VolumeAnalysis => {
     const analysis: Partial<VolumeAnalysis> = {};
@@ -368,6 +423,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     const volumeAnalysis = generateVolumeAnalysis(analysisSeed);
     const multiTimeframeSR = generateMultiTimeframeSR(price, analysisSeed, isBullish);
+    const liquidityMatrix = generateLiquidityMatrixData(price, swingHigh, swingLow, isBullish, analysisSeed);
     
     // --- Momentum (RSI simulation) ---
     const rsiValue = Math.floor(pseudoRandom(analysisSeed + 'rsi') * 80 + 10); // RSI between 10 and 90
@@ -493,6 +549,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             sidewaysMarket,
             volumeAnalysis,
             multiTimeframeSR,
+            liquidityMatrix,
             advancedStrengthDashboard,
         };
     }
@@ -719,6 +776,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         sidewaysMarket,
         volumeAnalysis,
         multiTimeframeSR,
+        liquidityMatrix,
         advancedStrengthDashboard,
     };
 };
