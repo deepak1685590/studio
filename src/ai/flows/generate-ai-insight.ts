@@ -127,7 +127,6 @@ const generateAiInsightFlow = ai.defineFlow(
     outputSchema: GenerateAiInsightOutputSchema,
   },
   async (input) => {
-    try {
       const { output } = await ai.generate({
         model: 'googleai/gemini-1.5-flash-latest',
         tools: [getMarketNews],
@@ -157,51 +156,5 @@ const generateAiInsightFlow = ai.defineFlow(
         throw new Error('AI model failed to produce a valid output. The response was empty.');
       }
       return output;
-    } catch (error) {
-        console.error('AI Insight Generation Error:', error);
-
-        let errorMessage = "An unexpected error occurred while generating the AI analysis.";
-        const errorString = String(error).toLowerCase();
-
-        if (errorString.includes("api key not valid")) {
-            errorMessage = "The Google AI API key is not valid. Please check your .env file and ensure it is configured correctly with NEXT_PUBLIC_GEMINI_API_KEY.";
-        } else if (errorString.includes("429") || errorString.includes("quota")) {
-            errorMessage = "The AI model is experiencing high demand or the daily usage quota has been exceeded. The service will be available again tomorrow. Please try again later.";
-        } else if (errorString.includes("safety") || errorString.includes("blocked")) {
-            errorMessage = "The AI response was blocked by content safety filters. The query may have been too sensitive.";
-        } else if (error instanceof Error) {
-            errorMessage = `A system error occurred: ${error.message}`;
-        }
-
-        // Return a structured error object that matches the expected output schema
-        return {
-            executiveSummary: {
-              primaryBias: "Error",
-              setupStrength: "N/A",
-              keyLevels: "N/A",
-              opportunityGrade: "Retail",
-              timeHorizon: errorMessage,
-            },
-            predictiveAnalysis: { 
-                primaryScenario: "Unavailable",
-                predictedTarget: "Unavailable", 
-                timeframe: "Unavailable", 
-                successProbability: "Unavailable", 
-                invalidationLevel: "Unavailable",
-                keyCatalysts: "Unavailable",
-                alternativeScenario: "Unavailable"
-            },
-            technicalAnalysis: { multiTimeframe: "Unavailable", volumeProfile: "Unavailable", marketMicrostructure: "Unavailable" },
-            riskManagement: { positionSizing: "Unavailable", dynamicLevels: "Unavailable" },
-            sentimentAndFlow: { onChainMetrics: "Unavailable", marketSentiment: "Unavailable" },
-            probabilityAssessment: { successMatrix: "Unavailable", alternativeScenarios: "Unavailable" },
-            advancedConfluence: { indicators: "Unavailable", patterns: "Unavailable" },
-            institutionalBehavior: { smartMoney: "Unavailable", correlation: "Unavailable" },
-            executionStrategy: { entryTactics: "Unavailable", exitStrategy: "Unavailable" },
-            marketContext: { macroFactors: "Unavailable", technicalCatalysts: "Unavailable" },
-            performanceTracking: { tradeManagementKPIs: "Unavailable", learningMetrics: "Unavailable" },
-            alertSystem: { preEntry: "Unavailable", inTrade: "Unavailable" },
-         };
-    }
   }
 );
