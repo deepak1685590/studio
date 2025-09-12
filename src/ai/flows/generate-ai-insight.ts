@@ -127,6 +127,7 @@ const generateAiInsightFlow = ai.defineFlow(
     outputSchema: GenerateAiInsightOutputSchema,
   },
   async (input) => {
+    try {
       const { output } = await ai.generate({
         model: 'googleai/gemini-1.5-flash-latest',
         tools: [getMarketNews],
@@ -134,27 +135,41 @@ const generateAiInsightFlow = ai.defineFlow(
             format: 'json',
             schema: GenerateAiInsightOutputSchema,
         },
-        prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for ${input.symbol}.
-        First, use the getMarketNews tool to fetch the latest headlines for ${input.symbol}.
+        prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for {{{symbol}}}.
+        First, use the getMarketNews tool to fetch the latest headlines for {{{symbol}}}.
         Then, synthesize ALL the provided data into the structured JSON format below. Be extremely detailed, professional, and analytical in every section.
 
         ## Analysis Parameters
-        - Asset: ${input.symbol}
+        - Asset: {{{symbol}}}
         - Current Price: $${input.price}
         - Analysis Timestamp: ${new Date().toISOString()}
-        - Market Session: ${input.marketSession}
-        - Volatility Regime: ${input.volatilityRegime}
-
-        ---
-        Fill out every field in the following JSON object with detailed, expert-level analysis based on this data:
-        ${JSON.stringify(input, null, 2)}
-        ---
+        - Market Session: {{{marketSession}}}
+        - Volatility Regime: {{{volatilityRegime}}}
         `,
+        input,
       });
 
       if (!output) {
         throw new Error('AI model failed to produce a valid output. The response was empty.');
       }
       return output;
+    } catch (error) {
+       console.error("AI Generation Error in Flow:", error);
+       // Create a specific error object that the frontend can interpret
+       const errorMessage = error instanceof Error ? error.message : "An unknown internal error occurred.";
+       return {
+         executiveSummary: {
+           primaryBias: "Error",
+           setupStrength: "N/A",
+           keyLevels: "N/A",
+           opportunityGrade: "Retail",
+           timeHorizon: `The AI model encountered an error: ${errorMessage}`
+         },
+         predictiveAnalysis: {} as any, technicalAnalysis: {} as any, riskManagement: {} as any,
+         sentimentAndFlow: {} as any, probabilityAssessment: {} as any, advancedConfluence: {} as any,
+         institutionalBehavior: {} as any, executionStrategy: {} as any, marketContext: {} as any,
+         performanceTracking: {} as any, alertSystem: {} as any
+       };
+    }
   }
 );
