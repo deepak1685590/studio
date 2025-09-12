@@ -120,57 +120,66 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     
     const entryPrice = parseFloat(entry);
 
-    const fullRangeMin = Math.min(demandMin, fvgMin);
-    const fullRangeMax = Math.max(supplyMax, fvgMax);
+    const fullRangeMin = Math.min(demandMin, fvgMin, supplyMin);
+    const fullRangeMax = Math.max(demandMax, fvgMax, supplyMax);
     const fullRange = fullRangeMax - fullRangeMin;
 
     const calculateTop = (price: number) => {
         if (fullRange === 0) return '50%';
         const position = ((price - fullRangeMin) / fullRange) * 100;
-        return `${100 - position}%`; // Invert because CSS top is from the top
+        return `${100 - position}%`;
+    };
+
+    const Zone: React.FC<{min: number, max: number, label: string, color: string}> = ({min, max, label, color}) => {
+        const top = calculateTop(max);
+        const height = `${((max - min) / fullRange) * 100}%`;
+        
+        // This regex extracts the color name (e.g., 'red-500') from the border utility class
+        const colorNameMatch = color.match(/border-([a-z]+-\d+)/);
+        const colorName = colorNameMatch ? colorNameMatch[1] : 'primary';
+        
+        return (
+            <div 
+                className={cn("absolute w-full border-y border-dashed", color)}
+                style={{ top, height, boxShadow: `inset 0 0 15px hsl(var(--${colorName}) / 0.2)` }}
+            >
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-right">
+                    <div className="text-xs font-bold">{label}</div>
+                    <div className="text-sm font-mono">${min.toFixed(4)} - ${max.toFixed(4)}</div>
+                </div>
+            </div>
+        )
     };
 
     return (
         <div>
             <SectionHeader icon={<Building />} title="Institutional Interest" />
             <div className="p-4 bg-black/30 rounded-lg border border-primary/30 font-mono">
-                <div className="relative h-48 w-full">
-                    {/* Zones */}
-                    <div className="absolute inset-0 flex flex-col justify-between">
-                        {/* Supply Zone */}
-                        <div className="h-1/3 bg-red-500/10 border-y border-dashed border-red-500/50 flex flex-col justify-center items-end pr-2 text-right">
-                            <div className="text-xs text-red-300">SUPPLY</div>
-                            <div className="text-sm text-red-200/80">${supplyMin.toFixed(4)} - ${supplyMax.toFixed(4)}</div>
-                        </div>
-                        {/* FVG */}
-                        <div className="h-1/3 flex flex-col justify-center items-end pr-2 text-right">
-                             <div className="text-xs text-purple-300">FVG</div>
-                            <div className="text-sm text-purple-200/80">${fvgMin.toFixed(4)} - ${fvgMax.toFixed(4)}</div>
-                        </div>
-                        {/* Demand Zone */}
-                        <div className="h-1/3 bg-green-500/10 border-y border-dashed border-green-500/50 flex flex-col justify-center items-end pr-2 text-right">
-                             <div className="text-xs text-green-300">DEMAND</div>
-                            <div className="text-sm text-green-200/80">${demandMin.toFixed(4)} - ${demandMax.toFixed(4)}</div>
-                        </div>
-                    </div>
-
+                <div className="relative h-56 w-full overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-red-500/10 via-transparent to-green-500/10" />
+                    <div className="price-scanner" />
+                    
+                    <Zone min={supplyMin} max={supplyMax} label="SUPPLY" color="border-red-500/50 text-red-300" />
+                    <Zone min={fvgMin} max={fvgMax} label="FVG" color="border-purple-400/50 text-purple-300" />
+                    <Zone min={demandMin} max={demandMax} label="DEMAND" color="border-green-400/50 text-green-300" />
+                    
                     {/* Entry Price Line */}
                     <div 
                         className="absolute left-0 right-0 h-px bg-accent/80 transition-all duration-300" 
-                        style={{ top: calculateTop(entryPrice) }}
+                        style={{ top: calculateTop(entryPrice), boxShadow: '0 0 8px hsl(var(--accent))' }}
                     >
                         <div className="absolute left-0 -translate-y-1/2 flex items-center gap-1 text-xs font-bold bg-accent text-accent-foreground px-1 py-0.5 rounded">
                            <ArrowRight size={12}/> {isBullish ? 'LONG' : 'SHORT'} ENTRY: ${entryPrice.toFixed(4)}
                         </div>
                     </div>
                     
-                    {/* Live Price Scanner */}
+                    {/* Live Price Line */}
                     {livePrice !== null && (
                         <div 
                             className="absolute left-0 right-0 h-0.5 bg-primary transition-all duration-200 ease-linear"
                             style={{ top: calculateTop(livePrice), boxShadow: '0 0 8px hsl(var(--primary))' }}
                         >
-                             <div className="absolute right-full mr-2 -translate-y-1/2 text-xs text-primary whitespace-nowrap">
+                             <div className="absolute right-full mr-2 -translate-y-1/2 text-xs text-primary whitespace-nowrap bg-background px-1 rounded">
                                 LIVE
                             </div>
                         </div>
