@@ -228,6 +228,7 @@ export interface SignalData {
   swingHigh: string;
   swingLow: string;
   pivot: string;
+  poc: string;
   s1: string;
   r1: string;
   buyVolume: string;

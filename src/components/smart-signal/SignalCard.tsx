@@ -7,7 +7,7 @@ import type { SignalData } from '@/types';
 import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp, Layers } from 'lucide-react';
+import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp, Layers, GitCommit, MoveVertical } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -18,7 +18,7 @@ import type { GenerateAiInsightInput } from '@/ai/flows/generate-ai-insight';
 import SidewaysMarketAlert from './SidewaysMarketAlert';
 import OracleInsight from './OracleInsight';
 import type { OracleInsightInput } from '@/ai/flows/oracle-insight';
-import QuantumPivotsMatrix from './QuantumPivotsMatrix';
+import KeyLevels from './KeyLevels';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -69,7 +69,7 @@ const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isB
 };
 
 const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | null }> = ({ data, livePrice }) => {
-  const { supplyZone, demandZone, fvg, isBullish, entry } = data;
+  const { supplyZone, demandZone, fvg, isBullish } = data;
   const supplyMin = parseFloat(supplyZone[0]);
   const supplyMax = parseFloat(supplyZone[1]);
   const demandMin = parseFloat(demandZone[0]);
@@ -79,12 +79,11 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
   
   const strongZone = isBullish ? 'DEMAND' : 'SUPPLY';
 
-  const ZoneBox = ({ range, title, color, isStrong, className }: { range: [number, number], title: string, color: string, isStrong: boolean, className?: string }) => (
+  const ZoneBox: React.FC<{ range: [number, number], title: string, color: string, isStrong: boolean, className?: string }> = ({ range, title, color, isStrong }) => (
     <div className={cn(
         "p-3 rounded-lg border-2 text-center transition-all duration-500",
         isStrong ? `${color} shadow-[0_0_25px]` : `border-primary/20 bg-black/30`,
         isStrong ? color.replace('border-', 'shadow-') : '',
-        className
     )}>
       <h5 className={cn("font-headline text-lg", isStrong ? 'text-white' : 'text-primary/80')}>{isStrong ? `STRONG ${title}` : title}</h5>
       <p className="font-mono text-xl text-white">${range[1].toFixed(4)} - ${range[0].toFixed(4)}</p>
@@ -98,14 +97,12 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
             <ZoneBox range={[supplyMin, supplyMax]} title="SUPPLY ZONE" color="border-red-500 bg-red-500/20" isStrong={strongZone === 'SUPPLY'} />
             
             <div className="relative h-20 flex items-center justify-center">
-                {/* FVG Zone */}
                 <div className="h-full w-full bg-purple-500/20 border-y-2 border-purple-500/50 flex items-center justify-center">
                      <div className="text-center">
                         <h5 className="font-headline text-purple-300">FVG</h5>
                         <p className="font-mono text-xs text-purple-300/80">${fvgMax.toFixed(4)} - ${fvgMin.toFixed(4)}</p>
                     </div>
                 </div>
-                {/* Live Price Line */}
                 {livePrice !== null && (
                     <div 
                         className="absolute w-full h-0.5 bg-primary transition-all duration-200 ease-linear z-10"
@@ -294,12 +291,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </SectionWrapper>
       
-      <div>
-        <SectionHeader icon={<Layers />} title="Quantum Pivots Matrix" />
-        <SectionWrapper>
-            <QuantumPivotsMatrix data={data.multiTimeframeSR} livePrice={realtimePrice} />
-        </SectionWrapper>
-      </div>
+      <KeyLevels data={data} />
 
       {mode === '4' && data.sniperZone && (
         <Alert className="border-primary bg-gradient-to-br from-primary/20 via-black to-accent/20 text-primary shadow-[0_0_25px_hsl(var(--primary)_/_0.6)] scanner-glow">
@@ -431,4 +423,3 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
-

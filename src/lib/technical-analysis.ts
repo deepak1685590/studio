@@ -283,6 +283,9 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const lastClose = parseFloat(lastCandle[4]);
     const pivot = (swingHigh + swingLow + lastClose) / 3;
 
+    const poc = (swingHigh + swingLow + lastClose) / 3 * (1 + (pseudoRandom(analysisSeed + 'poc') - 0.5) * 0.05);
+
+
     const r1 = (2 * pivot) - swingLow;
     const s1 = (2 * pivot) - swingHigh;
 
@@ -446,6 +449,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             swingHigh: swingHigh.toFixed(4),
             swingLow: swingLow.toFixed(4),
             pivot: pivot.toFixed(4),
+            poc: poc.toFixed(4),
             s1: s1.toFixed(4),
             r1: r1.toFixed(4),
             buyVolume: buyVolume.toFixed(0),
@@ -656,6 +660,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         swingHigh: swingHigh.toFixed(4),
         swingLow: swingLow.toFixed(4),
         pivot: pivot.toFixed(4),
+        poc: poc.toFixed(4),
         s1: s1.toFixed(4),
         r1: r1.toFixed(4),
         buyVolume: buyVolume.toFixed(0),

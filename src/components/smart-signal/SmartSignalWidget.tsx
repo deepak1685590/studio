@@ -23,7 +23,6 @@ import TradingSimulator from './TradingSimulator';
 import TrendRibbon from './TrendRibbon';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
-import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -388,13 +387,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
                     {isAnalyzing ? 'Analyzing...' : 'Analyze Chart Image'}
                 </Button>
             </div>
-
-            {signalData && (
-                <div className="bg-black/30 rounded-lg border border-primary/20 p-4 space-y-3">
-                     <h3 className="font-headline text-xl text-primary flex items-center gap-2"><Layers /> Quantum Pivots Matrix</h3>
-                     <QuantumPivotsMatrix data={signalData.multiTimeframeSR} livePrice={realtimePrice} />
-                </div>
-            )}
             
             {signalData && <TradingSimulator signalData={signalData} livePrice={realtimePrice} />}
             {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} bookTicker={bookTicker} />}
