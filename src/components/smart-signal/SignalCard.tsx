@@ -67,6 +67,32 @@ const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isB
     );
 };
 
+const KeyLevels: React.FC<{ data: SignalData }> = ({ data }) => {
+    const LevelRow = ({ label, value, colorClass }: { label: string; value: string; colorClass: string; }) => (
+        <div className="flex justify-between items-center text-sm">
+            <span className="text-foreground/70">{label}</span>
+            <span className={cn("font-mono font-bold", colorClass)}>${value}</span>
+        </div>
+    );
+
+    return (
+        <div>
+            <SectionHeader icon={<GitCommitHorizontal />} title="Key Technical Levels" />
+            <SectionWrapper>
+                <div className="space-y-2">
+                    <LevelRow label="Swing High" value={data.swingHigh} colorClass="text-red-400" />
+                    <LevelRow label="Pivot Point" value={data.pivot} colorClass="text-amber-400" />
+                    <LevelRow label="Swing Low" value={data.swingLow} colorClass="text-green-400" />
+                    <hr className="border-primary/20 my-2" />
+                    <LevelRow label="Resistance 1 (R1)" value={data.r1} colorClass="text-red-400/80" />
+                    <LevelRow label="Support 1 (S1)" value={data.s1} colorClass="text-green-400/80" />
+                </div>
+            </SectionWrapper>
+        </div>
+    );
+};
+
+
 const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | null }> = ({ data, livePrice }) => {
     const { supplyZone, demandZone, fvg, isBullish, entry } = data;
     const supplyMin = parseFloat(supplyZone[0]);
@@ -76,22 +102,6 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     const fvgMin = parseFloat(fvg[0]);
     const fvgMax = parseFloat(fvg[1]);
     
-    const entryPrice = parseFloat(entry);
-
-    const allPrices = [supplyMin, supplyMax, demandMin, demandMax, fvgMin, fvgMax, entryPrice];
-    if (livePrice !== null) {
-        allPrices.push(livePrice);
-    }
-    const fullRangeMin = Math.min(...allPrices) * 0.995;
-    const fullRangeMax = Math.max(...allPrices) * 1.005;
-    const fullRange = fullRangeMax - fullRangeMin;
-
-    const calculatePosition = (price: number) => {
-        if (fullRange === 0) return 50;
-        const position = ((fullRangeMax - price) / fullRange) * 100;
-        return Math.max(0, Math.min(100, position));
-    };
-
     const strongZone = isBullish ? 'DEMAND' : 'SUPPLY';
 
     const ZoneBox = ({ range, title, color, isStrong }: { range: [number, number], title: string, color: string, isStrong: boolean }) => (
@@ -108,32 +118,32 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     return (
         <div>
             <SectionHeader icon={<Building />} title="Institutional Interest" />
-            <div className="relative p-4 bg-black/30 rounded-lg border border-primary/30 space-y-2">
+            <div className="relative p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
                 
                 <ZoneBox range={[supplyMin, supplyMax]} title="SUPPLY ZONE" color="border-red-500 bg-red-500/20" isStrong={strongZone === 'SUPPLY'} />
                 
-                <div className="relative h-20">
-                     {/* Live Price Line */}
+                <div className="relative h-20 flex items-center justify-center">
+                    {/* FVG Zone */}
+                    <div className="h-full w-full bg-purple-500/20 border-y-2 border-purple-500/50 flex items-center justify-center">
+                         <div className="text-center">
+                            <h5 className="font-headline text-purple-300">FVG</h5>
+                            <p className="font-mono text-xs text-purple-300/80">${fvgMax.toFixed(4)} - ${fvgMin.toFixed(4)}</p>
+                        </div>
+                    </div>
+                    {/* Live Price Line */}
                     {livePrice !== null && (
                         <div 
                             className="absolute w-full h-0.5 bg-primary transition-all duration-200 ease-linear z-10"
-                            style={{ top: `${calculatePosition(livePrice)}%`, boxShadow: '0 0 10px hsl(var(--primary))' }}
+                            style={{ 
+                                top: `${( (supplyMin - livePrice) / (supplyMin - demandMax) ) * 100}%`,
+                                boxShadow: '0 0 10px hsl(var(--primary))' 
+                            }}
                         >
                             <div className="absolute right-0 -top-3 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded">
                                 LIVE: ${livePrice.toFixed(4)}
                             </div>
                         </div>
                     )}
-
-                    {/* FVG Zone */}
-                    <div className="absolute w-full" style={{ top: `${calculatePosition(fvgMax)}%`, height: `${calculatePosition(fvgMin) - calculatePosition(fvgMax)}%`}}>
-                        <div className="h-full w-full bg-purple-500/20 border-y-2 border-purple-500/50 flex items-center justify-center">
-                             <div className="text-center">
-                                <h5 className="font-headline text-purple-300">FVG</h5>
-                                <p className="font-mono text-xs text-purple-300/80">${fvgMax.toFixed(4)} - ${fvgMin.toFixed(4)}</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <ZoneBox range={[demandMin, demandMax]} title="DEMAND ZONE" color="border-green-500 bg-green-500/20" isStrong={strongZone === 'DEMAND'} />
@@ -145,6 +155,7 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
         </div>
     );
 };
+
 
 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
@@ -308,6 +319,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             </div>
         </div>
       </SectionWrapper>
+      
+      <KeyLevels data={data} />
 
       {mode === '4' && data.sniperZone && (
         <Alert className="border-primary bg-gradient-to-br from-primary/20 via-black to-accent/20 text-primary shadow-[0_0_25px_hsl(var(--primary)_/_0.6)] scanner-glow">
@@ -439,12 +452,4 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
-
-
-
-
-
-
-
-
 
