@@ -222,7 +222,7 @@ const generateAiInsightFlow = ai.defineFlow(
         if (errorString.includes("api key not valid")) {
             errorMessage = "The Google AI API key is not valid. Please check your .env file and ensure it is configured correctly with NEXT_PUBLIC_GEMINI_API_KEY.";
         } else if (errorString.includes("429") || errorString.includes("quota")) {
-            errorMessage = "The AI model is experiencing high demand or the daily usage quota has been exceeded. This service may be temporarily unavailable. Please try again later.";
+            errorMessage = "The AI model is experiencing high demand or the daily usage quota has been exceeded. The service will be available again tomorrow. Please try again later.";
         } else if (errorString.includes("safety") || errorString.includes("blocked")) {
             errorMessage = "The AI response was blocked by content safety filters. The query may have been too sensitive.";
         } else if (error instanceof Error) {
