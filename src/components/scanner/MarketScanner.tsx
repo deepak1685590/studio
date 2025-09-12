@@ -95,7 +95,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
             } catch (error) {
                 console.warn(`Could not scan ${symbol}:`, error);
             }
-
+            
             if (isMounted.current) {
                 const newProgress = ((i + 1) / totalAssets) * 100;
                 animationFrameId.current = requestAnimationFrame(() => setProgress(newProgress));
@@ -103,7 +103,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
         }
         
         if (isMounted.current) {
-            let filteredOpportunities = [...allResults];
+            let filteredOpportunities = allResults;
 
             if (filterHighConfidence) {
                 filteredOpportunities = filteredOpportunities.filter(op => op.confidenceBreakdown.overall >= 75);
