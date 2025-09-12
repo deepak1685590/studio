@@ -19,6 +19,8 @@ import OracleInsight from './OracleInsight';
 import type { OracleInsightInput } from '@/ai/flows/oracle-insight';
 import KeyLevels from './KeyLevels';
 import QuantumEntryMatrix from './QuantumEntryMatrix';
+import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -177,6 +179,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
   const isCrypto = !data.symbol.includes('/');
 
   const [hitTargets, setHitTargets] = useState({ entry: false, tp1: false, tp2: false });
+  const [showEliteAI, setShowEliteAI] = useState(mode === '3' || mode === '4');
 
   const entryPriceNum = useMemo(() => parseFloat(data.entry), [data.entry]);
   const tp1PriceNum = useMemo(() => parseFloat(data.tp1), [data.tp1]);
@@ -184,7 +187,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
   useEffect(() => {
     setHitTargets({ entry: false, tp1: false, tp2: false });
-  }, [data.symbol, data.entry, data.tp1, data.tp2]);
+    setShowEliteAI(mode === '3' || mode === '4');
+  }, [data.symbol, data.entry, data.tp1, data.tp2, mode]);
 
   useEffect(() => {
     if (realtimePrice === null) return;
@@ -451,11 +455,22 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       </div>
 
       {(mode === '3' || mode === '4') && (
-        <div>
-            <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
-                <EliteAiInsight data={eliteAiInsightData} />
-                {mode === '4' && <OracleInsight data={oracleInsightData} />}
+        <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                    <Switch id="elite-ai-toggle" checked={showEliteAI} onCheckedChange={setShowEliteAI} />
+                    <Label htmlFor="elite-ai-toggle" className="flex items-center gap-2 font-headline text-lg text-primary">
+                       <BrainCircuit /> Engage Elite AI
+                    </Label>
+                </div>
             </div>
+
+            {showEliteAI && (
+                <>
+                    <EliteAiInsight data={eliteAiInsightData} />
+                    {mode === '4' && <OracleInsight data={oracleInsightData} />}
+                </>
+            )}
         </div>
       )}
 
