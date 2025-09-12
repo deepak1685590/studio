@@ -67,7 +67,6 @@ const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isB
     );
 };
 
-
 const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | null }> = ({ data, livePrice }) => {
     const { supplyZone, demandZone, fvg, isBullish, entry } = data;
     const supplyMin = parseFloat(supplyZone[0]);
@@ -83,8 +82,8 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     if (livePrice !== null) {
         allPrices.push(livePrice);
     }
-    const fullRangeMin = Math.min(...allPrices) * 0.999;
-    const fullRangeMax = Math.max(...allPrices) * 1.001;
+    const fullRangeMin = Math.min(...allPrices) * 0.998;
+    const fullRangeMax = Math.max(...allPrices) * 1.002;
     const fullRange = fullRangeMax - fullRangeMin;
 
     const calculatePosition = (price: number) => {
@@ -95,21 +94,20 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
 
     const ZoneBar: React.FC<{min: number, max: number, label: string, color: string, glowColor: string}> = ({min, max, label, color, glowColor}) => {
         const left = `${calculatePosition(min)}%`;
-        const widthValue = ((max - min) / fullRange) * 100;
+        const widthValue = Math.max(0.5, ((max - min) / fullRange) * 100);
         const width = `${widthValue}%`;
         
         return (
              <div className="absolute top-0 bottom-0 text-center flex flex-col justify-center" style={{ left, width }}>
                 <div 
-                    className={cn("h-full opacity-20", color)} 
-                    style={{boxShadow: `inset 0 0 10px ${glowColor}`}}
+                    className={cn("h-full opacity-30 rounded", color)} 
+                    style={{boxShadow: `inset 0 0 10px ${glowColor}, 0 0 8px ${glowColor}`}}
                 />
-                <div className="absolute inset-0 flex flex-col justify-center items-center p-1">
-                    <div className="text-xs font-bold text-white/90">{label}</div>
+                <div className="absolute inset-0 flex flex-col justify-center items-center p-1 text-white" style={{textShadow: '0 0 3px black'}}>
+                    <div className="text-xs font-bold">{label}</div>
                      {widthValue > 15 && ( 
-                        <div className="text-[10px] font-mono opacity-80 scale-90">
-                            <div>${min.toFixed(4)}</div>
-                            <div>${max.toFixed(4)}</div>
+                        <div className="text-[10px] font-mono opacity-80">
+                            ${min.toFixed(4)} - ${max.toFixed(4)}
                         </div>
                      )}
                 </div>
@@ -117,64 +115,71 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
         )
     };
     
-    const PriceMarker: React.FC<{price: number, label: string, color: string, icon?: React.ReactNode, verticalOffset?: number}> = ({price, label, color, icon, verticalOffset = 0}) => {
-         const left = `${calculatePosition(price)}%`;
-         const top = `${3 + verticalOffset}rem`;
-         return (
+    const PriceMarker: React.FC<{price: number, label: string, color: string, icon?: React.ReactNode, align: 'top' | 'bottom'}> = ({price, label, color, icon, align}) => {
+        const left = `${calculatePosition(price)}%`;
+        const top = align === 'top' ? '-4.5rem' : '4.5rem';
+
+        return (
             <div className="absolute text-center" style={{ left, top, transform: 'translateX(-50%)' }}>
                 <div className="relative flex flex-col items-center">
-                    <div className={cn("w-px h-3", color.replace('border-','bg-'))} style={{ height: `${12 + (verticalOffset * 16)}px`}} />
-                    <div className={cn("flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full border bg-black/50", color)}>
+                    {align === 'bottom' && <div className={cn("w-px h-6", color.replace('border-','bg-'))} />}
+                    <div className={cn("flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full border bg-black/70", color)}>
                         {icon} <span className="mr-1">{label}:</span> ${price.toFixed(4)}
                     </div>
+                    {align === 'top' && <div className={cn("w-px h-6", color.replace('border-','bg-'))} />}
                 </div>
             </div>
-         )
+        )
     }
+
+    let liveMarkerAlign: 'top' | 'bottom' = 'top';
+    let entryMarkerAlign: 'top' | 'bottom' = 'bottom';
     
-    let liveMarkerOffset = 0;
-    let entryMarkerOffset = 0;
     if (livePrice !== null) {
         const livePos = calculatePosition(livePrice);
         const entryPos = calculatePosition(entryPrice);
         const proximity = Math.abs(livePos - entryPos);
 
-        if (proximity < 20) { // 20% proximity threshold on the bar
-            if (livePos > entryPos) {
-                liveMarkerOffset = 2.5; // push live marker down
+        if (proximity < 20) { // If markers are close, force them apart
+            if (livePos < entryPos) {
+                liveMarkerAlign = 'top';
+                entryMarkerAlign = 'bottom';
             } else {
-                entryMarkerOffset = 2.5; // push entry marker down
+                liveMarkerAlign = 'bottom';
+                entryMarkerAlign = 'top';
             }
         }
     }
 
     return (
-        <div>
+        <div className='py-4'>
             <SectionHeader icon={<Building />} title="Institutional Interest" />
             <SectionWrapper className="font-mono overflow-visible">
-                <div className="relative h-20 w-full rounded" style={{
-                    background: 'linear-gradient(90deg, rgba(74, 222, 128, 0.05) 0%, rgba(192, 132, 252, 0.05) 50%, rgba(239, 68, 68, 0.05) 100%)'
-                }}>
-                    <ZoneBar min={demandMin} max={demandMax} label="DEMAND" color="bg-green-500" glowColor="hsl(142 71% 47% / 0.5)" />
-                    <ZoneBar min={fvgMin} max={fvgMax} label="FVG" color="bg-purple-500" glowColor="hsl(262 83% 58% / 0.5)" />
-                    <ZoneBar min={supplyMin} max={supplyMax} label="SUPPLY" color="bg-red-500" glowColor="hsl(0 84% 60% / 0.5)" />
+                 <div className="relative h-28 w-full">
+                    {/* Price Markers rendered first to be behind the track */}
+                    <PriceMarker price={entryPrice} label={isBullish ? 'ENTRY' : 'ENTRY'} color="border-accent text-accent" icon={<ArrowRight size={12}/>} align={entryMarkerAlign} />
+                    {livePrice !== null && <PriceMarker price={livePrice} label="LIVE" color="border-primary text-primary" align={liveMarkerAlign} />}
                     
-                    {livePrice !== null && (
-                        <div 
-                            className="absolute top-0 bottom-0 w-0.5 bg-primary transition-all duration-200 ease-linear"
-                            style={{ left: `${calculatePosition(livePrice)}%`, boxShadow: '0 0 8px hsl(var(--primary))' }}
-                        >
-                             <div className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-                        </div>
-                    )}
-                </div>
-                
-                <div className="relative h-32">
-                     <PriceMarker price={entryPrice} label={isBullish ? 'LONG' : 'SHORT'} color="border-accent text-accent" icon={<ArrowRight size={12}/>} verticalOffset={entryMarkerOffset} />
-                     {livePrice !== null && <PriceMarker price={livePrice} label="LIVE" color="border-primary text-primary" verticalOffset={liveMarkerOffset} />}
+                    {/* Central Track */}
+                    <div className='absolute w-full h-12 top-1/2 -translate-y-1/2 rounded-lg bg-black/50 border border-primary/20 backdrop-blur-sm'>
+                        {/* Zones */}
+                        <ZoneBar min={demandMin} max={demandMax} label="DEMAND" color="bg-green-500" glowColor="hsl(142 71% 47% / 0.7)" />
+                        <ZoneBar min={fvgMin} max={fvgMax} label="FVG" color="bg-purple-500" glowColor="hsl(262 83% 58% / 0.7)" />
+                        <ZoneBar min={supplyMin} max={supplyMax} label="SUPPLY" color="bg-red-500" glowColor="hsl(0 84% 60% / 0.7)" />
+                        
+                        {/* Live Price Line */}
+                        {livePrice !== null && (
+                            <div 
+                                className="absolute top-0 bottom-0 w-0.5 bg-primary transition-all duration-200 ease-linear"
+                                style={{ left: `${calculatePosition(livePrice)}%`, boxShadow: '0 0 10px hsl(var(--primary))' }}
+                            >
+                                <div className="absolute top-1/2 -translate-y-1/2 -left-1 w-2.5 h-2.5 rounded-full bg-primary animate-pulse border-2 border-background"></div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                <div className="text-center text-xs text-foreground/60 mt-2">
+                <div className="text-center text-sm text-foreground/80 mt-2">
                     {data.volumeImbalance}
                 </div>
             </SectionWrapper>
@@ -475,6 +480,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+
 
 
 
