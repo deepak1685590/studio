@@ -122,7 +122,7 @@ const primaryGenerator = ai.definePrompt({
   input: {schema: GenerateAiInsightInputSchema},
   output: {schema: GenerateAiInsightOutputSchema},
   tools: [getMarketNews],
-  model: 'googleai/gemini-1.5-pro-latest',
+  model: 'googleai/gemini-1.5-flash-latest',
   prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for {{{symbol}}}.
 First, use the getMarketNews tool to fetch the latest headlines for {{{symbol}}}.
 Then, synthesize ALL the provided data into the structured JSON format below. Be extremely detailed, professional, and analytical in every section.
@@ -213,6 +213,18 @@ const fallbackGenerator = ai.definePrompt({
     `,
 });
 
+async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 2, delay = 500): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries > 0) {
+      await new Promise(res => setTimeout(res, delay));
+      return retryWithBackoff(fn, retries - 1, delay * 2);
+    }
+    throw error;
+  }
+}
+
 const generateAiInsightFlow = ai.defineFlow(
   {
     name: 'generateAiInsightFlow',
@@ -221,7 +233,7 @@ const generateAiInsightFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      const { output } = await primaryGenerator(input);
+      const { output } = await retryWithBackoff(() => primaryGenerator(input));
       if (!output) {
         throw new Error('Primary AI model failed to produce a valid output.');
       }
