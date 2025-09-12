@@ -120,6 +120,21 @@ const getMarketNews = ai.defineTool(
   }
 );
 
+const fallbackGenerator = ai.definePrompt({
+    name: 'fallbackGenerator',
+    input: { schema: GenerateAiInsightInputSchema },
+    output: { schema: z.object({ summary: z.string() }) },
+    model: 'googleai/gemini-pro',
+    prompt: `You are a high-speed market analysis AI. The primary analysis model is unavailable.
+    Provide a concise, single-paragraph executive summary based on the following data for {{{symbol}}}.
+    - Trend: {{{isBullish}}} (True=Bullish)
+    - Key Pattern: {{{chartPatternName}}}
+    - Entry: {{{entry}}}, SL: {{{sl}}}, TP1: {{{tp1}}}
+    - Confidence Factors: Trend Strength ({{{trendStrength}}}/100), Momentum ({{{momentum}}}/100)
+    Synthesize this into a professional, high-level summary.`,
+});
+
+
 const generateAiInsightFlow = ai.defineFlow(
   {
     name: 'generateAiInsightFlow',
@@ -144,7 +159,7 @@ const generateAiInsightFlow = ai.defineFlow(
 
     try {
       const { output } = await ai.generate({
-        model: 'googleai/gemini-pro',
+        model: 'googleai/gemini-1.5-flash-latest',
         tools: [getMarketNews],
         output: {
             format: 'json',
@@ -170,10 +185,31 @@ const generateAiInsightFlow = ai.defineFlow(
       return output;
 
     } catch (error) {
-       console.error("AI Generation Error:", error);
-       const errorMessage = error instanceof Error ? error.message : "An unknown internal error occurred.";
-       errorPayload.executiveSummary.timeHorizon = `The AI model encountered an error: ${errorMessage}`;
-       return errorPayload;
+       console.error("Primary AI Generation Error, attempting fallback:", error);
+       
+       try {
+         const { output: fallbackOutput } = await fallbackGenerator(input);
+         if (!fallbackOutput) {
+            throw new Error('Fallback AI model also failed.');
+         }
+         
+         // Populate the error payload with the fallback summary
+         const fallbackPayload = { ...errorPayload };
+         fallbackPayload.executiveSummary = {
+             primaryBias: "Summary (Fallback Model)",
+             setupStrength: "N/A",
+             keyLevels: "N/A",
+             opportunityGrade: "Retail",
+             timeHorizon: fallbackOutput.summary
+         };
+         return fallbackPayload;
+
+       } catch (fallbackError) {
+         console.error("Fallback AI Generation Error:", fallbackError);
+         const errorMessage = fallbackError instanceof Error ? fallbackError.message : "An unknown internal error occurred on the fallback model.";
+         errorPayload.executiveSummary.timeHorizon = `Primary model failed and fallback also failed: ${errorMessage}`;
+         return errorPayload;
+       }
     }
   }
 );
