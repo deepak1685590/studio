@@ -213,5 +213,3 @@ const generateAiInsightFlow = ai.defineFlow(
     }
   }
 );
-
-    
