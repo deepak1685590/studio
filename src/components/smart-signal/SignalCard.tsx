@@ -430,13 +430,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       <SmartMoneyConcepts data={data} trendColor={trendColor} />
 
       <div>
-        <SectionHeader icon={<Zap />} title={`Signals Detected (${data.confluenceCount})`} />
+        <SectionHeader icon={<Zap />} title={`Quantum Signals Detected (${data.confluenceCount})`} />
         <SectionWrapper>
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-2">
                 {data.confluenceFactors.map((factor, i) => (
-                    <Badge key={i} variant="outline" className="text-xs bg-primary/10 border-primary/30 text-primary/90 shadow-sm">
-                        {factor}
-                    </Badge>
+                    <div key={i} className="flex items-center gap-2 text-sm text-primary/90 p-2 bg-primary/5 rounded-md border border-primary/10">
+                        <Zap size={14} className="text-amber-400" />
+                        <span>{factor}</span>
+                    </div>
                 ))}
             </div>
         </SectionWrapper>
