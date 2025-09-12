@@ -102,7 +102,7 @@ const QuantumEntryMatrix: React.FC<QuantumEntryMatrixProps> = ({ data, livePrice
                     {icon} {title}
                 </div>
                 <div className="font-mono text-base text-white/70">
-                    ${entryZoneBottom.toFixed(4)} - ${entryZoneTop.toFixed(4)}
+                    ${entryZoneBottom.toFixed(isCrypto(data.symbol) ? 2 : 4)} - ${entryZoneTop.toFixed(isCrypto(data.symbol) ? 2 : 4)}
                 </div>
             </div>
             <div className="p-2 text-center rounded-lg border-2 border-accent bg-accent/20 shadow-[0_0_15px_hsl(var(--accent)_/_0.5)]">
@@ -121,5 +121,15 @@ const QuantumEntryMatrix: React.FC<QuantumEntryMatrixProps> = ({ data, livePrice
     </div>
   );
 };
+
+// Helper function to check if the symbol is crypto
+const isCrypto = (symbol: string): boolean => {
+    const upperSymbol = symbol.toUpperCase();
+    if (upperSymbol.includes('/')) return false; // Forex
+    const indianIndices = ['NIFTY', 'BANKNIFTY', 'GIFTNIFTY'];
+    if (indianIndices.includes(upperSymbol)) return false; // Indian Indices
+    return true; // Assume crypto
+}
+
 
 export default QuantumEntryMatrix;

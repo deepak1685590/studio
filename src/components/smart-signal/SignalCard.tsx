@@ -50,6 +50,7 @@ const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isB
     const alertColor = isBullish ? 'border-green-400 text-green-300' : 'border-red-500 text-red-300';
     const alertShadow = isBullish ? 'shadow-[0_0_20px_theme(colors.green.500)]' : 'shadow-[0_0_20px_theme(colors.red.500)]';
     const entryLabel = isBullish ? 'Long Entry' : 'Short Entry';
+    const isCrypto = !entryPrice.toString().includes('.'); // simple check if forex or crypto for formatting
 
     return (
         <div className={cn(
@@ -61,7 +62,7 @@ const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isB
             <div className="flex-1">
                 <h5 className="font-headline text-lg">ENTRY ZONE IMMINENT</h5>
                 <p className="text-sm font-mono">
-                    Live: ${livePrice.toFixed(4)} → {entryLabel}: ${entryPrice.toFixed(4)}
+                    Live: ${livePrice.toFixed(isCrypto ? 2 : 4)} → {entryLabel}: ${entryPrice.toFixed(isCrypto ? 2 : 4)}
                 </p>
             </div>
         </div>
@@ -70,6 +71,7 @@ const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isB
 
 const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | null }> = ({ data, livePrice }) => {
     const { supplyZone, demandZone, fvg } = data;
+    const isCrypto = !data.price.toString().includes('.');
     
     return (
         <div>
@@ -77,14 +79,14 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
             <div className="relative p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
                 <div className="p-3 rounded-lg border-2 text-center bg-red-500/20 border-red-500 shadow-[0_0_15px_theme(colors.red.500)]">
                     <h5 className="font-headline text-lg text-white">SUPPLY ZONE</h5>
-                    <p className="font-mono text-xl text-white/90">${supplyZone[1]} - ${supplyZone[0]}</p>
+                    <p className="font-mono text-xl text-white/90">${parseFloat(supplyZone[1]).toFixed(isCrypto ? 2 : 4)} - ${parseFloat(supplyZone[0]).toFixed(isCrypto ? 2 : 4)}</p>
                 </div>
 
                 <div className="relative h-20 flex items-center justify-center">
                     <div className="h-full w-full bg-purple-500/20 border-y-2 border-dashed border-purple-500/50 flex items-center justify-center">
                         <div className="text-center">
                             <h5 className="font-headline text-purple-300">FVG (Fair Value Gap)</h5>
-                            <p className="font-mono text-sm text-purple-300/80">${fvg[1]} - ${fvg[0]}</p>
+                            <p className="font-mono text-sm text-purple-300/80">${parseFloat(fvg[1]).toFixed(isCrypto ? 2 : 4)} - ${parseFloat(fvg[0]).toFixed(isCrypto ? 2 : 4)}</p>
                         </div>
                     </div>
                     {livePrice !== null && (
@@ -96,7 +98,7 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
                             }}
                         >
                             <div className="absolute right-0 -top-3 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded">
-                                LIVE: ${livePrice.toFixed(4)}
+                                LIVE: ${livePrice.toFixed(isCrypto ? 2 : 4)}
                             </div>
                         </div>
                     )}
@@ -104,7 +106,7 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
                 
                 <div className="p-3 rounded-lg border-2 text-center bg-green-500/20 border-green-500 shadow-[0_0_15px_theme(colors.green.500)]">
                     <h5 className="font-headline text-lg text-white">DEMAND ZONE</h5>
-                    <p className="font-mono text-xl text-white/90">${demandZone[1]} - ${demandZone[0]}</p>
+                    <p className="font-mono text-xl text-white/90">${parseFloat(demandZone[1]).toFixed(isCrypto ? 2 : 4)} - ${parseFloat(demandZone[0]).toFixed(isCrypto ? 2 : 4)}</p>
                 </div>
 
                 <div className="text-center text-sm text-foreground/80 pt-2">
@@ -117,6 +119,7 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
 
 const SmartMoneyConcepts: React.FC<{ data: SignalData, trendColor: string }> = ({ data, trendColor }) => {
   const { liquidity, smartMoneyConcepts, isBullish } = data;
+  const isCrypto = !data.price.toString().includes('.');
 
   const SMC_Item = ({ icon, title, level, description }: { icon: React.ReactNode, title: string, level: string, description: string }) => (
     <div className="flex items-start gap-3">
@@ -124,7 +127,7 @@ const SmartMoneyConcepts: React.FC<{ data: SignalData, trendColor: string }> = (
         {icon}
       </div>
       <div>
-        <h5 className="font-headline text-primary">{title} <span className="font-mono text-base">${level}</span></h5>
+        <h5 className="font-headline text-primary">{title} <span className="font-mono text-base">${parseFloat(level).toFixed(isCrypto ? 2 : 4)}</span></h5>
         <p className="text-xs text-foreground/70">{description}</p>
       </div>
     </div>
@@ -171,6 +174,7 @@ const SmartMoneyConcepts: React.FC<{ data: SignalData, trendColor: string }> = (
 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
+  const isCrypto = !data.symbol.includes('/');
 
   const [hitTargets, setHitTargets] = useState({ entry: false, tp1: false, tp2: false });
 
@@ -317,7 +321,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                             priceDirection === 'down' && 'bg-red-500 shadow-[0_0_8px_theme(colors.red.500)] animate-pulse',
                             priceDirection === 'neutral' && 'bg-gray-500'
                          )}></span>
-                        ${displayPrice.toFixed(4)}
+                        ${displayPrice.toFixed(isCrypto ? 2 : 4)}
                     </span>
                 </div>
 
