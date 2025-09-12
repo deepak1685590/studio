@@ -134,9 +134,9 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
         const top = calculateTop(max);
         const height = `${((max - min) / fullRange) * 100}%`;
         
-        // This regex extracts the color name (e.g., 'red-500') from the border utility class
         const colorNameMatch = color.match(/border-([a-z]+-\d+)/);
-        const colorName = colorNameMatch ? colorNameMatch[1] : 'primary';
+        if (!colorNameMatch) return null;
+        const colorName = colorNameMatch[1];
         
         return (
             <div 
