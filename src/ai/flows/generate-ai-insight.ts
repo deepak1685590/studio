@@ -283,9 +283,11 @@ const generateAiInsightFlow = ai.defineFlow(
          console.error('Fallback AI flow also failed:', fallbackError);
          
          let errorMessage = "An unexpected error occurred in both primary and fallback AI models.";
-         const errorString = String(fallbackError);
-         if (errorString.includes("429") || errorString.toLowerCase().includes("quota")) {
+         const errorString = String(fallbackError).toLowerCase();
+         if (errorString.includes("429") || errorString.includes("quota")) {
             errorMessage = "The AI model is experiencing high demand and the daily usage quota has been exceeded. The service will be available again tomorrow. Please try again later."
+         } else if (errorString.includes("api key not valid")) {
+            errorMessage = "The Google AI API key is not valid. Please check your .env file and ensure it is configured correctly."
          } else if (fallbackError instanceof Error) {
             errorMessage = `Primary model failed and fallback also failed. Error: ${fallbackError.message}`;
          }
