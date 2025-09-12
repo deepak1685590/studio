@@ -34,7 +34,7 @@ const analyzeCodeFlow = ai.defineFlow(
   },
   async ({ codeOrError }) => {
     const { output } = await ai.generate({
-      model: 'googleai/gemini-pro',
+      model: 'openai/grok-beta',
       output: {
         format: 'json',
         schema: AnalyzeCodeOutputSchema,
