@@ -4,7 +4,6 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import type { SignalData } from '@/types';
-import EliteAiInsight from './EliteAiInsight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
 import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp, Layers, MoveVertical, GitBranch, GitPullRequest, Replace } from 'lucide-react';
@@ -14,10 +13,7 @@ import { cn } from '@/lib/utils';
 import ConfidenceBreakdown from './ConfidenceBreakdown';
 import WhaleAlert from './WhaleAlert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import type { GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import SidewaysMarketAlert from './SidewaysMarketAlert';
-import OracleInsight from './OracleInsight';
-import type { OracleInsightInput } from '@/ai/flows/oracle-insight';
 import KeyLevels from './KeyLevels';
 import QuantumEntryMatrix from './QuantumEntryMatrix';
 import { Switch } from '../ui/switch';
@@ -210,34 +206,19 @@ const SmartMoneyConcepts: React.FC<{ data: SignalData, trendColor: string }> = (
 
 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
-  const [tradeSetup, setTradeSetup] = useState({
-    entry: data.entry,
-    sl: data.sl,
-    tp1: data.tp1,
-    tp2: data.tp2,
-  });
   
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
   const isCrypto = !data.symbol.includes('/');
 
   const [hitTargets, setHitTargets] = useState({ entry: false, tp1: false, tp2: false });
-  const [showEliteAI, setShowEliteAI] = useState(mode === '3' || mode === '4');
 
-  const entryPriceNum = useMemo(() => parseFloat(tradeSetup.entry), [tradeSetup.entry]);
-  const tp1PriceNum = useMemo(() => parseFloat(tradeSetup.tp1), [tradeSetup.tp1]);
-  const tp2PriceNum = useMemo(() => parseFloat(tradeSetup.tp2), [tradeSetup.tp2]);
+  const entryPriceNum = useMemo(() => parseFloat(data.entry), [data.entry]);
+  const tp1PriceNum = useMemo(() => parseFloat(data.tp1), [data.tp1]);
+  const tp2PriceNum = useMemo(() => parseFloat(data.tp2), [data.tp2]);
 
   useEffect(() => {
-    // Reset trade setup to default when data changes
-    setTradeSetup({
-      entry: data.entry,
-      sl: data.sl,
-      tp1: data.tp1,
-      tp2: data.tp2,
-    });
     setHitTargets({ entry: false, tp1: false, tp2: false });
-    setShowEliteAI(mode === '3' || mode === '4');
-  }, [data, mode]);
+  }, [data]);
 
   useEffect(() => {
     if (realtimePrice === null) return;
@@ -257,50 +238,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     });
 
   }, [realtimePrice, data.isBullish, entryPriceNum, tp1PriceNum, tp2PriceNum]);
-
-  const handleAiTradeSetup = (aiSetup: GenerateAiInsightOutput['tradeSetup']) => {
-    setTradeSetup({
-        entry: aiSetup.entryPrice,
-        sl: aiSetup.stopLoss,
-        tp1: aiSetup.takeProfit1,
-        tp2: aiSetup.takeProfit2,
-    });
-  };
-
-  const eliteAiInsightData: GenerateAiInsightInput = useMemo(() => ({
-    symbol: data.symbol,
-    price: data.price,
-    isBullish: data.isBullish,
-    action: data.action,
-    entry: parseFloat(data.entry),
-    sl: parseFloat(data.sl),
-    tp1: parseFloat(data.tp1),
-    tp2: parseFloat(data.tp2),
-    confluenceCount: data.confluenceCount,
-    demandZone: `$${data.demandZone[0]} - ${data.demandZone[1]}`,
-    fvg: `$${data.fvg[0]} - ${data.fvg[1]}`,
-    volumeImbalance: data.volumeImbalance,
-    multiTimeframeAnalysis: {
-      '5m': data.multiTimeframeAnalysis['5m']?.trend || 'Neutral',
-      '15m': data.multiTimeframeAnalysis['15m']?.trend || 'Neutral',
-      '1H': data.multiTimeframeAnalysis['1H']?.trend || 'Neutral',
-      '4H': data.multiTimeframeAnalysis['4H']?.trend || 'Neutral',
-      'Daily': data.multiTimeframeAnalysis['Daily']?.trend || 'Neutral',
-    },
-    chartPatternName: data.chartPattern.name,
-    trendStrength: data.trendStrength.score,
-    momentum: data.momentum.score,
-    marketSession: "New York", 
-    volatilityRegime: "Medium", 
-  }), [data]); 
-
-  const oracleInsightData: OracleInsightInput = useMemo(() => ({
-    symbol: data.symbol,
-    price: data.price,
-    isBullish: data.isBullish,
-    volatility: data.trendStrength.score,
-  }), [data.symbol, data.price, data.isBullish, data.trendStrength.score]);
-
 
   if (data.sidewaysMarket) {
     return (
@@ -364,7 +301,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       
       {isNearEntry && !hitTargets.entry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
 
-      <QuantumEntryMatrix data={{...data, ...tradeSetup}} livePrice={realtimePrice} />
+      <QuantumEntryMatrix data={data} livePrice={realtimePrice} />
 
       <SectionWrapper>
         <div className="grid grid-cols-1">
@@ -387,12 +324,12 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                     </span>
                 </div>
 
-                <LevelRow label={data.isBullish ? 'Long Entry' : 'Short Entry'} value={tradeSetup.entry} isHit={hitTargets.entry} isConfluence={mode === '4'} />
+                <LevelRow label={data.isBullish ? 'Long Entry' : 'Short Entry'} value={data.entry} isHit={hitTargets.entry} isConfluence={mode === '4'} />
                 
-                <div className="flex justify-between text-base"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-yellow-400">${tradeSetup.sl}</span></div>
+                <div className="flex justify-between text-base"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-yellow-400">${data.sl}</span></div>
 
-                <LevelRow label="Take-Profit 1" value={tradeSetup.tp1} isHit={hitTargets.tp1} isConfluence={mode === '4'} />
-                <LevelRow label="Take-Profit 2" value={tradeSetup.tp2} isHit={hitTargets.tp2} />
+                <LevelRow label="Take-Profit 1" value={data.tp1} isHit={hitTargets.tp1} isConfluence={mode === '4'} />
+                <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} />
                 
                 <div className="flex justify-between text-base pt-1"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono">1 : {data.riskReward.toFixed(1)}</span></div>
             </div>
@@ -492,26 +429,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             </div>
         </SectionWrapper>
       </div>
-
-      {(mode === '3' || mode === '4') && (
-        <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                    <Switch id="elite-ai-toggle" checked={showEliteAI} onCheckedChange={setShowEliteAI} />
-                    <Label htmlFor="elite-ai-toggle" className="flex items-center gap-2 font-headline text-lg text-primary">
-                       <BrainCircuit /> Engage Elite AI
-                    </Label>
-                </div>
-            </div>
-
-            {showEliteAI && (
-                <>
-                    <EliteAiInsight data={eliteAiInsightData} onTradeSetupGenerated={handleAiTradeSetup} />
-                    {mode === '4' && <OracleInsight data={oracleInsightData} />}
-                </>
-            )}
-        </div>
-      )}
 
       <div className="flex justify-between items-center mt-6">
         <small className="text-foreground/50">Generated: {new Date().toLocaleString()}</small>

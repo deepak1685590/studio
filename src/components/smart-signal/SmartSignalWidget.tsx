@@ -26,16 +26,24 @@ import { Label } from '../ui/label';
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
   setSelectedSymbol: (symbol: string) => void;
+  onSignalDataChange: (data: SignalData | null) => void;
+  onLoadingChange: (loading: boolean) => void;
+  signalData: SignalData | null;
 }
 
 const cryptoAssetsForWebsocket = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC'];
 
-const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = 'BTC', setSelectedSymbol }) => {
+const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ 
+    initialSymbol = 'BTC', 
+    setSelectedSymbol,
+    onSignalDataChange,
+    onLoadingChange,
+    signalData
+ }) => {
   const [symbol, setSymbol] = useState(initialSymbol);
   const [mode, setMode] = useState('3');
   const [timeframe, setTimeframe] = useState<Timeframe>('15m');
   const [loading, setLoading] = useState(true);
-  const [signalData, setSignalData] = useState<SignalData | null>(null);
   const [realtimePrice, setRealtimePrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
   const [liveTradeData, setLiveTradeData] = useState<LiveTradeData | null>(null);
@@ -63,7 +71,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
   }, [initialSymbol]);
 
   const handleGenerateSignal = useCallback(async (currentSymbol: string) => {
-    setSignalData(null);
+    onSignalDataChange(null);
     setRealtimePrice(null);
     setLiveTradeData(null);
     setBookTicker(null);
@@ -76,16 +84,18 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
     }
 
     setLoading(true);
+    onLoadingChange(true);
 
     if (!currentSymbol) {
       toast({ title: "Input Error", description: "Please enter a symbol.", variant: "destructive" });
       setLoading(false);
+      onLoadingChange(false);
       return;
     }
 
     try {
       const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe);
-      setSignalData(data);
+      onSignalDataChange(data);
       setRealtimePrice(data.price);
       previousPriceRef.current = data.price;
 
@@ -154,12 +164,13 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
       console.error("Error generating signal:", error);
       toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
       const mockData = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, true);
-      setSignalData(mockData);
+      onSignalDataChange(mockData);
       setRealtimePrice(mockData.price);
     } finally {
       setLoading(false);
+      onLoadingChange(false);
     }
-  }, [mode, timeframe, toast]);
+  }, [mode, timeframe, toast, onSignalDataChange, onLoadingChange]);
   
   useEffect(() => {
     handleGenerateSignal(symbol);

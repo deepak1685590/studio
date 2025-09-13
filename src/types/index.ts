@@ -1,4 +1,10 @@
 
+import type { GenerateAiInsightInput as GenkitGenerateAiInsightInput, GenerateAiInsightOutput as GenkitGenerateAiInsightOutput, OracleInsightInput as GenkitOracleInsightInput } from "@/ai/flows/generate-ai-insight";
+
+export type GenerateAiInsightInput = GenkitGenerateAiInsightInput;
+export type GenerateAiInsightOutput = GenkitGenerateAiInsightOutput;
+export type OracleInsightInput = GenkitOracleInsightInput;
+
 
 export interface User {
   username: string;
