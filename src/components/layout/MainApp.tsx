@@ -31,8 +31,6 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
   const [selectedSymbol, setSelectedSymbol] = useState(initialSymbol);
   const [signalData, setSignalData] = useState<SignalData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [eliteAiInsightData, setEliteAiInsightData] = useState<GenerateAiInsightInput | null>(null);
-  const [oracleInsightData, setOracleInsightData] = useState<OracleInsightInput | null>(null);
 
   useEffect(() => {
     // If the initialSymbol from props changes, update the state
@@ -41,59 +39,40 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
     }
   }, [initialSymbol]);
 
-  useEffect(() => {
-    if (signalData) {
-      setEliteAiInsightData({
-        symbol: signalData.symbol,
-        price: signalData.price,
-        isBullish: signalData.isBullish,
-        action: signalData.action,
-        entry: parseFloat(signalData.entry),
-        sl: parseFloat(signalData.sl),
-        tp1: parseFloat(signalData.tp1),
-        tp2: parseFloat(signalData.tp2),
-        confluenceCount: signalData.confluenceCount,
-        demandZone: `$${signalData.demandZone[0]} - ${signalData.demandZone[1]}`,
-        fvg: `$${signalData.fvg[0]} - ${signalData.fvg[1]}`,
-        volumeImbalance: signalData.volumeImbalance,
-        multiTimeframeAnalysis: {
-          '5m': signalData.multiTimeframeAnalysis['5m']?.trend || 'Neutral',
-          '15m': signalData.multiTimeframeAnalysis['15m']?.trend || 'Neutral',
-          '1H': signalData.multiTimeframeAnalysis['1H']?.trend || 'Neutral',
-          '4H': signalData.multiTimeframeAnalysis['4H']?.trend || 'Neutral',
-          'Daily': signalData.multiTimeframeAnalysis['Daily']?.trend || 'Neutral',
-        },
-        chartPatternName: signalData.chartPattern.name,
-        trendStrength: signalData.trendStrength.score,
-        momentum: signalData.momentum.score,
-        marketSession: "New York", 
-        volatilityRegime: "Medium", 
-      });
+  const eliteAiInsightData: GenerateAiInsightInput | null = signalData ? {
+    symbol: signalData.symbol,
+    price: signalData.price,
+    isBullish: signalData.isBullish,
+    action: signalData.action,
+    entry: parseFloat(signalData.entry),
+    sl: parseFloat(signalData.sl),
+    tp1: parseFloat(signalData.tp1),
+    tp2: parseFloat(signalData.tp2),
+    confluenceCount: signalData.confluenceCount,
+    demandZone: `$${signalData.demandZone[0]} - ${signalData.demandZone[1]}`,
+    fvg: `$${signalData.fvg[0]} - ${signalData.fvg[1]}`,
+    volumeImbalance: signalData.volumeImbalance,
+    multiTimeframeAnalysis: {
+      '5m': signalData.multiTimeframeAnalysis['5m']?.trend || 'Neutral',
+      '15m': signalData.multiTimeframeAnalysis['15m']?.trend || 'Neutral',
+      '1H': signalData.multiTimeframeAnalysis['1H']?.trend || 'Neutral',
+      '4H': signalData.multiTimeframeAnalysis['4H']?.trend || 'Neutral',
+      'Daily': signalData.multiTimeframeAnalysis['Daily']?.trend || 'Neutral',
+    },
+    chartPatternName: signalData.chartPattern.name,
+    trendStrength: signalData.trendStrength.score,
+    momentum: signalData.momentum.score,
+    marketSession: "New York", 
+    volatilityRegime: "Medium", 
+  } : null;
 
-      setOracleInsightData({
-        symbol: signalData.symbol,
-        price: signalData.price,
-        isBullish: signalData.isBullish,
-        volatility: signalData.trendStrength.score,
-      });
-    } else {
-      setEliteAiInsightData(null);
-      setOracleInsightData(null);
-    }
-  }, [signalData]);
+  const oracleInsightData: OracleInsightInput | null = signalData ? {
+    symbol: signalData.symbol,
+    price: signalData.price,
+    isBullish: signalData.isBullish,
+    volatility: signalData.trendStrength.score,
+  } : null;
 
-
-  const handleTradeSetupGenerated = (tradeSetup: GenerateAiInsightOutput['tradeSetup']) => {
-    if (signalData) {
-      setSignalData(prevData => prevData ? ({
-        ...prevData,
-        entry: tradeSetup.entryPrice,
-        sl: tradeSetup.stopLoss,
-        tp1: tradeSetup.takeProfit1,
-        tp2: tradeSetup.takeProfit2,
-      }) : null);
-    }
-  };
 
   return (
     <div className="p-4 pb-16">
@@ -145,11 +124,11 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
             <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4 max-w-4xl mx-auto">
                 {isLoading && <p className="text-center">Generating signal before AI analysis can be engaged...</p>}
                 {!isLoading && !signalData && <p className="text-center text-destructive">Could not load signal data. AI analysis is unavailable.</p>}
-                {!isLoading && signalData && eliteAiInsightData && oracleInsightData && (
-                    <>
-                        <EliteAiInsight data={eliteAiInsightData} onTradeSetupGenerated={handleTradeSetupGenerated} />
-                        {(signalData.mode === '4') && <OracleInsight data={oracleInsightData} />}
-                    </>
+                {!isLoading && signalData && eliteAiInsightData && (
+                    <EliteAiInsight data={eliteAiInsightData} />
+                )}
+                 {!isLoading && signalData && oracleInsightData && (signalData.mode === '4') && (
+                    <OracleInsight data={oracleInsightData} />
                 )}
             </div>
           </TabsContent>

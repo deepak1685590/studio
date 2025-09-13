@@ -4,20 +4,17 @@
 import React, { useState, useEffect } from 'react';
 import { generateAiInsight, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import { Button } from '@/components/ui/button';
-import { Copy, BrainCircuit, Target, Lightbulb, TrendingUp, AlertTriangle, Info, Layers } from 'lucide-react';
+import { Copy, BrainCircuit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { cn } from '@/lib/utils';
 import PredictiveAnalysis from './PredictiveAnalysis';
 
 interface EliteAiInsightProps {
   data: GenerateAiInsightInput;
-  onTradeSetupGenerated: (tradeSetup: GenerateAiInsightOutput['tradeSetup']) => void;
 }
 
-const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data, onTradeSetupGenerated }) => {
+const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
   const [insight, setInsight] = useState<GenerateAiInsightOutput | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -42,8 +39,6 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data, onTradeSetupGener
                 variant: "default",
                 duration: 8000
             });
-        } else if (result.tradeSetup) {
-           onTradeSetupGenerated(result.tradeSetup);
         }
         setInsight(result);
       } catch (error) {
@@ -56,7 +51,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data, onTradeSetupGener
     };
 
     fetchInsight();
-  }, [data, toast, onTradeSetupGenerated]);
+  }, [data, toast]);
 
 
   const copyToClipboard = () => {
@@ -80,16 +75,33 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data, onTradeSetupGener
     toast({ title: 'Success', description: 'Elite AI Report copied to clipboard!' });
   };
 
-  const renderSection = (title: string, content: Record<string, string>) => (
+  const renderSection = (title: string, content: Record<string, string | object>) => (
     <AccordionItem value={title}>
       <AccordionTrigger className="font-headline text-primary/90 text-md">{title}</AccordionTrigger>
       <AccordionContent className="space-y-2 text-sm text-foreground/80 pl-2">
-        {Object.entries(content).map(([key, value]) => (
-          <div key={key}>
-            <strong className="text-primary/70 block">{key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:</strong>
-            <p className="whitespace-pre-wrap">{value}</p>
-          </div>
-        ))}
+        {Object.entries(content).map(([key, value]) => {
+          if (typeof value === 'object' && value !== null) {
+            return (
+              <div key={key}>
+                <strong className="text-primary/70 block">{key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:</strong>
+                <div className="pl-4">
+                  {Object.entries(value).map(([subKey, subValue]) => (
+                    <div key={subKey}>
+                      <strong className="text-primary/60">{subKey.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:</strong>
+                      <p className="whitespace-pre-wrap">{subValue}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div key={key}>
+              <strong className="text-primary/70 block">{key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:</strong>
+              <p className="whitespace-pre-wrap">{value as string}</p>
+            </div>
+          )
+        })}
       </AccordionContent>
     </AccordionItem>
   );
@@ -131,19 +143,6 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data, onTradeSetupGener
 
       return (
         <div className="space-y-4">
-            <div className="p-4 bg-primary/10 rounded-lg border border-primary/30">
-                <h4 className="font-headline text-primary text-md mb-2">AI Trade Rationale</h4>
-                <p className="text-xs text-foreground/80 italic">"{insight.tradeSetup.tradeRationale}"</p>
-            </div>
-
-            {insight.tradeSetup.secondaryEntryPrice && (
-              <div className="p-3 text-center rounded-lg border-2 border-dashed border-primary bg-primary/10">
-                <h5 className="font-headline text-base text-primary flex items-center justify-center gap-2"><Layers />AI Secondary Entry</h5>
-                <p className="font-mono text-xl font-bold text-white/90">{insight.tradeSetup.secondaryEntryPrice}</p>
-                <p className="text-xs text-foreground/70">Multi-layer confirmation level</p>
-              </div>
-            )}
-
             <PredictiveAnalysis analysis={insight.predictiveAnalysis} isBullish={data.isBullish} />
 
             <Accordion type="single" collapsible defaultValue="Executive Summary">
