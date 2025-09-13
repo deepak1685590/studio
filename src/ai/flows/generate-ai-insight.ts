@@ -49,6 +49,13 @@ const GenerateAiInsightOutputSchema = z.object({
     opportunityGrade: z.enum(['Institutional', 'Professional', 'Retail']),
     timeHorizon: z.string(),
   }),
+  tradeSetup: z.object({
+    entryPrice: z.string().describe("The AI's optimized entry price."),
+    stopLoss: z.string().describe("The AI's recommended stop-loss level."),
+    takeProfit1: z.string().describe("The AI's primary take-profit target."),
+    takeProfit2: z.string().describe("The AI's secondary take-profit target."),
+    tradeRationale: z.string().describe("A brief rationale for the chosen entry and target levels."),
+  }).describe("The AI-generated trade plan with precise levels."),
   predictiveAnalysis: z.object({
     primaryScenario: z.string().describe("A detailed description of the most likely price action scenario over the specified timeframe."),
     predictedTarget: z.object({
@@ -133,6 +140,7 @@ const generateAiInsightFlow = ai.defineFlow(
   async (input) => {
     const errorPayload: GenerateAiInsightOutput = {
         executiveSummary: { primaryBias: "Error", setupStrength: "N/A", keyLevels: "N/A", opportunityGrade: "Retail", timeHorizon: "The AI model encountered an unrecoverable error." },
+        tradeSetup: { entryPrice: "N/A", stopLoss: "N/A", takeProfit1: "N/A", takeProfit2: "N/A", tradeRationale: "N/A" },
         predictiveAnalysis: { primaryScenario: "N/A", predictedTarget: { shortTerm: "N/A", intraday: "N/A", swing: "N/A" }, timeframe: "N/A", successProbability: "N/A", invalidationLevel: "N/A", keyCatalysts: "N/A", alternativeScenario: "N/A" },
         technicalAnalysis: { multiTimeframe: "N/A", volumeProfile: "N/A", marketMicrostructure: "N/A" },
         riskManagement: { positionSizing: "N/A", dynamicLevels: "N/A" },
@@ -157,7 +165,10 @@ const generateAiInsightFlow = ai.defineFlow(
         },
         prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for ${input.symbol}.
         First, use the getMarketNews tool to fetch the latest headlines for ${input.symbol}.
-        Then, synthesize ALL the provided data into the structured JSON format below. Be extremely detailed, professional, and analytical in every section.
+        Then, synthesize ALL the provided data into the structured JSON format below.
+        
+        **Crucially, based on your holistic analysis of all provided data, you must derive and populate the 'tradeSetup' section with your own optimized entry, stop-loss, and take-profit levels. Provide a brief rationale for your choices.**
+
         For the 'predictedTarget', provide distinct price targets for short-term (scalp/5-15m), intraday (1-4h), and swing (daily/weekly) timeframes based on the overall analysis.
 
         ## Analysis Parameters

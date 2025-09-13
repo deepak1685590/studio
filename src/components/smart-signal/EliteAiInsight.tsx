@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { generateAiInsight, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import { Button } from '@/components/ui/button';
-import { Copy, BrainCircuit, Target, Lightbulb, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Copy, BrainCircuit, Target, Lightbulb, TrendingUp, AlertTriangle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
@@ -13,9 +13,10 @@ import { cn } from '@/lib/utils';
 
 interface EliteAiInsightProps {
   data: GenerateAiInsightInput;
+  onTradeSetupGenerated: (tradeSetup: GenerateAiInsightOutput['tradeSetup']) => void;
 }
 
-const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
+const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data, onTradeSetupGenerated }) => {
   const [insight, setInsight] = useState<GenerateAiInsightOutput | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -40,6 +41,8 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
                 variant: "default",
                 duration: 8000
             });
+        } else if (result.tradeSetup) {
+           onTradeSetupGenerated(result.tradeSetup);
         }
         setInsight(result);
       } catch (error) {
@@ -52,7 +55,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
     };
 
     fetchInsight();
-  }, [data, toast]);
+  }, [data, toast, onTradeSetupGenerated]);
 
 
   const copyToClipboard = () => {
@@ -129,6 +132,11 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
 
       return (
         <div className="space-y-4">
+            <div className="p-4 bg-primary/10 rounded-lg border border-primary/30">
+                <h4 className="font-headline text-primary text-md mb-2">AI Trade Rationale</h4>
+                <p className="text-xs text-foreground/80 italic">"{insight.tradeSetup.tradeRationale}"</p>
+            </div>
+
             <div className="p-4 bg-gradient-to-r from-accent/20 to-primary/20 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.5)]">
               <h4 className="font-headline text-lg text-accent flex items-center gap-2 mb-2">
                   <Target /> Predictive Analysis
