@@ -246,3 +246,5 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data, onTradeSetupGener
 };
 
 export default EliteAiInsight;
+
+    
