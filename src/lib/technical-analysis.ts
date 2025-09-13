@@ -1,6 +1,7 @@
 
 
 
+
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
@@ -225,10 +226,22 @@ const generateSuperTrendAnalysis = (price: number, atr: number, isBullish: boole
         status = isBullish ? 'Uptrend Developing' : 'Downtrend Developing';
     }
 
-    // New calculated fields
-    const strengthScore = 100 - momentumDecay; // Inverse of decay
-    const entrySignalPrice = isBullish ? superTrendLine * 1.001 : superTrendLine * 0.999;
-    const exitSignalPrice = isBullish ? superTrendLine * 0.999 : superTrendLine * 1.001;
+    // New ATR-based calculation for entry/exit
+    const strengthScore = 100 - momentumDecay;
+    const entryOffset = atr * 0.5; // Entry signal is 0.5 ATR away from the ST line
+    const exitOffset = atr * 0.5;  // Exit signal is also 0.5 ATR away, on the other side
+
+    let entrySignalPrice, exitSignalPrice;
+
+    if (isBullish) {
+        // For a long, you want to enter above the line and exit below it.
+        entrySignalPrice = superTrendLine + entryOffset;
+        exitSignalPrice = superTrendLine - exitOffset;
+    } else {
+        // For a short, you want to enter below the line and exit above it.
+        entrySignalPrice = superTrendLine - entryOffset;
+        exitSignalPrice = superTrendLine + exitOffset;
+    }
     
     return {
         status,
