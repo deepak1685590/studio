@@ -51,7 +51,11 @@ const GenerateAiInsightOutputSchema = z.object({
   }),
   predictiveAnalysis: z.object({
     primaryScenario: z.string().describe("A detailed description of the most likely price action scenario over the specified timeframe."),
-    predictedTarget: z.string().describe("The AI's primary price target based on the primary scenario."),
+    predictedTarget: z.object({
+        shortTerm: z.string().describe("The AI's price target for a short-term timeframe (e.g., 5-15 minutes)."),
+        intraday: z.string().describe("The AI's price target for an intraday timeframe (e.g., 1-4 hours)."),
+        swing: z.string().describe("The AI's price target for a swing trade timeframe (e.g., Daily/Weekly)."),
+    }).describe("The AI's primary price targets broken down by different timeframes."),
     timeframe: z.string().describe("The estimated time it will take to reach the predicted target."),
     successProbability: z.string().describe("The AI's confidence in the primary scenario, as a percentage."),
     invalidationLevel: z.string().describe("The price level at which the primary scenario would be considered invalid."),
@@ -129,7 +133,7 @@ const generateAiInsightFlow = ai.defineFlow(
   async (input) => {
     const errorPayload: GenerateAiInsightOutput = {
         executiveSummary: { primaryBias: "Error", setupStrength: "N/A", keyLevels: "N/A", opportunityGrade: "Retail", timeHorizon: "The AI model encountered an unrecoverable error." },
-        predictiveAnalysis: { primaryScenario: "N/A", predictedTarget: "N/A", timeframe: "N/A", successProbability: "N/A", invalidationLevel: "N/A", keyCatalysts: "N/A", alternativeScenario: "N/A" },
+        predictiveAnalysis: { primaryScenario: "N/A", predictedTarget: { shortTerm: "N/A", intraday: "N/A", swing: "N/A" }, timeframe: "N/A", successProbability: "N/A", invalidationLevel: "N/A", keyCatalysts: "N/A", alternativeScenario: "N/A" },
         technicalAnalysis: { multiTimeframe: "N/A", volumeProfile: "N/A", marketMicrostructure: "N/A" },
         riskManagement: { positionSizing: "N/A", dynamicLevels: "N/A" },
         sentimentAndFlow: { onChainMetrics: "N/A", marketSentiment: "N/A" },
@@ -154,6 +158,7 @@ const generateAiInsightFlow = ai.defineFlow(
         prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for ${input.symbol}.
         First, use the getMarketNews tool to fetch the latest headlines for ${input.symbol}.
         Then, synthesize ALL the provided data into the structured JSON format below. Be extremely detailed, professional, and analytical in every section.
+        For the 'predictedTarget', provide distinct price targets for short-term (scalp/5-15m), intraday (1-4h), and swing (daily/weekly) timeframes based on the overall analysis.
 
         ## Analysis Parameters
         - Asset: ${input.symbol}
