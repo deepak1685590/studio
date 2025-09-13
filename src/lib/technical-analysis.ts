@@ -1,6 +1,5 @@
 
 
-
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
@@ -774,7 +773,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             description: `A significant pool of liquidity is resting ${isBullish ? 'above' : 'below'} this level, acting as a price magnet.`
         },
         smartMoneyConcepts: {
-            entry,
             bos: bosLevel,
             choch: isBullish ? (swingLow * 0.998).toFixed(4) : (swingHigh * 1.002).toFixed(4),
             confirmedEntry: confirmedEntry.toFixed(4),
