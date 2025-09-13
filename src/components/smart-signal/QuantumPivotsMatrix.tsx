@@ -2,10 +2,10 @@
 "use client";
 
 import React from 'react';
-import { MultiTimeframeSR } from '@/types';
+import { MultiTimeframeSR, SupportResistanceLevel } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown, ArrowRight, GitCommitHorizontal } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowRight, GitCommitHorizontal, Target } from 'lucide-react';
 
 interface QuantumPivotsMatrixProps {
   data: MultiTimeframeSR;
@@ -50,13 +50,18 @@ const QuantumPivotsMatrix: React.FC<QuantumPivotsMatrixProps> = ({ data, livePri
                     </TableRow>
                 ))}
                 
-                <TableRow className="bg-primary/10 text-primary font-bold border-y-2 border-primary">
-                    <TableHead className="font-bold flex items-center gap-1"><GitCommitHorizontal size={14}/> Probable Target</TableHead>
-                    {timeframes.map(tf => (
-                         <TableCell key={tf} className="text-center font-mono">
-                            {data[tf].probableTarget}
-                        </TableCell>
-                    ))}
+                <TableRow className="bg-primary/10 text-primary font-bold border-y-2 border-primary scanner-glow">
+                    <TableHead className="font-bold flex items-center gap-1"><Target size={14}/> Confirmed Target</TableHead>
+                    {timeframes.map(tf => {
+                        const targetKey = data[tf].probableTarget;
+                        const targetPrice = data[tf][targetKey];
+                        const isResistance = targetKey.startsWith('R');
+                        return (
+                            <TableCell key={tf} className={cn("text-center font-mono", isResistance ? 'text-red-300' : 'text-green-300')}>
+                                {targetKey} - ${targetPrice.toFixed(4)}
+                            </TableCell>
+                        )
+                    })}
                 </TableRow>
 
                 {['S1', 'S2', 'S3'].map(level => (
