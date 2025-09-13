@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -106,7 +105,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
             const messageData = message.data;
             
             // Ensure the message is for the current symbol before updating state
-            if (currentSymbolRef.current.toLowerCase() !== messageData.s.replace('usdt', '')) {
+            if (currentSymbolRef.current.toLowerCase() + 'usdt' !== messageData.s.toLowerCase()) {
                 return;
             }
             
@@ -418,5 +417,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ initialSymbol = '
 };
 
 export default SmartSignalWidget;
+    
 
     
