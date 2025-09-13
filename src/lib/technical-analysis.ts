@@ -1,6 +1,6 @@
 
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -597,33 +597,14 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const mtfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '5m' ? '15m' : '4H';
     const htfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '1h' ? '4H' : 'Daily';
     
-    const trends: ('Bullish' | 'Bearish' | 'Neutral')[] = ['Bullish', 'Bearish', 'Neutral'];
+    const trends: Trend[] = ['Bullish', 'Bearish', 'Neutral'];
     let multiTimeframeAnalysis: MultiTimeframeAnalysis = {};
-
-    const mtfMap: {[key in Timeframe]?: (keyof MultiTimeframeAnalysis)[]} = {
-        '5m': ['15m', '1H'],
-        '15m': ['1H', '4H', 'Daily'],
-        '1h': ['4H', 'Daily'],
-        '4h': ['Daily', 'Weekly'],
-        '1d': ['Weekly'],
-    };
-    
-    const analysisTimeframes = mtfMap[timeframe] || mtfMap['15m']!;
-    
-    const currentTfKey = timeframe.toUpperCase() as keyof MultiTimeframeAnalysis;
-    multiTimeframeAnalysis[currentTfKey] = isBullish ? 'Bullish' : 'Bearish';
-    
-    analysisTimeframes.forEach(tf => {
-        if (!multiTimeframeAnalysis[tf]) {
-            multiTimeframeAnalysis[tf] = trends[Math.floor(pseudoRandom(analysisSeed + tf) * 3)];
-        }
-    });
-    
     const requiredTfs: (keyof MultiTimeframeAnalysis)[] = ['5m', '15m', '1H', '4H', 'Daily'];
+    
     requiredTfs.forEach(tf => {
-        if (!multiTimeframeAnalysis[tf]) {
-            multiTimeframeAnalysis[tf] = 'Neutral';
-        }
+      const trend = trends[Math.floor(pseudoRandom(analysisSeed + tf + 'trend') * 3)];
+      const strength = Math.floor(pseudoRandom(analysisSeed + tf + 'strength') * 60 + 40); // Strength from 40 to 100
+      multiTimeframeAnalysis[tf] = { trend, strength };
     });
 
     if (parseInt(mode) >= 2) {
@@ -666,7 +647,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     const tradersChecklist: TradersChecklist = {
         riskRewardPass: riskReward > 1.5,
-        mtfAlignmentPass: multiTimeframeAnalysis[mtfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish') || multiTimeframeAnalysis[htfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish'),
+        mtfAlignmentPass: multiTimeframeAnalysis[mtfAlignmentKey]?.trend === (isBullish ? 'Bullish' : 'Bearish') || multiTimeframeAnalysis[htfAlignmentKey]?.trend === (isBullish ? 'Bullish' : 'Bearish'),
         volumeConfirmationPass: netFlow > 0 === isBullish,
         entryInZonePass: pseudoRandom(analysisSeed + 'entry_zone') > 0.4,
         momentumAlignmentPass: isBullish ? momentum.rating !== 'Overbought' : momentum.rating !== 'Oversold',

@@ -257,11 +257,11 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     fvg: `$${data.fvg[0]} - ${data.fvg[1]}`,
     volumeImbalance: data.volumeImbalance,
     multiTimeframeAnalysis: {
-      '5m': data.multiTimeframeAnalysis['5m'] || 'Neutral',
-      '15m': data.multiTimeframeAnalysis['15m'] || 'Neutral',
-      '1H': data.multiTimeframeAnalysis['1H'] || 'Neutral',
-      '4H': data.multiTimeframeAnalysis['4H'] || 'Neutral',
-      'Daily': data.multiTimeframeAnalysis['Daily'] || 'Neutral',
+      '5m': data.multiTimeframeAnalysis['5m']?.trend || 'Neutral',
+      '15m': data.multiTimeframeAnalysis['15m']?.trend || 'Neutral',
+      '1H': data.multiTimeframeAnalysis['1H']?.trend || 'Neutral',
+      '4H': data.multiTimeframeAnalysis['4H']?.trend || 'Neutral',
+      'Daily': data.multiTimeframeAnalysis['Daily']?.trend || 'Neutral',
     },
     chartPatternName: data.chartPattern.name,
     trendStrength: data.trendStrength.score,
@@ -318,7 +318,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <div className="flex justify-between items-center">
           <div className='flex items-center gap-3'>
             <div className={cn("flex items-center justify-center w-12 h-12 rounded-full", data.isBullish ? 'bg-green-500/20' : 'bg-red-500/20')}>
-              {data.isBullish ? <TrendingUp className="w-8 h-8 text-green-400" /> : <TrendingDown className="w-8 h-8 text-red-500" />}
+              {data.isBullish ? <TrendingUp className="w-8 h-8 text-green-400" /> : <TrendingDown className="w-8 h-8 text-red-400" />}
             </div>
             <div>
               <h3 className="font-headline text-2xl text-foreground">{data.symbol}</h3>

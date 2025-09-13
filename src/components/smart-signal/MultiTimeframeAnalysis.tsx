@@ -2,27 +2,36 @@
 "use client";
 
 import React from 'react';
-import { MultiTimeframeAnalysis as MultiTimeframeAnalysisType, Trend } from '@/types';
+import { MultiTimeframeAnalysis as MultiTimeframeAnalysisType, TimeframeData } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Progress } from '../ui/progress';
 
 interface MultiTimeframeAnalysisProps {
   data: MultiTimeframeAnalysisType;
 }
 
-const TimeframeBadge: React.FC<{ timeframe: string; trend: Trend }> = ({ timeframe, trend }) => {
+const TimeframeCell: React.FC<{ timeframe: string; data: TimeframeData }> = ({ timeframe, data }) => {
+  const { trend, strength } = data;
+  
   const trendClasses = {
-    Bullish: 'bg-green-500/20 text-green-400 border-green-500/50',
-    Bearish: 'bg-red-500/20 text-red-400 border-red-500/50',
-    Neutral: 'bg-gray-500/20 text-gray-400 border-gray-500/50',
+    Bullish: 'text-green-400 border-green-400/50 bg-green-900/40',
+    Bearish: 'text-red-400 border-red-400/50 bg-red-900/40',
+    Neutral: 'text-yellow-400 border-yellow-400/50 bg-yellow-900/40',
   };
+  
+  const progressColor = trend === 'Bullish' ? 'bg-green-500' : trend === 'Bearish' ? 'bg-red-500' : 'bg-yellow-500';
 
   return (
-    <div className="text-center">
-      <div className="text-xs text-foreground/70 mb-1">{timeframe}</div>
-      <Badge variant="outline" className={cn("font-bold", trendClasses[trend])}>
+    <div className={cn("p-3 rounded-lg border text-center space-y-2", trendClasses[trend])}>
+      <div className="font-headline text-lg">{timeframe}</div>
+      <Badge variant="outline" className={cn("font-bold text-base", trendClasses[trend])}>
         {trend}
       </Badge>
+       <div>
+        <Progress value={strength} className="h-2 [&>div]:bg-current" />
+        <div className="text-xs mt-1 font-mono">{strength}% Strength</div>
+       </div>
     </div>
   );
 };
@@ -32,9 +41,9 @@ const MultiTimeframeAnalysis: React.FC<MultiTimeframeAnalysisProps> = ({ data })
   const availableTimeframes = timeframes.filter(tf => data[tf]);
 
   return (
-    <div className="grid grid-cols-5 gap-4 p-4 bg-black/30 rounded-lg border border-primary/20">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 bg-black/30 rounded-lg border border-primary/20">
       {availableTimeframes.map(tf => (
-        <TimeframeBadge key={tf} timeframe={tf} trend={data[tf]!} />
+        <TimeframeCell key={tf} timeframe={tf.toUpperCase()} data={data[tf]!} />
       ))}
     </div>
   );

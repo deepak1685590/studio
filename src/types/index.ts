@@ -41,14 +41,19 @@ export interface Trade {
   pnl: number;
 }
 
+export interface TimeframeData {
+  trend: Trend;
+  strength: number; // 0-100 strength of the trend
+}
+
 export interface MultiTimeframeAnalysis {
-  '5m'?: Trend;
-  '15m'?: Trend;
-  '1H'?: Trend;
-  '4H'?: Trend;
-  'Daily'?: Trend;
-  'Weekly'?: Trend;
-  [key: string]: Trend | undefined;
+  '5m'?: TimeframeData;
+  '15m'?: TimeframeData;
+  '1H'?: TimeframeData;
+  '4H'?: TimeframeData;
+  'Daily'?: TimeframeData;
+  'Weekly'?: TimeframeData;
+  [key: string]: TimeframeData | undefined;
 }
 
 export interface ChartPattern {
