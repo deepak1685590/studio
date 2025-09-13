@@ -77,13 +77,24 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     const { supplyZone, demandZone, fvg } = data;
     const isCrypto = !data.price.toString().includes('.');
     
+    const supplyLow = parseFloat(supplyZone[1]);
+    const supplyHigh = parseFloat(supplyZone[0]);
+    const demandLow = parseFloat(demandZone[1]);
+    const demandHigh = parseFloat(demandZone[0]);
+
+    const isPriceInSupply = livePrice !== null && livePrice >= supplyLow && livePrice <= supplyHigh;
+    const isPriceInDemand = livePrice !== null && livePrice >= demandLow && livePrice <= demandHigh;
+
     return (
         <div>
             <SectionHeader icon={<Building />} title="Institutional Interest" />
             <div className="relative p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
-                <div className="p-3 rounded-lg border-2 text-center bg-red-500/20 border-red-500 shadow-[0_0_15px_theme(colors.red.500)]">
+                <div className={cn(
+                    "p-3 rounded-lg border-2 text-center bg-red-500/20 border-red-500 shadow-[0_0_15px_theme(colors.red.500)] transition-all duration-300",
+                    isPriceInSupply && "animate-pulse shadow-[0_0_25px_theme(colors.red.500)] border-white/80"
+                )}>
                     <h5 className="font-headline text-lg text-white">SUPPLY ZONE</h5>
-                    <p className="font-mono text-xl text-white/90">${parseFloat(supplyZone[1]).toFixed(isCrypto ? 2 : 4)} - ${parseFloat(supplyZone[0]).toFixed(isCrypto ? 2 : 4)}</p>
+                    <p className="font-mono text-xl text-white/90">${supplyLow.toFixed(isCrypto ? 2 : 4)} - ${supplyHigh.toFixed(isCrypto ? 2 : 4)}</p>
                 </div>
 
                 <div className="relative h-40 flex items-center justify-center">
@@ -115,7 +126,7 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
                         <div 
                             className="absolute w-full h-0.5 bg-primary transition-all duration-200 ease-linear z-10"
                             style={{ 
-                                top: `${( (parseFloat(supplyZone[0]) - livePrice) / (parseFloat(supplyZone[0]) - parseFloat(demandZone[1])) ) * 100}%`,
+                                top: `${( (supplyHigh - livePrice) / (supplyHigh - demandLow) ) * 100}%`,
                                 boxShadow: '0 0 10px hsl(var(--primary))' 
                             }}
                         >
@@ -126,9 +137,12 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
                     )}
                 </div>
                 
-                <div className="p-3 rounded-lg border-2 text-center bg-green-500/20 border-green-500 shadow-[0_0_15px_theme(colors.green.500)]">
+                <div className={cn(
+                    "p-3 rounded-lg border-2 text-center bg-green-500/20 border-green-500 shadow-[0_0_15px_theme(colors.green.500)] transition-all duration-300",
+                    isPriceInDemand && "animate-pulse shadow-[0_0_25px_theme(colors.green.500)] border-white/80"
+                )}>
                     <h5 className="font-headline text-lg text-white">DEMAND ZONE</h5>
-                    <p className="font-mono text-xl text-white/90">${parseFloat(demandZone[1]).toFixed(isCrypto ? 2 : 4)} - ${parseFloat(demandZone[0]).toFixed(isCrypto ? 2 : 4)}</p>
+                    <p className="font-mono text-xl text-white/90">${demandLow.toFixed(isCrypto ? 2 : 4)} - ${demandHigh.toFixed(isCrypto ? 2 : 4)}</p>
                 </div>
 
                 <div className="text-center text-sm text-foreground/80 pt-2">
