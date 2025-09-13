@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -21,6 +22,7 @@ import { Label } from '../ui/label';
 import LiquidityTargetAlert from './LiquidityTargetAlert';
 import QuantumSuperTrendMatrix from './QuantumSuperTrendMatrix';
 import QuantumPivotsMatrix from './QuantumPivotsMatrix';
+import QuantumOrderBlockMatrix from './QuantumOrderBlockMatrix';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -305,6 +307,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       <QuantumPivotsMatrix data={data.multiTimeframeSR} livePrice={realtimePrice} />
 
       <QuantumEntryMatrix data={data} livePrice={realtimePrice} />
+
+      {data.orderBlock && <QuantumOrderBlockMatrix orderBlock={data.orderBlock} entryPrice={entryPriceNum} />}
 
       <SectionWrapper>
         <div className="grid grid-cols-1">

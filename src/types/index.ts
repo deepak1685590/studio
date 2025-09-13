@@ -1,6 +1,7 @@
 
 
 
+
 import type { GenerateAiInsightInput as GenkitGenerateAiInsightInput, GenerateAiInsightOutput as GenkitGenerateAiInsightOutput } from "@/ai/flows/generate-ai-insight";
 import type { OracleInsightInput as GenkitOracleInsightInput } from "@/ai/flows/oracle-insight";
 
@@ -96,6 +97,14 @@ export interface SniperZone {
     max: string;
 }
 
+export interface OrderBlock {
+    type: 'BULLISH' | 'BEARISH';
+    top: string;
+    bottom: string;
+    meanThreshold: string;
+    significance: string;
+}
+
 export interface ConfidenceBreakdown {
   overall: number;
   patternStrength: number;
@@ -187,8 +196,8 @@ export interface SuperTrendAnalysis {
     superTrendLine: number;
     momentumDecay: number; // 0-100, higher means trend is weakening
     trendStrength: number; // 0-100, overall strength of the current trend phase
-    entrySignal: number; // Price at which to consider entering a trade
-    exitSignal: number; // Price at which to consider exiting a trade
+    entrySignal: number;
+    exitSignal: number;
 }
 
 export interface AdvancedStrengthDashboardData {
@@ -290,6 +299,7 @@ export interface SignalData {
   goldenPullbackZone?: GoldenPullbackZone;
   goldenReverseZone?: GoldenPullbackZone;
   sniperZone?: SniperZone;
+  orderBlock?: OrderBlock;
   confidenceBreakdown: ConfidenceBreakdown;
   movingAverageAnalysis: MovingAverageAnalysis;
   trendStrength: TrendStrength;

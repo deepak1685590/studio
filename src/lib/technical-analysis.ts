@@ -5,7 +5,8 @@
 
 
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis } from '@/types';
+
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -193,7 +194,7 @@ const generateVolumeAnalysis = (seed: string): VolumeAnalysis => {
     return analysis as VolumeAnalysis;
 }
 
-const generateMultiTimeframeSR = (price: number, klines: any[], isBullish: boolean): MultiTimeframeSR => {
+const generateMultiTimeframeSR = (price: number, klines: any[], isBullish: boolean, seed: string): MultiTimeframeSR => {
     const sr: Partial<MultiTimeframeSR> = {};
     const tfs: (keyof MultiTimeframeSR)[] = ['5m', '15m', '1H'];
 
@@ -259,19 +260,17 @@ const generateSuperTrendAnalysis = (price: number, atr: number, isBullish: boole
         status = isBullish ? 'Uptrend Developing' : 'Downtrend Developing';
     }
 
-    // New ATR-based calculation for entry/exit
+    // ATR-based calculation for entry/exit
     const strengthScore = 100 - momentumDecay;
-    const entryOffset = atr * 0.5; // Entry signal is 0.5 ATR away from the ST line
-    const exitOffset = atr * 0.5;  // Exit signal is also 0.5 ATR away, on the other side
+    const entryOffset = atr * 0.5;
+    const exitOffset = atr * 0.5;
 
     let entrySignalPrice, exitSignalPrice;
 
     if (isBullish) {
-        // For a long, you want to enter above the line and exit below it.
         entrySignalPrice = superTrendLine + entryOffset;
         exitSignalPrice = superTrendLine - exitOffset;
     } else {
-        // For a short, you want to enter below the line and exit above it.
         entrySignalPrice = superTrendLine - entryOffset;
         exitSignalPrice = superTrendLine + exitOffset;
     }
@@ -375,6 +374,29 @@ const generateAdvancedStrengthData = (price: number, closes: number[], volumes: 
         rsiStatus,
         divergence,
         stochRsi: { k: stochRsiK, d: stochRsiD, signal: stochSignal }
+    };
+};
+
+const generateOrderBlock = (swingHigh: number, swingLow: number, isBullish: boolean, seed: string): OrderBlock => {
+    let top, bottom;
+    const range = swingHigh - swingLow;
+    if (isBullish) {
+        // A bullish OB is a down-candle before an up-move. We simulate this near a swing low.
+        bottom = swingLow * (1 + pseudoRandom(seed + 'ob_bottom') * 0.005);
+        top = bottom * (1 + pseudoRandom(seed + 'ob_range') * 0.01);
+    } else {
+        // A bearish OB is an up-candle before a down-move. We simulate this near a swing high.
+        top = swingHigh * (1 - pseudoRandom(seed + 'ob_top') * 0.005);
+        bottom = top * (1 - pseudoRandom(seed + 'ob_range') * 0.01);
+    }
+    const meanThreshold = (top + bottom) / 2;
+
+    return {
+        type: isBullish ? 'BULLISH' : 'BEARISH',
+        top: top.toFixed(isCrypto(seed) ? 2 : 4),
+        bottom: bottom.toFixed(isCrypto(seed) ? 2 : 4),
+        meanThreshold: meanThreshold.toFixed(isCrypto(seed) ? 2 : 4),
+        significance: "High probability reversal zone based on institutional order flow."
     };
 };
 
@@ -510,7 +532,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const reversalConfirmed = pseudoRandom(analysisSeed + 'reversal') > 0.6;
     
     const volumeAnalysis = generateVolumeAnalysis(analysisSeed);
-    const multiTimeframeSR = generateMultiTimeframeSR(price, klines, isBullish);
+    const multiTimeframeSR = generateMultiTimeframeSR(price, klines, isBullish, analysisSeed);
     const liquidityMatrix = generateLiquidityMatrixData(price, swingHigh, swingLow, isBullish, analysisSeed);
     
     // --- Momentum (RSI simulation) ---
@@ -791,6 +813,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         confluenceFactors.push(`🎯 QUANTUM SNIPER ZONE IDENTIFIED`);
     }
 
+    const orderBlock = generateOrderBlock(swingHigh, swingLow, isBullish, analysisSeed);
+
 
     return {
         symbol: symbol.toUpperCase(),
@@ -841,6 +865,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         goldenPullbackZone,
         goldenReverseZone,
         sniperZone,
+        orderBlock,
         confidenceBreakdown,
         movingAverageAnalysis,
         trendStrength,
