@@ -9,7 +9,7 @@ import { getSignalData } from '@/lib/technical-analysis';
 import type { SignalData, BookTicker } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
-import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Layers } from 'lucide-react';
+import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Layers, Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timeframe, LiveTradeData } from '@/types';
 import jsPDF from 'jspdf';
@@ -53,6 +53,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showChart, setShowChart] = useState(true);
+  const [showSimulator, setShowSimulator] = useState(true);
 
 
   const { toast } = useToast();
@@ -312,12 +313,21 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
                     className={cn("bg-input text-foreground", inputColor)}
                 />
             </div>
-            <div className="flex items-center space-x-2 shrink-0">
-                <Switch id="show-chart" checked={showChart} onCheckedChange={setShowChart} />
-                <Label htmlFor="show-chart" className="flex items-center gap-1 font-bold text-primary/80">
-                    {showChart ? <Eye size={16} /> : <EyeOff size={16} />}
-                    Show Chart
-                </Label>
+            <div className="flex items-center space-x-4 shrink-0">
+                <div className="flex items-center space-x-2">
+                    <Switch id="show-chart" checked={showChart} onCheckedChange={setShowChart} />
+                    <Label htmlFor="show-chart" className="flex items-center gap-1 font-bold text-primary/80">
+                        {showChart ? <Eye size={16} /> : <EyeOff size={16} />}
+                        Chart
+                    </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Switch id="show-simulator" checked={showSimulator} onCheckedChange={setShowSimulator} />
+                    <Label htmlFor="show-simulator" className="flex items-center gap-1 font-bold text-primary/80">
+                        <Wallet size={16} />
+                        Simulator
+                    </Label>
+                </div>
             </div>
         </div>
         
@@ -394,7 +404,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
                 </Button>
             </div>
             
-            {signalData && <TradingSimulator signalData={signalData} livePrice={realtimePrice} />}
+            {showSimulator && signalData && <TradingSimulator signalData={signalData} livePrice={realtimePrice} />}
             {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} bookTicker={bookTicker} />}
           </div>
         )}
@@ -426,3 +436,4 @@ export default SmartSignalWidget;
     
 
     
+
