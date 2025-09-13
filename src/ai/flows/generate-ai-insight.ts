@@ -179,8 +179,8 @@ const generateAiInsightFlow = ai.defineFlow(
             format: 'json',
             schema: GenerateAiInsightOutputSchema,
         },
-        prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for ${input.symbol}.
-        First, use the getMarketNews tool to fetch the latest headlines for ${input.symbol}.
+        prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for {{{symbol}}}.
+        First, use the getMarketNews tool to fetch the latest headlines for {{{symbol}}}.
         Then, synthesize ALL the provided data into the structured JSON format below.
         
         **Crucially, based on your holistic analysis of all provided data, you must derive and populate the 'tradeSetup' section with your own optimized primary entry, stop-loss, and take-profit levels. Provide a brief rationale for your choices.**
@@ -190,11 +190,11 @@ const generateAiInsightFlow = ai.defineFlow(
         For the 'predictedTarget', provide distinct price targets for short-term (scalp/5-15m), intraday (1-4h), and swing (daily/weekly) timeframes based on the overall analysis.
 
         ## Analysis Parameters
-        - Asset: ${input.symbol}
-        - Current Price: $${input.price}
+        - Asset: {{{symbol}}}
+        - Current Price: $
         - Analysis Timestamp: ${new Date().toISOString()}
-        - Market Session: ${input.marketSession}
-        - Volatility Regime: ${input.volatilityRegime}
+        - Market Session: {{{marketSession}}}
+        - Volatility Regime: {{{volatilityRegime}}}
         `,
         input: input,
       });
