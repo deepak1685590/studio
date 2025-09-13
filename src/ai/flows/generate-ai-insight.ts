@@ -227,8 +227,14 @@ const generateAiInsightFlow = ai.defineFlow(
 
        } catch (fallbackError) {
          console.error("Fallback AI Generation Error:", fallbackError);
-         const errorMessage = fallbackError instanceof Error ? fallbackError.message : "An unknown internal error occurred on the fallback model.";
-         errorPayload.executiveSummary.timeHorizon = `Primary model failed and fallback also failed: ${errorMessage}`;
+         
+         // Check for specific quota error
+         const errorMessage = fallbackError instanceof Error ? fallbackError.message : "An unknown internal error occurred.";
+         if (errorMessage.includes("429") || errorMessage.includes("QuotaFailure")) {
+            errorPayload.executiveSummary.timeHorizon = "The daily API quota has been exceeded. This feature will be available again tomorrow. Please check your billing details for more information.";
+         } else {
+            errorPayload.executiveSummary.timeHorizon = `Primary model failed and fallback also failed: ${errorMessage}`;
+         }
          return errorPayload;
        }
     }
