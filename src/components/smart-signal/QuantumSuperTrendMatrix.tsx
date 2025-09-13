@@ -4,15 +4,26 @@
 import React from 'react';
 import { SuperTrendAnalysis } from '@/types';
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown, Hourglass, PauseCircle, Zap } from 'lucide-react';
+import { TrendingUp, TrendingDown, Hourglass, PauseCircle, Zap, Power, LogIn, LogOut, ShieldAlert } from 'lucide-react';
 import { Progress } from '../ui/progress';
 
 interface QuantumSuperTrendMatrixProps {
   analysis: SuperTrendAnalysis;
 }
 
+const InfoBox: React.FC<{ title: string; value: string; icon: React.ReactNode; color: string; }> = ({ title, value, icon, color }) => (
+    <div className="text-center">
+        <div className={cn("flex items-center justify-center gap-1 text-sm", color)}>
+            {icon} {title}
+        </div>
+        <div className={cn("font-mono text-xl font-bold", color)} style={{ textShadow: `0 0 8px currentColor`}}>
+            ${value}
+        </div>
+    </div>
+);
+
 const QuantumSuperTrendMatrix: React.FC<QuantumSuperTrendMatrixProps> = ({ analysis }) => {
-  const { status, superTrendLine, momentumDecay } = analysis;
+  const { status, superTrendLine, trendStrength, entrySignal, exitSignal, momentumDecay } = analysis;
 
   const config = {
     'Uptrend Developing': { icon: <TrendingUp />, color: 'text-cyan-400', bg: 'bg-cyan-900/30', border: 'border-cyan-500/50', shadow: 'shadow-cyan-500/30' },
@@ -24,30 +35,50 @@ const QuantumSuperTrendMatrix: React.FC<QuantumSuperTrendMatrixProps> = ({ analy
   }[status];
   
   const isUp = status.includes('Uptrend');
-  const isDown = status.includes('Downtrend');
 
   return (
-    <div className={cn("p-4 rounded-lg border-2 grid grid-cols-1 md:grid-cols-3 gap-4 items-center", config.bg, config.border, `shadow-[0_0_20px_var(--tw-shadow-color)]`)}>
-      <div className="md:col-span-1 flex flex-col items-center text-center">
-        <div className={cn("flex items-center gap-2 font-headline text-lg", config.color)}>
-          {config.icon}
-          {status}
+    <div className={cn("p-4 rounded-lg border-2 space-y-4", config.bg, config.border, `shadow-[0_0_20px_var(--tw-shadow-color)]`)}>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex flex-col items-center text-center">
+            <div className={cn("flex items-center gap-2 font-headline text-lg", config.color)}>
+            {config.icon}
+            {status}
+            </div>
+        </div>
+        <div className="w-full md:w-auto flex items-center gap-2">
+            <div className="text-sm text-foreground/70 flex items-center justify-center gap-1">
+                <Power size={14} /> Trend Strength
+            </div>
+            <Progress value={trendStrength} className={cn("h-3 w-24", "[&>div]:bg-current", config.color)} />
+            <span className={cn("font-mono font-bold text-lg", config.color)}>{trendStrength}%</span>
+        </div>
+        <div className="w-full md:w-auto flex items-center gap-2">
+            <div className="text-sm text-foreground/70 flex items-center justify-center gap-1">
+                <ShieldAlert size={14} /> Trend Exhaustion
+            </div>
+            <Progress value={momentumDecay} className="h-3 w-24 [&>div]:bg-yellow-400" />
+            <span className="font-mono font-bold text-lg text-yellow-400">{momentumDecay}%</span>
         </div>
       </div>
-      <div className="md:col-span-1 text-center">
-        <div className="text-sm text-foreground/70">SuperTrend Line</div>
-        <div className={cn("font-mono text-2xl font-bold", isUp ? 'text-green-300' : isDown ? 'text-red-300' : 'text-primary')}>
-            ${superTrendLine.toFixed(2)}
-        </div>
-      </div>
-       <div className="md:col-span-1 text-center">
-        <div className="text-sm text-foreground/70 flex items-center justify-center gap-1">
-            <Zap size={14} /> Momentum Decay
-        </div>
-        <div className="flex items-center gap-2">
-            <Progress value={momentumDecay} className={cn("h-3", "[&>div]:bg-current", config.color)} />
-            <span className={cn("font-mono font-bold text-lg", config.color)}>{momentumDecay}%</span>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-primary/20">
+         <InfoBox 
+            title={isUp ? "Long Entry Signal" : "Short Entry Signal"}
+            value={entrySignal.toFixed(2)}
+            icon={<LogIn size={16}/>}
+            color={isUp ? "text-green-400" : "text-red-400"}
+         />
+          <InfoBox 
+            title="SuperTrend Line"
+            value={superTrendLine.toFixed(2)}
+            icon={<Zap size={16}/>}
+            color="text-primary"
+         />
+         <InfoBox 
+            title={isUp ? "Long Exit Signal" : "Short Exit Signal"}
+            value={exitSignal.toFixed(2)}
+            icon={<LogOut size={16}/>}
+            color="text-yellow-400"
+         />
       </div>
     </div>
   );

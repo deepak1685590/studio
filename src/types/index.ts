@@ -1,4 +1,5 @@
 
+
 import type { GenerateAiInsightInput as GenkitGenerateAiInsightInput, GenerateAiInsightOutput as GenkitGenerateAiInsightOutput } from "@/ai/flows/generate-ai-insight";
 import type { OracleInsightInput as GenkitOracleInsightInput } from "@/ai/flows/oracle-insight";
 
@@ -188,6 +189,9 @@ export interface SuperTrendAnalysis {
     status: 'Uptrend Developing' | 'Uptrend Mature' | 'Downtrend Developing' | 'Downtrend Mature' | 'Trend Exhaustion' | 'Consolidation';
     superTrendLine: number;
     momentumDecay: number; // 0-100, higher means trend is weakening
+    trendStrength: number; // 0-100, overall strength of the current trend phase
+    entrySignal: number; // Price at which to consider entering a trade
+    exitSignal: number; // Price at which to consider exiting a trade
 }
 
 export interface AdvancedStrengthDashboardData {

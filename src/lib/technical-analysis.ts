@@ -1,5 +1,6 @@
 
 
+
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
@@ -202,13 +203,12 @@ const generateMultiTimeframeSR = (price: number, seed: string, isBullish: boolea
 const generateSuperTrendAnalysis = (price: number, atr: number, isBullish: boolean, trendStrength: TrendStrength, momentum: Momentum, seed: string): SuperTrendAnalysis => {
     let status: SuperTrendAnalysis['status'];
     const superTrendLine = isBullish ? price - atr * 2 : price + atr * 2;
-    let momentumDecay = 0; // 0-100
+    let momentumDecay = 0;
 
     // Simulate momentum decay
     if ((isBullish && momentum.rating === 'Overbought') || (!isBullish && momentum.rating === 'Oversold')) {
         momentumDecay = Math.floor(pseudoRandom(seed + 'decay_extreme') * 40 + 60); // 60-100
     } else if ((isBullish && momentum.rating === 'Bearish') || (!isBullish && momentum.rating === 'Bullish')) {
-        // Divergence scenario
         momentumDecay = Math.floor(pseudoRandom(seed + 'decay_div') * 30 + 50); // 50-80
     } else {
         momentumDecay = Math.floor(pseudoRandom(seed + 'decay_normal') * 40); // 0-40
@@ -224,11 +224,19 @@ const generateSuperTrendAnalysis = (price: number, atr: number, isBullish: boole
     } else {
         status = isBullish ? 'Uptrend Developing' : 'Downtrend Developing';
     }
+
+    // New calculated fields
+    const strengthScore = 100 - momentumDecay; // Inverse of decay
+    const entrySignalPrice = isBullish ? superTrendLine * 1.001 : superTrendLine * 0.999;
+    const exitSignalPrice = isBullish ? superTrendLine * 0.999 : superTrendLine * 1.001;
     
     return {
         status,
         superTrendLine: parseFloat(superTrendLine.toFixed(isCrypto(seed) ? 2 : 4)),
         momentumDecay,
+        trendStrength: strengthScore,
+        entrySignal: parseFloat(entrySignalPrice.toFixed(isCrypto(seed) ? 2 : 4)),
+        exitSignal: parseFloat(exitSignalPrice.toFixed(isCrypto(seed) ? 2 : 4)),
     };
 };
 
