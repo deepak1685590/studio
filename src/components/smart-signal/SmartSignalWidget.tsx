@@ -99,65 +99,60 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       setRealtimePrice(data.price);
       previousPriceRef.current = data.price;
 
-      if (typeof window !== 'undefined') {
-        const isSupportedCrypto = cryptoAssetsForWebsocket.includes(data.symbol.toUpperCase());
-        
-        if (isSupportedCrypto) {
-          const wsSymbol = data.symbol.toLowerCase() + 'usdt';
-          const streams = `${wsSymbol}@trade/${wsSymbol}@bookTicker`;
-          const socket = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
-          ws.current = socket;
+      if (typeof window !== 'undefined' && cryptoAssetsForWebsocket.includes(data.symbol.toUpperCase())) {
+        const wsSymbol = data.symbol.toLowerCase() + 'usdt';
+        const streams = `${wsSymbol}@trade/${wsSymbol}@bookTicker`;
+        const socket = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+        ws.current = socket;
 
-          socket.onopen = () => console.log(`WebSocket connected for ${streams}`);
-          socket.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            const stream = message.stream;
-            const messageData = message.data;
-            
-            // Ensure the message is for the current symbol before updating state
-            if (currentSymbolRef.current.toLowerCase() + 'usdt' !== messageData.s.toLowerCase()) {
-                return;
-            }
-            
-            if (stream.endsWith('@trade')) {
-                const newPrice = parseFloat(messageData.p);
-                const newQuantity = parseFloat(messageData.q);
-                
-                setRealtimePrice(newPrice);
-                
-                let direction: 'up' | 'down' | 'neutral' = 'neutral';
-                if (previousPriceRef.current !== null) {
-                  if (newPrice > previousPriceRef.current) {
-                    direction = 'up';
-                  } else if (newPrice < previousPriceRef.current) {
-                    direction = 'down';
-                  }
+        socket.onopen = () => console.log(`WebSocket connected for ${streams}`);
+        socket.onmessage = (event) => {
+          const message = JSON.parse(event.data);
+          const stream = message.stream;
+          const messageData = message.data;
+          
+          if (currentSymbolRef.current.toLowerCase() + 'usdt' !== messageData.s.toLowerCase()) {
+              return;
+          }
+          
+          if (stream.endsWith('@trade')) {
+              const newPrice = parseFloat(messageData.p);
+              const newQuantity = parseFloat(messageData.q);
+              
+              setRealtimePrice(newPrice);
+              
+              let direction: 'up' | 'down' | 'neutral' = 'neutral';
+              if (previousPriceRef.current !== null) {
+                if (newPrice > previousPriceRef.current) {
+                  direction = 'up';
+                } else if (newPrice < previousPriceRef.current) {
+                  direction = 'down';
                 }
-                setPriceDirection(direction);
-                
-                setLiveTradeData({
-                    volume: newQuantity,
-                    side: direction === 'up' ? 'Buy' : direction === 'down' ? 'Sell' : 'Neutral'
-                });
+              }
+              setPriceDirection(direction);
+              
+              setLiveTradeData({
+                  volume: newQuantity,
+                  side: direction === 'up' ? 'Buy' : direction === 'down' ? 'Sell' : 'Neutral'
+              });
 
-                previousPriceRef.current = newPrice;
-            } else if (stream.endsWith('@bookTicker')) {
-                setBookTicker({
-                    bidPrice: parseFloat(messageData.b),
-                    askPrice: parseFloat(messageData.a)
-                });
-            }
-          };
-          socket.onerror = (error) => {
-            console.error('WebSocket Error:', error);
-          };
-          socket.onclose = () => {
-            console.log(`WebSocket disconnected for ${streams}`);
-            if (ws.current === socket) {
-              ws.current = null;
-            }
-          };
-        }
+              previousPriceRef.current = newPrice;
+          } else if (stream.endsWith('@bookTicker')) {
+              setBookTicker({
+                  bidPrice: parseFloat(messageData.b),
+                  askPrice: parseFloat(messageData.a)
+              });
+          }
+        };
+        socket.onerror = (error) => {
+          console.error('WebSocket Error:', error);
+        };
+        socket.onclose = () => {
+          console.log(`WebSocket disconnected for ${streams}`);
+          if (ws.current === socket) {
+            ws.current = null;
+          }
+        };
       }
 
     } catch (error) {
