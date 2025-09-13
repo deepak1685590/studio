@@ -55,7 +55,7 @@ const QuantumOrderBlockMatrix: React.FC<QuantumOrderBlockMatrixProps> = ({ order
         {isEntryInZone && (
             <div className="flex items-center justify-center gap-2 p-2 rounded-md bg-primary/20 border border-primary/50 text-primary font-bold animate-pulse">
                 <CheckCircle2 size={18} />
-                <span>Entry Confirmed Inside Order Block</span>
+                <span>{isBullish ? 'Long' : 'Short'} Entry Confirmed Inside Order Block</span>
                 <Target size={18} />
             </div>
         )}
