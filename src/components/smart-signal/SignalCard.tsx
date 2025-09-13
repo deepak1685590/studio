@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -85,12 +86,30 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
                     <p className="font-mono text-xl text-white/90">${parseFloat(supplyZone[1]).toFixed(isCrypto ? 2 : 4)} - ${parseFloat(supplyZone[0]).toFixed(isCrypto ? 2 : 4)}</p>
                 </div>
 
-                <div className="relative h-20 flex items-center justify-center">
-                    <div className="h-full w-full bg-purple-500/20 border-y-2 border-dashed border-purple-500/50 flex items-center justify-center">
+                <div className="relative h-40 flex items-center justify-center">
+                    <div className="h-full w-full bg-purple-500/20 border-y-2 border-dashed border-purple-500/50 flex flex-col items-center justify-center p-2 gap-2">
                         <div className="text-center">
                             <h5 className="font-headline text-purple-300">FVG (Fair Value Gap)</h5>
                             <p className="font-mono text-sm text-purple-300/80">${parseFloat(fvg[1]).toFixed(isCrypto ? 2 : 4)} - ${parseFloat(fvg[0]).toFixed(isCrypto ? 2 : 4)}</p>
                         </div>
+                         <Alert className="border-cyan-400 bg-cyan-900/40 text-cyan-300 p-2">
+                            <Layers className="h-4 w-4 text-cyan-300" />
+                            <AlertTitle className="font-headline text-sm text-cyan-300">
+                                FVG Long Breakout
+                            </AlertTitle>
+                            <AlertDescription className="font-mono text-base text-white/90">
+                                ${data.fvg[1]}
+                            </AlertDescription>
+                        </Alert>
+                         <Alert className="border-orange-400 bg-orange-900/40 text-orange-300 p-2">
+                            <Layers className="h-4 w-4 text-orange-300" />
+                            <AlertTitle className="font-headline text-sm text-orange-300">
+                                FVG Short Breakdown
+                            </AlertTitle>
+                            <AlertDescription className="font-mono text-base text-white/90">
+                                ${data.fvg[0]}
+                            </AlertDescription>
+                        </Alert>
                     </div>
                     {livePrice !== null && (
                         <div 
@@ -285,7 +304,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <div className="flex justify-between items-center">
           <div className='flex items-center gap-3'>
             <div className={cn("flex items-center justify-center w-12 h-12 rounded-full", data.isBullish ? 'bg-green-500/20' : 'bg-red-500/20')}>
-              {data.isBullish ? <TrendingUp className="w-8 h-8 text-green-400" /> : <TrendingDown className="w-8 h-8 text-red-400" />}
+              {data.isBullish ? <TrendingUp className="w-8 h-8 text-green-400" /> : <TrendingDown className="w-8 h-8 text-red-500" />}
             </div>
             <div>
               <h3 className="font-headline text-2xl text-foreground">{data.symbol}</h3>
@@ -383,28 +402,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
       
       <InstitutionalInterest data={data} livePrice={displayPrice} />
-
-      {data.isBullish ? (
-        <Alert className="border-cyan-400 bg-gradient-to-br from-cyan-900/40 to-black text-cyan-300 shadow-[0_0_15px_hsl(180_100%_45.1%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(180_100%_45.1%_/_0.8)]">
-            <Layers className="h-5 w-5 text-cyan-300" />
-            <AlertTitle className="font-headline text-lg text-cyan-300">
-                FVG Long Breakout Level
-            </AlertTitle>
-            <AlertDescription className="font-mono text-xl mt-1 text-white/90">
-                ${data.fvg[1]}
-            </AlertDescription>
-        </Alert>
-      ) : (
-        <Alert className="border-orange-400 bg-gradient-to-br from-orange-900/40 to-black text-orange-300 shadow-[0_0_15px_hsl(24_9.8%_10%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(24_9.8%_10%_/_0.8)]">
-            <Layers className="h-5 w-5 text-orange-300" />
-            <AlertTitle className="font-headline text-lg text-orange-300">
-                FVG Short Breakdown Level
-            </AlertTitle>
-            <AlertDescription className="font-mono text-xl mt-1 text-white/90">
-                ${data.fvg[0]}
-            </AlertDescription>
-        </Alert>
-      )}
 
       <ConfidenceBreakdown 
         breakdown={data.confidenceBreakdown} 
