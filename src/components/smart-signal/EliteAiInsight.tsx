@@ -75,7 +75,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
     toast({ title: 'Success', description: 'Elite AI Report copied to clipboard!' });
   };
 
-  const renderSection = (title: string, content: Record<string, string | object>) => (
+  const renderSection = (title: string, content: Record<string, string | object | undefined>) => (
     <AccordionItem value={title}>
       <AccordionTrigger className="font-headline text-primary/90 text-md">{title}</AccordionTrigger>
       <AccordionContent className="space-y-2 text-sm text-foreground/80 pl-2">
@@ -96,10 +96,12 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
             );
           }
           return (
-            <div key={key}>
-              <strong className="text-primary/70 block">{key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:</strong>
-              <p className="whitespace-pre-wrap">{value as string}</p>
-            </div>
+             value && (
+              <div key={key}>
+                <strong className="text-primary/70 block">{key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:</strong>
+                <p className="whitespace-pre-wrap">{value as string}</p>
+              </div>
+            )
           )
         })}
       </AccordionContent>
@@ -147,6 +149,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
 
             <Accordion type="single" collapsible defaultValue="Executive Summary">
               {renderSection("Executive Summary", insight.executiveSummary)}
+              {insight.tradeSetup && renderSection("AI-Optimized Trade Setup", insight.tradeSetup)}
               {renderSection("Technical Analysis", insight.technicalAnalysis)}
               {renderSection("Risk Management", insight.riskManagement)}
               {renderSection("Sentiment & Flow", insight.sentimentAndFlow)}

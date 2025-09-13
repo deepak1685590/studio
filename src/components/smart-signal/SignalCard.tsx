@@ -5,7 +5,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import type { SignalData } from '@/types';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp, Layers, MoveVertical, GitBranch, GitPullRequest, Replace } from 'lucide-react';
+import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp, Layers, MoveVertical, GitBranch, GitPullRequest, Replace, Shield, LogIn } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,7 @@ import LiquidityTargetAlert from './LiquidityTargetAlert';
 import QuantumSuperTrendMatrix from './QuantumSuperTrendMatrix';
 import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 import QuantumOrderBlockMatrix from './QuantumOrderBlockMatrix';
+import PredictiveAnalysis from './PredictiveAnalysis';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -203,12 +204,49 @@ const SmartMoneyConcepts: React.FC<{ data: SignalData, trendColor: string }> = (
   );
 }
 
+const LevelRow: React.FC<{
+  label: string;
+  value: string;
+  isHit?: boolean;
+  type: 'entry' | 'sl' | 'tp';
+  icon: React.ReactNode;
+}> = ({ label, value, isHit, type, icon }) => {
+  
+  const typeClasses = {
+    entry: 'border-accent text-accent shadow-accent/40',
+    sl: 'border-red-500/80 text-red-400 shadow-red-500/40',
+    tp: 'border-green-500/80 text-green-400 shadow-green-500/40',
+  };
+
+  const achievedClasses = {
+    entry: 'bg-accent/20',
+    sl: 'bg-red-500/20',
+    tp: 'bg-green-500/20',
+  }
+  
+  return (
+    <div className={cn(
+      "flex justify-between items-center p-2 rounded-lg border-2 transition-all duration-300", 
+      typeClasses[type],
+      isHit && `shadow-[0_0_20px_var(--tw-shadow-color)] ${achievedClasses[type]}`
+    )}>
+      <div className="flex items-center gap-2 font-headline text-base">
+        {isHit ? <CheckCircle2 size={18} className="text-current" /> : icon}
+        {label}
+      </div>
+      <span className="font-mono font-bold text-xl text-white/90">${value}</span>
+    </div>
+  );
+};
+
 
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
   
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
   const isCrypto = !data.symbol.includes('/');
   const [hitTargets, setHitTargets] = useState({ entry: false, tp1: false, tp2: false });
+  const [aiInsight, setAiInsight] = useState<GenerateAiInsightOutput | null>(null);
+  const [isLoadingAi, setIsLoadingAi] = useState(false);
 
   const entryPriceNum = useMemo(() => parseFloat(data.entry), [data.entry]);
   const tp1PriceNum = useMemo(() => parseFloat(data.tp1), [data.tp1]);
@@ -217,7 +255,52 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
   useEffect(() => {
     setHitTargets({ entry: false, tp1: false, tp2: false });
+    setAiInsight(null);
   }, [data]);
+  
+   useEffect(() => {
+    const fetchAiInsight = async () => {
+      if ((mode === '3' || mode === '4') && data && !data.sidewaysMarket) {
+        setIsLoadingAi(true);
+        try {
+          const insightInput: GenerateAiInsightInput = {
+              symbol: data.symbol,
+              price: data.price,
+              isBullish: data.isBullish,
+              action: data.action,
+              entry: parseFloat(data.entry),
+              sl: parseFloat(data.sl),
+              tp1: parseFloat(data.tp1),
+              tp2: parseFloat(data.tp2),
+              confluenceCount: data.confluenceCount,
+              demandZone: `$${data.demandZone[0]} - ${data.demandZone[1]}`,
+              fvg: `$${data.fvg[0]} - ${data.fvg[1]}`,
+              volumeImbalance: data.volumeImbalance,
+              multiTimeframeAnalysis: {
+                '5m': data.multiTimeframeAnalysis['5m']?.trend || 'Neutral',
+                '15m': data.multiTimeframeAnalysis['15m']?.trend || 'Neutral',
+                '1H': data.multiTimeframeAnalysis['1H']?.trend || 'Neutral',
+                '4H': data.multiTimeframeAnalysis['4H']?.trend || 'Neutral',
+                'Daily': data.multiTimeframeAnalysis['Daily']?.trend || 'Neutral',
+              },
+              chartPatternName: data.chartPattern.name,
+              trendStrength: data.trendStrength.score,
+              momentum: data.momentum.score,
+              marketSession: "New York", 
+              volatilityRegime: "Medium", 
+          };
+          const result = await generateAiInsight(insightInput);
+          setAiInsight(result);
+        } catch (error) {
+          console.error("Failed to fetch Elite AI Insight for SignalCard:", error);
+          setAiInsight(null);
+        } finally {
+          setIsLoadingAi(false);
+        }
+      }
+    };
+    fetchAiInsight();
+  }, [data, mode]);
 
   useEffect(() => {
     if (realtimePrice === null) return;
@@ -249,23 +332,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
   const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; 
   const trendColor = data.isBullish ? 'text-green-400' : 'text-red-400';
   
-  const achievedClass = data.isBullish
-    ? "bg-green-500/20 text-green-300 shadow-[0_0_15px_theme(colors.green.400)]"
-    : "bg-red-500/20 text-red-300 shadow-[0_0_15px_theme(colors.red.500)]";
-
-  const LevelRow = ({ label, value, isHit, isConfluence }: { label: string; value: string; isHit: boolean; isConfluence?: boolean; }) => (
-    <div className={cn("flex justify-between items-center text-lg my-2 p-2 rounded-md border transition-all duration-300", 
-      isHit ? achievedClass : "border-transparent"
-    )}>
-      <span className="text-foreground/80 text-base flex items-center gap-2">
-        {isHit && <Check size={16} />} 
-        {isConfluence && <CheckCircle2 size={14} className="text-primary/70" title="Confluence Price" />}
-        {label}:
-      </span>
-      <span className={cn("font-mono font-bold text-xl", trendColor)}>${value}</span>
-    </div>
-  );
-
   return (
     <div id="signal-card-content" className={cn(
         "mt-5 p-5 bg-black/70 border-2 rounded-xl text-sm leading-relaxed shadow-lg space-y-4",
@@ -299,6 +365,39 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       </header>
       
       {isNearEntry && !hitTargets.entry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
+
+      <SectionWrapper>
+        <div className="grid grid-cols-1 gap-2">
+            <div className="flex justify-between items-center p-2">
+                <span className="font-headline text-lg text-primary/80">Live Price:</span>
+                <span className={cn("font-mono text-3xl font-bold flex items-center gap-2 transition-colors duration-300",
+                    priceDirection === 'up' && 'text-green-400',
+                    priceDirection === 'down' && 'text-red-400',
+                )} style={{
+                    textShadow: priceDirection !== 'neutral' ? `0 0 10px currentColor` : 'none'
+                }}>
+                      <span className={cn(
+                        "w-4 h-4 rounded-full transition-all",
+                        priceDirection === 'up' && 'bg-green-500 shadow-[0_0_8px_theme(colors.green.500)] animate-pulse',
+                        priceDirection === 'down' && 'bg-red-500 shadow-[0_0_8px_theme(colors.red.500)] animate-pulse',
+                        priceDirection === 'neutral' && 'bg-gray-500'
+                     )}></span>
+                    ${displayPrice.toFixed(isCrypto ? 2 : 4)}
+                </span>
+            </div>
+
+            <LevelRow label={data.isBullish ? 'Long Entry' : 'Short Entry'} value={data.entry} isHit={hitTargets.entry} type="entry" icon={<LogIn size={18} />} />
+            <LevelRow label="Stop-Loss" value={data.sl} type="sl" icon={<Shield size={18} />} />
+            <LevelRow label="Take-Profit 1" value={data.tp1} isHit={hitTargets.tp1} type="tp" icon={<Target size={18} />} />
+            <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} type="tp" icon={<Target size={18} />} />
+            
+            <div className="flex justify-between text-base pt-2 px-2"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono font-bold">1 : {data.riskReward.toFixed(1)}</span></div>
+        </div>
+      </SectionWrapper>
+      
+      { (mode === '3' || mode === '4') && aiInsight && <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} isBullish={data.isBullish}/>}
+      
+      <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />
       
       <QuantumPivotsMatrix data={data.multiTimeframeSR} livePrice={realtimePrice} />
 
@@ -306,40 +405,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
       {data.orderBlock && <QuantumOrderBlockMatrix orderBlock={data.orderBlock} entryPrice={entryPriceNum} />}
 
-      <SectionWrapper>
-        <div className="grid grid-cols-1">
-            <div className="space-y-1">
-                <div className="flex justify-between text-lg items-center py-1">
-                    <span className="text-foreground/70 text-base">Live Price:</span>
-                    <span className={cn("font-mono text-2xl font-bold flex items-center gap-2 transition-colors duration-300",
-                        priceDirection === 'up' && 'text-green-400',
-                        priceDirection === 'down' && 'text-red-400',
-                    )} style={{
-                        textShadow: priceDirection !== 'neutral' ? `0 0 8px currentColor` : 'none'
-                    }}>
-                         <span className={cn(
-                            "w-4 h-4 rounded-full transition-all",
-                            priceDirection === 'up' && 'bg-green-500 shadow-[0_0_8px_theme(colors.green.500)] animate-pulse',
-                            priceDirection === 'down' && 'bg-red-500 shadow-[0_0_8px_theme(colors.red.500)] animate-pulse',
-                            priceDirection === 'neutral' && 'bg-gray-500'
-                         )}></span>
-                        ${displayPrice.toFixed(isCrypto ? 2 : 4)}
-                    </span>
-                </div>
-
-                <LevelRow label={data.isBullish ? 'Long Entry' : 'Short Entry'} value={data.entry} isHit={hitTargets.entry} isConfluence={mode === '4'} />
-                
-                <div className="flex justify-between text-base"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-yellow-400">${data.sl}</span></div>
-
-                <LevelRow label="Take-Profit 1" value={data.tp1} isHit={hitTargets.tp1} isConfluence={mode === '4'} />
-                <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} />
-                
-                <div className="flex justify-between text-base pt-1"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono">1 : {data.riskReward.toFixed(1)}</span></div>
-            </div>
-        </div>
-      </SectionWrapper>
-      
-      <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />
 
       <KeyLevels data={data} />
 
