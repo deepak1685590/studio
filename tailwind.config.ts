@@ -121,6 +121,16 @@ export default {
             color: '#fae8ff',
           },
         },
+        'neon-red': {
+          '0%, 100%': {
+            'text-shadow': '0 0 5px #fda4af, 0 0 10px #fda4af, 0 0 20px #fda4af, 0 0 40px #f43f5e, 0 0 80px #f43f5e',
+            color: '#fff1f2',
+          },
+          '50%': {
+            'text-shadow': '0 0 10px #fda4af, 0 0 20px #fda4af, 0 0 40px #f43f5e, 0 0 80px #f43f5e, 0 0 100px #f43f5e',
+            color: '#fff1f2',
+          },
+        },
         'neon-color-cycle': {
             '0%': { color: 'hsl(180, 100%, 50%)', textShadow: '0 0 5px hsl(180, 100%, 50%), 0 0 10px hsl(180, 100%, 50%)' },
             '25%': { color: 'hsl(270, 100%, 60%)', textShadow: '0 0 5px hsl(270, 100%, 60%), 0 0 10px hsl(270, 100%, 60%)' },
@@ -148,6 +158,7 @@ export default {
         'pulse-glow': 'pulse-glow 2.5s infinite alternate',
         'neon-blue': 'neon-blue 2s ease-in-out infinite alternate',
         'neon-purple': 'neon-purple 2.5s ease-in-out infinite alternate',
+        'neon-red': 'neon-red 2.2s ease-in-out infinite alternate',
         'neon-color-cycle': 'neon-color-cycle 5s linear infinite',
         marquee: 'marquee 40s linear infinite',
         'neon-glow': 'neon-glow 4s ease-in-out infinite alternate',
