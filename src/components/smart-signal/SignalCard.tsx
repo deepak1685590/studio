@@ -20,6 +20,7 @@ import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import LiquidityTargetAlert from './LiquidityTargetAlert';
 import QuantumSuperTrendMatrix from './QuantumSuperTrendMatrix';
+import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -300,6 +301,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       </header>
       
       {isNearEntry && !hitTargets.entry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
+
+      <QuantumPivotsMatrix data={data.multiTimeframeSR} livePrice={realtimePrice} />
 
       <QuantumEntryMatrix data={data} livePrice={realtimePrice} />
 
