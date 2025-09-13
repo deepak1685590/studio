@@ -103,7 +103,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
         }
         
         if (isMounted.current) {
-            let filteredOpportunities = allResults;
+            let filteredOpportunities = allResults.filter(op => !op.sidewaysMarket);
 
             if (filterHighConfidence) {
                 filteredOpportunities = filteredOpportunities.filter(op => op.confidenceBreakdown.overall >= 75);
@@ -115,13 +115,23 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                 filteredOpportunities = filteredOpportunities.filter(op => !!op.whaleAlert);
             }
             
-            const finalOpportunities = filteredOpportunities.sort((a,b) => b.confidenceBreakdown.overall - a.confidenceBreakdown.overall);
-            
+            let finalOpportunities = filteredOpportunities.sort((a,b) => b.confidenceBreakdown.overall - a.confidenceBreakdown.overall);
+            let toastDescription = `Found ${finalOpportunities.length} setups matching your criteria.`;
+
+            // **FIX**: If filters result in zero opportunities, show the top 5 unfiltered results instead.
+            if (finalOpportunities.length === 0 && allResults.length > 0) {
+                finalOpportunities = allResults
+                    .filter(op => !op.sidewaysMarket)
+                    .sort((a,b) => b.confidenceBreakdown.overall - a.confidenceBreakdown.overall)
+                    .slice(0, 5);
+                toastDescription = `No setups matched your filters. Showing the top ${finalOpportunities.length} available signals.`;
+            }
+
             setOpportunities(finalOpportunities);
 
             toast({
                 title: "Scan Complete",
-                description: `Found ${finalOpportunities.length} setups matching your criteria.`,
+                description: toastDescription,
             });
             setIsScanning(false);
         }
