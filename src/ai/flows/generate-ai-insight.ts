@@ -56,7 +56,7 @@ const GenerateAiInsightOutputSchema = z.object({
         intraday: z.string().describe("The AI's price target for an intraday timeframe (e.g., 1-4 hours)."),
         swing: z.string().describe("The AI's price target for a swing trade timeframe (e.g., Daily/Weekly)."),
     }).describe("The AI's primary price targets broken down by different timeframes."),
-    timeframe: z.string().describe("The estimated time it will take to reach the predicted target."),
+    timeframe: z.string().describe("The estimated time it will take to reach the predicted target, prefixed with 'Long:' or 'Short:' based on the overall trade bias (e.g., 'Long: 1-3 hours', 'Short: 4-8 hours')."),
     successProbability: z.string().describe("The AI's confidence in the primary scenario, as a percentage."),
     invalidationLevel: z.string().describe("The price level at which the primary scenario would be considered invalid."),
     keyCatalysts: z.string().describe("The key technical or fundamental catalysts that could trigger the predicted move."),
