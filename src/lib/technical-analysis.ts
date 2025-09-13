@@ -1,6 +1,7 @@
 
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend } from '@/types';
+
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 8000 } = options;
@@ -198,6 +199,40 @@ const generateMultiTimeframeSR = (price: number, seed: string, isBullish: boolea
 
     return sr as MultiTimeframeSR;
 };
+
+const generateSuperTrendAnalysis = (price: number, atr: number, isBullish: boolean, trendStrength: TrendStrength, momentum: Momentum, seed: string): SuperTrendAnalysis => {
+    let status: SuperTrendAnalysis['status'];
+    const superTrendLine = isBullish ? price - atr * 2 : price + atr * 2;
+    let momentumDecay = 0; // 0-100
+
+    // Simulate momentum decay
+    if ((isBullish && momentum.rating === 'Overbought') || (!isBullish && momentum.rating === 'Oversold')) {
+        momentumDecay = Math.floor(pseudoRandom(seed + 'decay_extreme') * 40 + 60); // 60-100
+    } else if ((isBullish && momentum.rating === 'Bearish') || (!isBullish && momentum.rating === 'Bullish')) {
+        // Divergence scenario
+        momentumDecay = Math.floor(pseudoRandom(seed + 'decay_div') * 30 + 50); // 50-80
+    } else {
+        momentumDecay = Math.floor(pseudoRandom(seed + 'decay_normal') * 40); // 0-40
+    }
+
+    // Determine trend status
+    if (trendStrength.rating === 'Ranging') {
+        status = 'Consolidation';
+    } else if (momentumDecay > 70) {
+        status = 'Trend Exhaustion';
+    } else if (trendStrength.rating === 'Strong') {
+        status = isBullish ? 'Uptrend Mature' : 'Downtrend Mature';
+    } else {
+        status = isBullish ? 'Uptrend Developing' : 'Downtrend Developing';
+    }
+    
+    return {
+        status,
+        superTrendLine: parseFloat(superTrendLine.toFixed(isCrypto(seed) ? 2 : 4)),
+        momentumDecay,
+    };
+};
+
 
 const generateAdvancedStrengthData = (price: number, closes: number[], volumes: number[], seed: string, isBullish: boolean, momentumScore: number, trendStrengthScore: number, emas: { ema20: number, ema50: number }): AdvancedStrengthDashboardData => {
     // 1. Price and Change
@@ -449,6 +484,9 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             range: [swingHigh.toFixed(4), swingLow.toFixed(4)]
         }
     }
+
+    // --- SuperTrend Analysis ---
+    const superTrendAnalysis = generateSuperTrendAnalysis(price, atr, isBullish, trendStrength, momentum, analysisSeed);
     
     // --- ADVANCED STRENGTH DASHBOARD ---
     const advancedStrengthDashboard = generateAdvancedStrengthData(price, closes, volumes, analysisSeed, isBullish, rsiValue, adxValue, { ema20, ema50 });
@@ -547,6 +585,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             trendStrength,
             momentum: { score: 50, rating: 'Neutral' },
             sidewaysMarket,
+            superTrendAnalysis,
             volumeAnalysis,
             multiTimeframeSR,
             liquidityMatrix,
@@ -755,6 +794,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         trendStrength,
         momentum,
         sidewaysMarket,
+        superTrendAnalysis,
         volumeAnalysis,
         multiTimeframeSR,
         liquidityMatrix,

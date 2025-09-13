@@ -177,6 +177,12 @@ export interface MultiTimeframeSR {
     '1H': SupportResistanceLevel;
 }
 
+export interface SuperTrendAnalysis {
+    status: 'Uptrend Developing' | 'Uptrend Mature' | 'Downtrend Developing' | 'Downtrend Mature' | 'Trend Exhaustion' | 'Consolidation';
+    superTrendLine: number;
+    momentumDecay: number; // 0-100, higher means trend is weakening
+}
+
 export interface AdvancedStrengthDashboardData {
     marketPhase: 'BREAKOUT' | 'BREAKDOWN' | 'CONSOLIDATION' | 'BULLISH TREND' | 'BEARISH TREND' | 'NEUTRAL';
     price: string;
@@ -283,6 +289,7 @@ export interface SignalData {
   sidewaysMarket?: SidewaysMarket;
   volumeAnalysis: VolumeAnalysis;
   multiTimeframeSR: MultiTimeframeSR;
+  superTrendAnalysis: SuperTrendAnalysis;
   liquidityMatrix?: LiquidityMatrixData;
   advancedStrengthDashboard?: AdvancedStrengthDashboardData;
 }
