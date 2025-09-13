@@ -44,7 +44,7 @@ const analyzeCodeFlow = ai.defineFlow(
 
       **Input to Analyze:**
       \`\`\`
-      ${codeOrError}
+      {{{codeOrError}}}
       \`\`\`
 
       **Your Task:**
@@ -53,6 +53,7 @@ const analyzeCodeFlow = ai.defineFlow(
       3.  **Provide a Suggested Fix:** Write the corrected code. This should be the final, complete code snippet that the user can copy and paste to resolve the problem. Do not include comments like "// your other code here" unless it's essential for context. Provide the full, corrected block.
 
       Provide your complete analysis in the required JSON format.`,
+      input: { codeOrError },
     });
     return output!;
   }

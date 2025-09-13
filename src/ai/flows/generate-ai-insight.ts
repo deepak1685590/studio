@@ -196,7 +196,7 @@ const generateAiInsightFlow = ai.defineFlow(
         - Market Session: ${input.marketSession}
         - Volatility Regime: ${input.volatilityRegime}
         `,
-        input,
+        input: input,
       });
 
       if (!output) {
@@ -234,5 +234,3 @@ const generateAiInsightFlow = ai.defineFlow(
     }
   }
 );
-
-    
