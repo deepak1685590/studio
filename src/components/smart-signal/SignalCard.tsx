@@ -369,7 +369,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 <div className="flex justify-between text-base"><span className="text-foreground/70">Stop-Loss:</span><span className="font-mono text-yellow-400">${data.sl}</span></div>
 
                 <LevelRow label="Take-Profit 1" value={data.tp1} isHit={hitTargets.tp1} isConfluence={mode === '4'} />
-                <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} isConfluence={mode === '4'} />
+                <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} />
                 
                 <div className="flex justify-between text-base pt-1"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono">1 : {data.riskReward.toFixed(1)}</span></div>
             </div>
