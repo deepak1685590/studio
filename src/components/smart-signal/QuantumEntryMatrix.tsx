@@ -18,6 +18,15 @@ const LevelRow: React.FC<{ label: string; value: string; className?: string }> =
   </div>
 );
 
+const isCrypto = (symbol: string): boolean => {
+    const upperSymbol = symbol.toUpperCase();
+    if (upperSymbol.includes('/')) return false; // Forex
+    const indianIndices = ['NIFTY', 'BANKNIFTY', 'GIFTNIFTY'];
+    if (indianIndices.includes(upperSymbol)) return false; // Indian Indices
+    return true; // Assume crypto
+}
+
+
 const QuantumEntryMatrix: React.FC<QuantumEntryMatrixProps> = ({ data, livePrice }) => {
   const { isBullish, poc, vah, val, entry } = data;
   
@@ -121,15 +130,5 @@ const QuantumEntryMatrix: React.FC<QuantumEntryMatrixProps> = ({ data, livePrice
     </div>
   );
 };
-
-// Helper function to check if the symbol is crypto
-const isCrypto = (symbol: string): boolean => {
-    const upperSymbol = symbol.toUpperCase();
-    if (upperSymbol.includes('/')) return false; // Forex
-    const indianIndices = ['NIFTY', 'BANKNIFTY', 'GIFTNIFTY'];
-    if (indianIndices.includes(upperSymbol)) return false; // Indian Indices
-    return true; // Assume crypto
-}
-
 
 export default QuantumEntryMatrix;
