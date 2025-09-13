@@ -4,6 +4,7 @@
 
 
 
+
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis } from '@/types';
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
@@ -40,15 +41,29 @@ const getMockKlines = (price: number, interval: Timeframe) => {
     const high = open * (1 + (pseudoRandom(i.toString()) - 0.45) * 0.02);
     const low = open * (1 + (pseudoRandom(i.toString() + 'low') - 0.55) * 0.02);
     const close = (high + low) / 2 * (1 + (pseudoRandom(i.toString()+'close') - 0.5) * 0.01);
+    const volume = pseudoRandom(i.toString()+'vol') * 1000;
+    
+    // Inject volume spikes
+    if (i % 30 === 0 && i > 0) { // create a spike every 30 candles or so
+        klines.push([
+          Date.now() - (200 - i) * intervalMinutes * 60 * 1000,
+          open.toFixed(4),
+          (high * 1.01).toFixed(4), // higher high on spike
+          (low * 0.99).toFixed(4), // lower low on spike
+          close.toFixed(4),
+          (volume * 5).toFixed(4), // 5x volume spike
+        ]);
+    } else {
+        klines.push([
+          Date.now() - (200 - i) * intervalMinutes * 60 * 1000,
+          open.toFixed(4),
+          high.toFixed(4),
+          low.toFixed(4),
+          close.toFixed(4),
+          volume.toFixed(4),
+        ]);
+    }
     currentPrice = close;
-    klines.push([
-      Date.now() - (200 - i) * intervalMinutes * 60 * 1000,
-      open.toFixed(4),
-      high.toFixed(4),
-      low.toFixed(4),
-      close.toFixed(4),
-      (pseudoRandom(i.toString()+'vol') * 1000).toFixed(4),
-    ]);
   }
   return klines;
 };
@@ -178,30 +193,46 @@ const generateVolumeAnalysis = (seed: string): VolumeAnalysis => {
     return analysis as VolumeAnalysis;
 }
 
-const generateMultiTimeframeSR = (price: number, seed: string, isBullish: boolean): MultiTimeframeSR => {
+const generateMultiTimeframeSR = (price: number, klines: any[], isBullish: boolean): MultiTimeframeSR => {
     const sr: Partial<MultiTimeframeSR> = {};
     const tfs: (keyof MultiTimeframeSR)[] = ['5m', '15m', '1H'];
 
-    tfs.forEach((tf, index) => {
-        const volatility = (index + 1) * 0.005; // 5m is less volatile, 1H is more
-        const high = price * (1 + pseudoRandom(seed + tf + 'h') * volatility);
-        const low = price * (1 - pseudoRandom(seed + tf + 'l') * volatility);
-        const pivot = (high + low + price) / 3;
-        const range = high - low;
+    tfs.forEach((tf) => {
+        // Simulate volume-based S/R detection
+        const volumes = klines.map(k => parseFloat(k[5]));
+        const avgVolume = volumes.slice(0, -1).reduce((sum, vol) => sum + vol, 0) / (volumes.length - 1);
+        const volumeThreshold = 3.5; // Spike is 3.5x average
+
+        let resistances: number[] = [];
+        let supports: number[] = [];
+
+        for (let i = 1; i < klines.length; i++) {
+            if (volumes[i] > avgVolume * volumeThreshold) {
+                const spikeHigh = parseFloat(klines[i][2]);
+                const spikeLow = parseFloat(klines[i][3]);
+                if (spikeHigh > price) resistances.push(spikeHigh);
+                if (spikeLow < price) supports.push(spikeLow);
+            }
+        }
+
+        // De-duplicate and sort levels
+        resistances = [...new Set(resistances)].sort((a, b) => a - b);
+        supports = [...new Set(supports)].sort((a, b) => b - a);
         
+        // Find closest R and S to current price
+        const closestResistance = resistances[0] || price * (1.01 + pseudoRandom(tf+'res') * 0.01);
+        const closestSupport = supports[0] || price * (0.99 - pseudoRandom(tf+'sup')*0.01);
+
         sr[tf] = {
-            S1: pivot - 0.382 * range,
-            S2: pivot - 0.618 * range,
-            S3: pivot - 1.000 * range,
-            R1: pivot + 0.382 * range,
-            R2: pivot + 0.618 * range,
-            R3: pivot + 1.000 * range,
-            probableTarget: isBullish ? 'R1' : 'S1',
+            R: resistances.slice(0, 3), // Top 3 resistance levels
+            S: supports.slice(0, 3),    // Top 3 support levels
+            probableTarget: isBullish ? closestResistance : closestSupport,
         };
     });
 
     return sr as MultiTimeframeSR;
 };
+
 
 const generateSuperTrendAnalysis = (price: number, atr: number, isBullish: boolean, trendStrength: TrendStrength, momentum: Momentum, seed: string): SuperTrendAnalysis => {
     let status: SuperTrendAnalysis['status'];
@@ -479,7 +510,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const reversalConfirmed = pseudoRandom(analysisSeed + 'reversal') > 0.6;
     
     const volumeAnalysis = generateVolumeAnalysis(analysisSeed);
-    const multiTimeframeSR = generateMultiTimeframeSR(price, analysisSeed, isBullish);
+    const multiTimeframeSR = generateMultiTimeframeSR(price, klines, isBullish);
     const liquidityMatrix = generateLiquidityMatrixData(price, swingHigh, swingLow, isBullish, analysisSeed);
     
     // --- Momentum (RSI simulation) ---
@@ -628,8 +659,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         const confluencePrice = confluenceLevels.reduce((a, b) => a + b, 0) / confluenceLevels.length;
         entry = confluencePrice.toFixed(4);
         sl = (isBullish ? (swingLow - atr * 0.5) : (swingHigh + atr * 0.5)).toFixed(4);
-        tp1 = (isBullish ? multiTimeframeSR[timeframe].R1 : multiTimeframeSR[timeframe].S1).toFixed(4);
-        tp2 = (isBullish ? multiTimeframeSR[timeframe].R2 : multiTimeframeSR[timeframe].S2).toFixed(4);
+        tp1 = (isBullish ? multiTimeframeSR[timeframe as keyof MultiTimeframeSR]!.probableTarget : multiTimeframeSR[timeframe as keyof MultiTimeframeSR]!.probableTarget).toFixed(4);
+        tp2 = (isBullish ? multiTimeframeSR[timeframe as keyof MultiTimeframeSR]!.R[1] || multiTimeframeSR[timeframe as keyof MultiTimeframeSR]!.R[0] * 1.01 : multiTimeframeSR[timeframe as keyof MultiTimeframeSR]!.S[1] || multiTimeframeSR[timeframe as keyof MultiTimeframeSR]!.S[0] * 0.99).toFixed(4);
     } else { // Original Logic for Elite Mode and others
         const timeframeMultipliers = {
             '5m': { atr: 1.5 },

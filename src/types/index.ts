@@ -1,5 +1,6 @@
 
 
+
 import type { GenerateAiInsightInput as GenkitGenerateAiInsightInput, GenerateAiInsightOutput as GenkitGenerateAiInsightOutput } from "@/ai/flows/generate-ai-insight";
 import type { OracleInsightInput as GenkitOracleInsightInput } from "@/ai/flows/oracle-insight";
 
@@ -170,13 +171,9 @@ export interface VolumeAnalysis {
 }
 
 export interface SupportResistanceLevel {
-    S1: number;
-    S2: number;
-    S3: number;
-    R1: number;
-    R2: number;
-    R3: number;
-    probableTarget: 'S1' | 'S2' | 'S3' | 'R1' | 'R2' | 'R3';
+    S: number[];
+    R: number[];
+    probableTarget: number;
 }
 
 export interface MultiTimeframeSR {
