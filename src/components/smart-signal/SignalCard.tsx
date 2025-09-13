@@ -2,7 +2,8 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
-import type { SignalData } from '@/types';
+import type { SignalData, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/types';
+import { generateAiInsight } from '@/ai/flows/generate-ai-insight';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
 import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp, Layers, MoveVertical, GitBranch, GitPullRequest, Replace, Shield, LogIn } from 'lucide-react';
