@@ -50,7 +50,8 @@ const GenerateAiInsightOutputSchema = z.object({
     timeHorizon: z.string(),
   }),
   tradeSetup: z.object({
-    entryPrice: z.string().describe("The AI's optimized entry price."),
+    entryPrice: z.string().describe("The AI's optimized primary entry price."),
+    secondaryEntryPrice: z.string().optional().describe("An optional secondary entry price based on multi-layer confirmation, if a suitable one exists."),
     stopLoss: z.string().describe("The AI's recommended stop-loss level."),
     takeProfit1: z.string().describe("The AI's primary take-profit target."),
     takeProfit2: z.string().describe("The AI's secondary take-profit target."),
@@ -167,7 +168,9 @@ const generateAiInsightFlow = ai.defineFlow(
         First, use the getMarketNews tool to fetch the latest headlines for ${input.symbol}.
         Then, synthesize ALL the provided data into the structured JSON format below.
         
-        **Crucially, based on your holistic analysis of all provided data, you must derive and populate the 'tradeSetup' section with your own optimized entry, stop-loss, and take-profit levels. Provide a brief rationale for your choices.**
+        **Crucially, based on your holistic analysis of all provided data, you must derive and populate the 'tradeSetup' section with your own optimized primary entry, stop-loss, and take-profit levels. Provide a brief rationale for your choices.**
+        
+        **If you identify a secondary, high-probability entry point based on multi-layer confirmation (like a confluence of Fibonacci levels, pivot points, or key moving averages from the provided data), populate the optional 'secondaryEntryPrice' field. Otherwise, omit it.**
 
         For the 'predictedTarget', provide distinct price targets for short-term (scalp/5-15m), intraday (1-4h), and swing (daily/weekly) timeframes based on the overall analysis.
 

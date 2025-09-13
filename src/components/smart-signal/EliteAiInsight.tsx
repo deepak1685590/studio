@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { generateAiInsight, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import { Button } from '@/components/ui/button';
-import { Copy, BrainCircuit, Target, Lightbulb, TrendingUp, AlertTriangle, Info } from 'lucide-react';
+import { Copy, BrainCircuit, Target, Lightbulb, TrendingUp, AlertTriangle, Info, Layers } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
@@ -136,6 +136,14 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data, onTradeSetupGener
                 <h4 className="font-headline text-primary text-md mb-2">AI Trade Rationale</h4>
                 <p className="text-xs text-foreground/80 italic">"{insight.tradeSetup.tradeRationale}"</p>
             </div>
+
+            {insight.tradeSetup.secondaryEntryPrice && (
+              <div className="p-3 text-center rounded-lg border-2 border-dashed border-primary bg-primary/10">
+                <h5 className="font-headline text-base text-primary flex items-center justify-center gap-2"><Layers />AI Secondary Entry</h5>
+                <p className="font-mono text-xl font-bold text-white/90">{insight.tradeSetup.secondaryEntryPrice}</p>
+                <p className="text-xs text-foreground/70">Multi-layer confirmation level</p>
+              </div>
+            )}
 
             <div className="p-4 bg-gradient-to-r from-accent/20 to-primary/20 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.5)]">
               <h4 className="font-headline text-lg text-accent flex items-center gap-2 mb-2">
