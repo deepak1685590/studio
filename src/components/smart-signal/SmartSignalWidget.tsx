@@ -96,7 +96,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     
     const isCrypto = cryptoAssetsForWebsocket.includes(currentSymbol.toUpperCase());
 
-    // Establish WebSocket connection only for supported crypto assets
+    // Establish WebSocket connection ONLY for supported crypto assets
     if (isCrypto && typeof window !== 'undefined') {
       const wsSymbol = currentSymbol.toLowerCase() + 'usdt';
       const streams = `${wsSymbol}@trade/${wsSymbol}@bookTicker`;
@@ -109,6 +109,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
         const stream = message.stream;
         const messageData = message.data;
         
+        // Ensure the message is for the currently active symbol before processing
         if (currentSymbolRef.current.toLowerCase() + 'usdt' !== messageData.s.toLowerCase()) {
             return;
         }
@@ -154,6 +155,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     }
 
     try {
+      // The getSignalData function already handles fetching real vs mock data internally.
       const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe);
       onSignalDataChange(data);
       setRealtimePrice(data.price);
@@ -161,10 +163,11 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 
     } catch (error) {
       console.error("Error generating signal:", error);
-      toast({ title: "API Error", description: "Failed to fetch market data. Using mock data.", variant: "destructive" });
+      // Fallback to mock data on any failure.
       const mockData = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, true);
       onSignalDataChange(mockData);
       setRealtimePrice(mockData.price);
+      toast({ title: "API Error", description: "Failed to fetch market data. Displaying simulated data.", variant: "destructive" });
     } finally {
       setLoading(false);
       onLoadingChange(false);
@@ -177,6 +180,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   }, [symbol]);
 
   useEffect(() => {
+    // Cleanup WebSocket on component unmount
     return () => {
       if (ws.current) {
         ws.current.close();
@@ -301,7 +305,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
             SmartSignal Pro - Quantum Analysis Engine
         </h3>
         <div className="text-sm font-code mt-1">
-            CREATOR: <span className="animate-neon-purple">DG143</span>
+            CREATOR: <span className="animate-neon-purple">DG143</span> <span className="animate-neon-red">🌹❤️</span>
         </div>
       </header>
       <div className="widget-controls p-4 md:p-6 space-y-4">
@@ -439,4 +443,5 @@ export default SmartSignalWidget;
     
 
     
+
 
