@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { SignalData } from '@/types';
-import { TrendingUp, TrendingDown, MoveVertical, GitCommitHorizontal, GitCommit } from 'lucide-react';
+import { TrendingUp, TrendingDown, MoveVertical, GitCommitHorizontal, GitCommit, Layers, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
@@ -20,49 +20,79 @@ const LevelRow: React.FC<{ label: string; value: string; icon: React.ReactNode; 
   </div>
 );
 
+const LevelGroup: React.FC<{ title: string; children: React.ReactNode; className?: string }> = ({ title, children, className }) => (
+    <div>
+        <h5 className={cn("font-bold mb-2 text-center", className)}>{title}</h5>
+        <div className="space-y-2">{children}</div>
+    </div>
+);
+
+
 const KeyLevels: React.FC<{ data: SignalData }> = ({ data }) => {
-  const { swingHigh, swingLow, poc, pivot, s1, r1, isBullish } = data;
+  const { swingHigh, swingLow, poc, pivot, s1, r1, vah, val, isBullish } = data;
 
   return (
     <div>
-      <SectionHeader icon={<GitCommitHorizontal />} title="Key Technical Levels" />
-      <div className="space-y-2">
-        <LevelRow 
-            label="Swing High" 
-            value={`$${swingHigh}`} 
-            icon={<TrendingUp size={16} />} 
-            className="text-red-400 border-red-500/20" 
-        />
-        <LevelRow 
-            label="Resistance 1 (R1)" 
-            value={`$${r1}`} 
-            icon={<GitCommit size={16} className="rotate-90"/>} 
-            className="text-red-400/80 border-red-500/10"
-        />
-        <LevelRow 
-            label="Point of Control (POC)" 
-            value={`$${poc}`} 
-            icon={<MoveVertical size={16} />} 
-            className="text-amber-400 border-amber-500/20" 
-        />
-         <LevelRow 
-            label="Pivot Point" 
-            value={`$${pivot}`} 
-            icon={<GitCommit size={16} className="rotate-90"/>} 
-            className="text-primary/80 border-primary/20"
-        />
-        <LevelRow 
-            label="Support 1 (S1)" 
-            value={`$${s1}`} 
-            icon={<GitCommit size={16} className="rotate-90"/>} 
-            className="text-green-400/80 border-green-500/10"
-        />
-        <LevelRow 
-            label="Swing Low" 
-            value={`$${swingLow}`} 
-            icon={<TrendingDown size={16} />} 
-            className="text-green-400 border-green-500/20" 
-        />
+      <SectionHeader icon={<Layers />} title="Key Technical Levels" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <LevelGroup title="Resistance Levels" className="text-red-400">
+            <LevelRow 
+                label="Swing High" 
+                value={`$${swingHigh}`} 
+                icon={<TrendingUp size={16} />} 
+                className="text-red-400 border-red-500/20" 
+            />
+             <LevelRow 
+                label="Value Area High" 
+                value={`$${vah}`} 
+                icon={<GitCommitHorizontal size={16} />} 
+                className="text-red-400/90 border-red-500/15" 
+            />
+            <LevelRow 
+                label="Resistance 1 (R1)" 
+                value={`$${r1}`} 
+                icon={<GitCommit size={16} className="rotate-90"/>} 
+                className="text-red-400/80 border-red-500/10"
+            />
+        </LevelGroup>
+
+        <LevelGroup title="Core Levels" className="text-amber-400">
+            <LevelRow 
+                label="Point of Control" 
+                value={`$${poc}`} 
+                icon={<Target size={16} />} 
+                className="text-amber-400 border-amber-500/20" 
+            />
+            <LevelRow 
+                label="Pivot Point" 
+                value={`$${pivot}`} 
+                icon={<MoveVertical size={16} />} 
+                className="text-primary/80 border-primary/20"
+            />
+        </LevelGroup>
+        
+        <LevelGroup title="Support Levels" className="text-green-400">
+            <LevelRow 
+                label="Value Area Low" 
+                value={`$${val}`} 
+                icon={<GitCommitHorizontal size={16} />} 
+                className="text-green-400/90 border-green-500/15" 
+            />
+            <LevelRow 
+                label="Support 1 (S1)" 
+                value={`$${s1}`} 
+                icon={<GitCommit size={16} className="rotate-90"/>} 
+                className="text-green-400/80 border-green-500/10"
+            />
+            <LevelRow 
+                label="Swing Low" 
+                value={`$${swingLow}`} 
+                icon={<TrendingDown size={16} />} 
+                className="text-green-400 border-green-500/20" 
+            />
+        </LevelGroup>
+        
       </div>
     </div>
   );
