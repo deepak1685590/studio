@@ -132,6 +132,21 @@ const getMarketNews = ai.defineTool(
   }
 );
 
+const fallbackGenerator = ai.definePrompt({
+    name: 'fallbackGenerator',
+    input: { schema: GenerateAiInsightInputSchema },
+    output: { schema: z.object({ summary: z.string() }) },
+    model: 'googleai/gemini-pro',
+    prompt: `You are a high-speed market analysis AI. The primary analysis model is unavailable.
+    Provide a concise, single-paragraph executive summary based on the following data for {{{symbol}}}.
+    - Trend: {{{isBullish}}} (True=Bullish)
+    - Key Pattern: {{{chartPatternName}}}
+    - Entry: {{{entry}}}, SL: {{{sl}}}, TP1: {{{tp1}}}
+    - Confidence Factors: Trend Strength ({{{trendStrength}}}/100), Momentum ({{{momentum}}}/100)
+    Synthesize this into a professional, high-level summary.`,
+});
+
+
 const generateAiInsightFlow = ai.defineFlow(
   {
     name: 'generateAiInsightFlow',
@@ -193,18 +208,7 @@ const generateAiInsightFlow = ai.defineFlow(
        console.error("Primary AI Generation Error, attempting fallback:", error);
        
        try {
-         // Fallback model attempt
-         const { output: fallbackOutput } = await ai.generate({
-           model: 'googleai/gemini-pro',
-           output: { format: 'json', schema: z.object({ summary: z.string() }) },
-           prompt: `You are a high-speed market analysis AI. The primary analysis model is unavailable.
-            Provide a concise, single-paragraph executive summary based on the following data for ${input.symbol}.
-            - Trend: ${input.isBullish ? 'Bullish' : 'Bearish'}
-            - Key Pattern: ${input.chartPatternName}
-            - Entry: ${input.entry}, SL: ${input.sl}, TP1: ${input.tp1}
-            - Confidence Factors: Trend Strength (${input.trendStrength}/100), Momentum (${input.momentum}/100)
-            Synthesize this into a professional, high-level summary.`,
-         });
+         const { output: fallbackOutput } = await fallbackGenerator(input);
 
          if (!fallbackOutput) {
             throw new Error('Fallback AI model also failed.');
