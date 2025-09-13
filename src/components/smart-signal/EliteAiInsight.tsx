@@ -10,6 +10,7 @@ import { Skeleton } from '../ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { cn } from '@/lib/utils';
+import PredictiveAnalysis from './PredictiveAnalysis';
 
 interface EliteAiInsightProps {
   data: GenerateAiInsightInput;
@@ -128,8 +129,6 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data, onTradeSetupGener
         )
       }
 
-      const isBullish = data.isBullish;
-
       return (
         <div className="space-y-4">
             <div className="p-4 bg-primary/10 rounded-lg border border-primary/30">
@@ -145,64 +144,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data, onTradeSetupGener
               </div>
             )}
 
-            <div className="p-4 bg-gradient-to-r from-accent/20 to-primary/20 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.5)]">
-              <h4 className="font-headline text-lg text-accent flex items-center gap-2 mb-2">
-                  <Target /> Predictive Analysis
-              </h4>
-              <div className="space-y-3">
-                 <div className="text-sm">
-                    <strong className="text-accent/80 block">Primary Scenario:</strong>
-                    <p className="text-foreground/90">{insight.predictiveAnalysis.primaryScenario}</p>
-                </div>
-
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="text-accent/80">Timeframe</TableHead>
-                            <TableHead className={cn("text-right", isBullish ? "text-green-400" : "text-red-400")}>Predicted Target</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <TableRow>
-                            <TableCell>Short-Term (5-15m)</TableCell>
-                            <TableCell className="text-right font-mono font-bold text-lg">{insight.predictiveAnalysis.predictedTarget.shortTerm}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell>Intraday (1-4h)</TableCell>
-                            <TableCell className="text-right font-mono font-bold text-lg">{insight.predictiveAnalysis.predictedTarget.intraday}</TableCell>
-                        </TableRow>
-                         <TableRow>
-                            <TableCell>Swing (Daily+)</TableCell>
-                            <TableCell className="text-right font-mono font-bold text-lg">{insight.predictiveAnalysis.predictedTarget.swing}</TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs pt-2">
-                    <div className="flex flex-col">
-                        <span className="text-foreground/70">Overall Timeframe:</span>
-                        <span className="font-mono text-foreground/90">{insight.predictiveAnalysis.timeframe}</span>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-foreground/70">Success Probability:</span>
-                        <span className="font-mono font-bold text-lg text-green-400">{insight.predictiveAnalysis.successProbability}</span>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-foreground/70">Invalidation Level:</span>
-                        <span className="font-mono text-yellow-400">{insight.predictiveAnalysis.invalidationLevel}</span>
-                    </div>
-                </div>
-
-                <div className="text-sm pt-2">
-                    <strong className="text-accent/80 flex items-center gap-1"><Lightbulb size={14}/> Key Catalysts:</strong>
-                    <p className="text-foreground/90">{insight.predictiveAnalysis.keyCatalysts}</p>
-                </div>
-                 <div className="text-sm">
-                    <strong className="text-yellow-400 flex items-center gap-1"><AlertTriangle size={14}/> Alternative Scenario:</strong>
-                    <p className="text-foreground/90">{insight.predictiveAnalysis.alternativeScenario}</p>
-                </div>
-              </div>
-            </div>
+            <PredictiveAnalysis analysis={insight.predictiveAnalysis} isBullish={data.isBullish} />
 
             <Accordion type="single" collapsible defaultValue="Executive Summary">
               {renderSection("Executive Summary", insight.executiveSummary)}
@@ -246,5 +188,3 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data, onTradeSetupGener
 };
 
 export default EliteAiInsight;
-
-    
