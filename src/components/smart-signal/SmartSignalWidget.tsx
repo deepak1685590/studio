@@ -158,9 +158,10 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       // The getSignalData function already handles fetching real vs mock data internally.
       const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe);
       onSignalDataChange(data);
-      setRealtimePrice(data.price);
-      previousPriceRef.current = data.price;
-
+      if (!isCrypto) { // For non-websocket assets, set price from data
+        setRealtimePrice(data.price);
+        previousPriceRef.current = data.price;
+      }
     } catch (error) {
       console.error("Error generating signal:", error);
       // Fallback to mock data on any failure.
@@ -445,3 +446,6 @@ export default SmartSignalWidget;
     
 
 
+
+
+    
