@@ -10,6 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {getMarketNews as fetchMarketNews} from '@/services/market-news-service';
 import {z} from 'genkit';
 
@@ -86,7 +87,7 @@ const fallbackGenerator = ai.definePrompt({
     name: 'fallbackGenerator',
     input: { schema: GenerateAiInsightInputSchema },
     output: { schema: z.object({ summary: z.string() }) },
-    model: 'gemini-pro',
+    model: googleAI.model('gemini-1.5-flash-latest'),
     prompt: `You are a high-speed market analysis AI. The primary analysis model is unavailable.
     Provide a concise, single-paragraph executive summary based on the following data for {{{symbol}}}.
     - Trend: {{{isBullish}}} (True=Bullish)
@@ -113,7 +114,7 @@ const generateAiInsightFlow = ai.defineFlow(
     try {
       // Primary model attempt
       const { output } = await ai.generate({
-        model: 'gemini-pro',
+        model: googleAI.model('gemini-1.5-flash-latest'),
         tools: [getMarketNews],
         output: {
             format: 'json',
