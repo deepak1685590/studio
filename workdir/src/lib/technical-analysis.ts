@@ -1,29 +1,6 @@
 
-
-
-
-
-
-
-
-
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock } from '@/types';
-
-async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
-  const { timeout = 8000 } = options;
-  
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-
-  const response = await fetch(resource, {
-    ...options,
-    signal: controller.signal  
-  });
-  clearTimeout(id);
-
-  return response;
-}
-
+import { getKlines as fetchKlinesFromServer } from '@/app/actions/getKlines';
 
 const getMockKlines = (price: number, interval: Timeframe) => {
   const klines = [];
@@ -414,15 +391,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     let price, klines: any[], symbolWithUSDT = symbol.toUpperCase().replace('/', '') + (isCrypto(symbol) ? "USDT" : "");
     const analysisSeed = `${symbol}-${timeframe}`;
     
-    const timeframeToInterval = {
-      '5m': '5m',
-      '15m': '15m',
-      '1h': '1h',
-      '4h': '4h',
-      '1d': '1d',
-    };
-    const apiInterval = timeframeToInterval[timeframe] || '15m';
-
     const useMockData = forceMock || !isCrypto(symbol);
 
     if (useMockData) {
@@ -435,17 +403,16 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         klines = getMockKlines(price, timeframe);
     } else {
         try {
-            const priceResponse = await fetchWithTimeout(`https://api.binance.com/api/v3/ticker/price?symbol=${symbolWithUSDT}`, { timeout: 3000 });
-            if (!priceResponse.ok) throw new Error('Price fetch failed');
-            const priceData = await priceResponse.json();
-            price = parseFloat(priceData.price);
-            
-            const klinesResponse = await fetchWithTimeout(`https://api.binance.com/api/v3/klines?symbol=${symbolWithUSDT}&interval=${apiInterval}&limit=200`, { timeout: 5000 });
-            if (!klinesResponse.ok) throw new Error('Klines fetch failed');
-            klines = await klinesResponse.json();
+            // Use the server action to fetch klines
+            klines = await fetchKlinesFromServer(symbolWithUSDT, timeframe);
+            if (!klines || klines.length === 0) {
+                throw new Error('Server action returned no klines');
+            }
+            // Use the last close price from the fetched klines as the current price
+            price = parseFloat(klines[klines.length - 1][4]);
         } catch (err) {
-            console.warn(`Binance API failed for ${symbolWithUSDT}, using mock data.`, err);
-            return getSignalData(symbol, mode, timeframe, true);
+            console.warn(`Server action for ${symbolWithUSDT} failed, using mock data.`, err);
+            return getSignalData(symbol, mode, timeframe, true); // Fallback to mock data
         }
     }
     
