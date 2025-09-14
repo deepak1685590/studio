@@ -86,7 +86,7 @@ const fallbackGenerator = ai.definePrompt({
     name: 'fallbackGenerator',
     input: { schema: GenerateAiInsightInputSchema },
     output: { schema: z.object({ summary: z.string() }) },
-    model: 'googleai/gemini-1.5-flash-latest',
+    model: 'google/gemini-flash-1.5',
     prompt: `You are a high-speed market analysis AI. The primary analysis model is unavailable.
     Provide a concise, single-paragraph executive summary based on the following data for {{{symbol}}}.
     - Trend: {{{isBullish}}} (True=Bullish)
@@ -113,7 +113,7 @@ const generateAiInsightFlow = ai.defineFlow(
     try {
       // Primary model attempt
       const { output } = await ai.generate({
-        model: 'googleai/gemini-1.5-flash-latest',
+        model: 'google/gemini-flash-1.5',
         tools: [getMarketNews],
         output: {
             format: 'json',
@@ -170,7 +170,7 @@ const generateAiInsightFlow = ai.defineFlow(
          
          // Check for specific quota error
          const errorMessage = fallbackError instanceof Error ? fallbackError.message : "An unknown internal error occurred.";
-         if (errorMessage.includes("429") || errorMessage.includes("QuotaFailure")) {
+         if (errorMessage.includes("429") || errorMessage.includes("QuotaFailure") || errorMessage.includes("quota")) {
             errorPayload.executiveSummary.timeHorizon = "The daily API quota has been exceeded. This feature will be available again tomorrow. Please check your billing details for more information.";
          } else {
             errorPayload.executiveSummary.timeHorizon = `Primary model failed and fallback also failed: ${errorMessage}`;
