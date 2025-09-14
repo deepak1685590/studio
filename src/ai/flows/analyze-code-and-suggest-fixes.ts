@@ -35,7 +35,7 @@ const analyzeCodeFlow = ai.defineFlow(
   },
   async ({ codeOrError }) => {
     const { output } = await ai.generate({
-      model: 'gemini-1.5-flash-latest',
+      model: 'gemini-pro',
       output: {
         format: 'json',
         schema: AnalyzeCodeOutputSchema,
