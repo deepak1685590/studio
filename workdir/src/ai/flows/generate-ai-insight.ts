@@ -43,11 +43,10 @@ export type GenerateAiInsightInput = z.infer<typeof GenerateAiInsightInputSchema
 
 const GenerateAiInsightOutputSchema = z.object({
   executiveSummary: z.object({
-    primaryBias: z.string(),
-    setupStrength: z.string(),
-    keyLevels: z.string(),
-    opportunityGrade: z.enum(['Institutional', 'Professional', 'Retail']),
-    timeHorizon: z.string(),
+    primaryBias: z.string().describe("The primary market bias (e.g., 'Bullish Continuation', 'Bearish Reversal')."),
+    setupStrength: z.string().describe("The perceived strength of this trading setup (e.g., 'High-Conviction', 'Moderate')."),
+    opportunityGrade: z.enum(['Institutional', 'Professional', 'Retail']).describe("A letter grade for the quality of the opportunity."),
+    timeHorizon: z.string().describe("The recommended time horizon for this trade (e.g., 'Scalp', 'Intraday', 'Swing')."),
   }),
   tradeSetup: z.object({
     entryPrice: z.string().describe("The AI's optimized primary entry price."),
@@ -59,57 +58,8 @@ const GenerateAiInsightOutputSchema = z.object({
   }).describe("The AI-generated trade plan with precise levels."),
   predictiveAnalysis: z.object({
     primaryScenario: z.string().describe("A detailed description of the most likely price action scenario over the specified timeframe."),
-    predictedTarget: z.object({
-        shortTerm: z.string().describe("The AI's price target for a short-term timeframe (e.g., 5-15 minutes)."),
-        intraday: z.string().describe("The AI's price target for an intraday timeframe (e.g., 1-4 hours)."),
-        swing: z.string().describe("The AI's price target for a swing trade timeframe (e.g., Daily/Weekly)."),
-    }).describe("The AI's primary price targets broken down by different timeframes."),
-    timeframe: z.string().describe("The estimated time it will take to reach the predicted target, prefixed with 'Long:' or 'Short:' based on the overall trade bias (e.g., 'Long: 1-3 hours', 'Short: 4-8 hours')."),
     successProbability: z.string().describe("The AI's confidence in the primary scenario, as a percentage."),
-    invalidationLevel: z.string().describe("The price level at which the primary scenario would be considered invalid."),
-    keyCatalysts: z.string().describe("The key technical or fundamental catalysts that could trigger the predicted move."),
     alternativeScenario: z.string().describe("A brief description of a plausible alternative scenario if the primary prediction is invalidated.")
-  }),
-  technicalAnalysis: z.object({
-    multiTimeframe: z.string(),
-    volumeProfile: z.string(),
-    marketMicrostructure: z.string(),
-  }),
-  riskManagement: z.object({
-    positionSizing: z.string(),
-    dynamicLevels: z.string(),
-  }),
-  sentimentAndFlow: z.object({
-    onChainMetrics: z.string(),
-    marketSentiment: z.string(),
-  }),
-  probabilityAssessment: z.object({
-    successMatrix: z.string(),
-    alternativeScenarios: z.string(),
-  }),
-  advancedConfluence: z.object({
-    indicators: z.string(),
-    patterns: z.string(),
-  }),
-  institutionalBehavior: z.object({
-    smartMoney: z.string(),
-    correlation: z.string(),
-  }),
-  executionStrategy: z.object({
-    entryTactics: z.string(),
-    exitStrategy: z.string(),
-  }),
-  marketContext: z.object({
-    macroFactors: z.string(),
-    technicalCatalysts: z.string(),
-  }),
-  performanceTracking: z.object({
-    tradeManagementKPIs: z.string(),
-    learningMetrics: z.string(),
-  }),
-  alertSystem: z.object({
-    preEntry: z.string(),
-    inTrade: z.string(),
   }),
 });
 export type GenerateAiInsightOutput = z.infer<typeof GenerateAiInsightOutputSchema>;
@@ -136,7 +86,7 @@ const fallbackGenerator = ai.definePrompt({
     name: 'fallbackGenerator',
     input: { schema: GenerateAiInsightInputSchema },
     output: { schema: z.object({ summary: z.string() }) },
-    model: 'googleai/gemini-1.5-flash-latest',
+    model: 'google/gemini-flash-1.5',
     prompt: `You are a high-speed market analysis AI. The primary analysis model is unavailable.
     Provide a concise, single-paragraph executive summary based on the following data for {{{symbol}}}.
     - Trend: {{{isBullish}}} (True=Bullish)
@@ -155,39 +105,29 @@ const generateAiInsightFlow = ai.defineFlow(
   },
   async (input) => {
     const errorPayload: GenerateAiInsightOutput = {
-        executiveSummary: { primaryBias: "Error", setupStrength: "N/A", keyLevels: "N/A", opportunityGrade: "Retail", timeHorizon: "The AI model encountered an unrecoverable error." },
+        executiveSummary: { primaryBias: "Error", setupStrength: "N/A", opportunityGrade: "Retail", timeHorizon: "The AI model encountered an unrecoverable error." },
         tradeSetup: { entryPrice: "N/A", stopLoss: "N/A", takeProfit1: "N/A", takeProfit2: "N/A", tradeRationale: "N/A" },
-        predictiveAnalysis: { primaryScenario: "N/A", predictedTarget: { shortTerm: "N/A", intraday: "N/A", swing: "N/A" }, timeframe: "N/A", successProbability: "N/A", invalidationLevel: "N/A", keyCatalysts: "N/A", alternativeScenario: "N/A" },
-        technicalAnalysis: { multiTimeframe: "N/A", volumeProfile: "N/A", marketMicrostructure: "N/A" },
-        riskManagement: { positionSizing: "N/A", dynamicLevels: "N/A" },
-        sentimentAndFlow: { onChainMetrics: "N/A", marketSentiment: "N/A" },
-        probabilityAssessment: { successMatrix: "N/A", alternativeScenarios: "N/A" },
-        advancedConfluence: { indicators: "N/A", patterns: "N/A" },
-        institutionalBehavior: { smartMoney: "N/A", correlation: "N/A" },
-        executionStrategy: { entryTactics: "N/A", exitStrategy: "N/A" },
-        marketContext: { macroFactors: "N/A", technicalCatalysts: "N/A" },
-        performanceTracking: { tradeManagementKPIs: "N/A", learningMetrics: "N/A" },
-        alertSystem: { preEntry: "N/A", inTrade: "N/A" }
+        predictiveAnalysis: { primaryScenario: "N/A", successProbability: "N/A", alternativeScenario: "N/A" },
     };
 
     try {
       // Primary model attempt
       const { output } = await ai.generate({
-        model: 'googleai/gemini-1.5-flash-latest',
+        model: 'google/gemini-flash-1.5',
         tools: [getMarketNews],
         output: {
             format: 'json',
             schema: GenerateAiInsightOutputSchema,
         },
-        prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for {{{symbol}}}.
+        prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a concise but powerful trading analysis report for {{{symbol}}}.
         First, use the getMarketNews tool to fetch the latest headlines for {{{symbol}}}.
         Then, synthesize ALL the provided data into the structured JSON format below.
         
         **Crucially, based on your holistic analysis of all provided data, you must derive and populate the 'tradeSetup' section with your own optimized primary entry, stop-loss, and take-profit levels. Provide a brief rationale for your choices.**
         
         **If you identify a secondary, high-probability entry point based on multi-layer confirmation (like a confluence of Fibonacci levels, pivot points, or key moving averages from the provided data), populate the optional 'secondaryEntryPrice' field. Otherwise, omit it.**
-
-        For the 'predictedTarget', provide distinct price targets for short-term (scalp/5-15m), intraday (1-4h), and swing (daily/weekly) timeframes based on the overall analysis.
+        
+        Fill out EVERY field in the JSON schema with insightful, actionable analysis. Be professional and direct.
 
         ## Analysis Parameters
         - Asset: {{{symbol}}}
@@ -195,6 +135,7 @@ const generateAiInsightFlow = ai.defineFlow(
         - Analysis Timestamp: ${new Date().toISOString()}
         - Market Session: {{{marketSession}}}
         - Volatility Regime: {{{volatilityRegime}}}
+        - Provided Data: ${JSON.stringify(input)}
         `,
         input: input,
       });
@@ -219,7 +160,6 @@ const generateAiInsightFlow = ai.defineFlow(
          fallbackPayload.executiveSummary = {
              primaryBias: "Summary (Fallback Model)",
              setupStrength: "N/A",
-             keyLevels: "N/A",
              opportunityGrade: "Retail",
              timeHorizon: fallbackOutput.summary
          };
