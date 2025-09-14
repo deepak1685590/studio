@@ -21,6 +21,8 @@ import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 import QuantumOrderBlockMatrix from './QuantumOrderBlockMatrix';
 import PredictiveAnalysis from './PredictiveAnalysis';
 import QuantumSummary from './QuantumSummary';
+import SmartMoneyConcepts from './SmartMoneyConcepts';
+import SupermodeDashboard from './SupermodeDashboard';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -29,13 +31,6 @@ const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }
 const SectionWrapper = ({ children, className }: { children: React.ReactNode, className?: string }) => (
   <div className={cn('p-4 bg-black/30 rounded-lg border border-primary/30', className)}>
     {children}
-  </div>
-);
-
-const ChecklistItem = ({ label, passed }: { label: string; passed: boolean }) => (
-  <div className="flex items-center gap-2">
-    {passed ? <CheckCircle2 className="text-green-400" /> : <XCircle className="text-red-400" />}
-    <span className={cn("text-sm", passed ? "text-green-400/90" : "text-red-400/90")}>{label}</span>
   </div>
 );
 
@@ -152,60 +147,6 @@ const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | nu
     );
 };
 
-const SmartMoneyConcepts: React.FC<{ data: SignalData, trendColor: string }> = ({ data, trendColor }) => {
-  const { liquidity, smartMoneyConcepts, isBullish } = data;
-  const isCrypto = !data.price.toString().includes('.');
-
-  const SMC_Item = ({ icon, title, level, description }: { icon: React.ReactNode, title: string, level: string, description: string }) => (
-    <div className="flex items-start gap-3">
-      <div className="p-2 bg-black rounded-full border border-primary/50 mt-1">
-        {icon}
-      </div>
-      <div>
-        <h5 className="font-headline text-primary">{title} <span className="font-mono text-base">${parseFloat(level).toFixed(isCrypto ? 2 : 4)}</span></h5>
-        <p className="text-xs text-foreground/70">{description}</p>
-      </div>
-    </div>
-  );
-
-  return (
-    <div>
-      <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
-      <SectionWrapper>
-        <div className="space-y-4">
-            <SMC_Item 
-                icon={<GitPullRequest size={20} />} 
-                title="Liquidity Grab" 
-                level={liquidity.level}
-                description={liquidity.description}
-            />
-            <SMC_Item 
-                icon={<GitBranch size={20} />} 
-                title="Break of Structure (BOS)" 
-                level={smartMoneyConcepts.bos}
-                description={isBullish ? "Confirmation of upward trend continuation." : "Confirmation of downward trend continuation."}
-            />
-            <SMC_Item 
-                icon={<Replace size={20} />} 
-                title="Change of Character (CHOCH)" 
-                level={smartMoneyConcepts.choch}
-                description="Indicates a potential trend reversal has occurred."
-            />
-            <div className={cn(
-                "mt-4 p-3 rounded-lg border-2 text-center animate-pulse",
-                isBullish ? "border-green-400 bg-green-900/40 shadow-[0_0_15px_theme(colors.green.400)]" : "border-red-500 bg-red-900/40 shadow-[0_0_15px_theme(colors.red.500)]"
-            )}>
-                <h5 className="font-headline text-lg text-white">Confirmed {isBullish ? "Long" : "Short"} Entry</h5>
-                <p className={cn("font-mono text-2xl font-bold", trendColor)} style={{ textShadow: `0 0 10px currentColor` }}>
-                    ${smartMoneyConcepts.confirmedEntry}
-                </p>
-            </div>
-        </div>
-      </SectionWrapper>
-    </div>
-  );
-}
-
 const LevelRow: React.FC<{
   label: string;
   value: string;
@@ -286,7 +227,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
   const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; 
   const trendColor = data.isBullish ? 'text-green-400' : 'text-red-400';
-  const showSummary = (mode === '3' || mode === '4') && aiInsight?.executiveSummary.primaryBias !== 'Error' && aiInsight?.executiveSummary.timeHorizon !== "The daily API quota has been exceeded. This feature will be available again tomorrow. Please check your billing details for more information.";
+  const showSummary = (mode === '3' || mode === '4' || mode === '5') && aiInsight?.executiveSummary.primaryBias !== 'Error' && aiInsight?.executiveSummary.timeHorizon !== "The daily API quota has been exceeded. This feature will be available again tomorrow. Please check your billing details for more information.";
 
   return (
     <div id="signal-card-content" className={cn(
@@ -324,137 +265,134 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       
       {isNearEntry && !hitTargets.entry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
 
-      <SectionWrapper>
-        <div className="grid grid-cols-1 gap-2">
-            <div className="flex justify-between items-center p-2">
-                <span className="font-headline text-lg text-primary/80">Live Price:</span>
-                <span className={cn("font-mono text-3xl font-bold flex items-center gap-2 transition-colors duration-300",
-                    priceDirection === 'up' && 'text-green-400',
-                    priceDirection === 'down' && 'text-red-400',
-                )} style={{
-                    textShadow: priceDirection !== 'neutral' ? `0 0 10px currentColor` : 'none'
-                }}>
-                      <span className={cn(
-                        "w-4 h-4 rounded-full transition-all",
-                        priceDirection === 'up' && 'bg-green-500 shadow-[0_0_8px_theme(colors.green.500)] animate-pulse',
-                        priceDirection === 'down' && 'bg-red-500 shadow-[0_0_8px_theme(colors.red.500)] animate-pulse',
-                        priceDirection === 'neutral' && 'bg-gray-500'
-                     )}></span>
-                    ${displayPrice.toFixed(isCrypto ? 2 : 4)}
-                </span>
-            </div>
-
-            <LevelRow label={data.isBullish ? 'Long Entry' : 'Short Entry'} value={data.entry} isHit={hitTargets.entry} type="entry" icon={<LogIn size={18} />} />
-            <LevelRow label="Stop-Loss" value={data.sl} type="sl" icon={<Shield size={18} />} />
-            <LevelRow label="Take-Profit 1" value={data.tp1} isHit={hitTargets.tp1} type="tp" icon={<Target size={18} />} />
-            <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} type="tp" icon={<Target size={18} />} />
-            
-            <div className="flex justify-between text-base pt-2 px-2"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono font-bold">1 : {data.riskReward.toFixed(1)}</span></div>
-        </div>
-      </SectionWrapper>
-      
-      { (mode === '3' || mode === '4') && aiInsight && <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} />}
-      
-      <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />
-      
-      <QuantumPivotsMatrix data={data.multiTimeframeSR} livePrice={realtimePrice} />
-
-      <QuantumEntryMatrix data={data} livePrice={realtimePrice} />
-
-      {data.orderBlock && <QuantumOrderBlockMatrix orderBlock={data.orderBlock} entryPrice={entryPriceNum} />}
-
-
-      <KeyLevels data={data} />
-
-      {mode === '4' && data.sniperZone && (
-        <Alert className="border-primary bg-gradient-to-br from-primary/20 via-black to-accent/20 text-primary shadow-[0_0_25px_hsl(var(--primary)_/_0.6)] scanner-glow">
-            <Crosshair className="h-5 w-5 text-primary" />
-            <AlertTitle className="font-headline text-lg text-primary">
-                Quantum Sniper Zone ({data.isBullish ? "Long" : "Short"})
-            </AlertTitle>
-            <AlertDescription className="font-mono text-xl mt-1 text-white/90">
-                ${data.sniperZone.min} - ${data.sniperZone.max}
-            </AlertDescription>
-        </Alert>
-      )}
-
-      {data.goldenPullbackZone && (
-        <Alert className="border-amber-400 bg-gradient-to-br from-yellow-900/40 to-black text-amber-300 shadow-[0_0_15px_hsl(38_92%_50%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(38_92%_50%_/_0.8)]">
-            <Target className="h-5 w-5 text-amber-300" />
-            <AlertTitle className="font-headline text-lg text-amber-300">
-                Golden {data.isBullish ? "Long" : "Short"} Re-Entry Zone
-            </AlertTitle>
-            <AlertDescription className="font-mono text-xl mt-1 text-white/90">
-                ${data.goldenPullbackZone.min} - ${data.goldenPullbackZone.max}
-            </AlertDescription>
-        </Alert>
-      )}
-
-      {data.goldenReverseZone && (
-        <Alert className="border-purple-400 bg-gradient-to-br from-purple-900/40 to-black text-purple-300 shadow-[0_0_15px_hsl(271_76%_53%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(271_76%_53%_/_0.8)]">
-            <ShieldAlert className="h-5 w-5 text-purple-300" />
-            <AlertTitle className="font-headline text-lg text-purple-300">
-                Golden {data.isBullish ? "Short" : "Long"} Reverse Zone
-            </AlertTitle>
-            <AlertDescription className="font-mono text-xl mt-1 text-white/90">
-                ${data.goldenReverseZone.min} - ${data.goldenReverseZone.max}
-            </AlertDescription>
-        </Alert>
-      )}
-      
-      {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
-      
-      <InstitutionalInterest data={data} livePrice={displayPrice} />
-
-      <ConfidenceBreakdown 
-        breakdown={data.confidenceBreakdown} 
-        confidence={data.confidence}
-        isBullish={data.isBullish} 
-      />
-        
-      <div>
-        <SectionHeader icon={<BarChart />} title="Multi-Timeframe Analysis" />
-        <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <SectionHeader icon={<BookOpen />} title="Pattern Recognition" />
-          <SectionWrapper>
-            <h5 className="font-bold text-primary">{data.chartPattern.name}</h5>
-            <p className="text-xs text-foreground/80 mt-1">{data.chartPattern.description}</p>
-          </SectionWrapper>
-        </div>
-        <div>
-          <SectionHeader icon={<CheckCircle2 />} title="Trader's Checklist" />
-          <SectionWrapper>
-              <div className="space-y-2">
-                <ChecklistItem label={`R/R > 1.5 (${data.riskReward.toFixed(1)})`} passed={data.tradersChecklist.riskRewardPass} />
-                <ChecklistItem label="HTF Alignment" passed={data.tradersChecklist.mtfAlignmentPass} />
-                <ChecklistItem label="Volume Confirmation" passed={data.tradersChecklist.volumeConfirmationPass} />
-                <ChecklistItem label="Momentum Alignment" passed={data.tradersChecklist.momentumAlignmentPass} />
-                <ChecklistItem label="Smart Money Entry" passed={data.tradersChecklist.smartMoneyEntryPass} />
-              </div>
-          </SectionWrapper>
-        </div>
-      </div>
-      
-      <SmartMoneyConcepts data={data} trendColor={trendColor} />
-
-      <div>
-        <SectionHeader icon={<Zap />} title={`Quantum Signals Detected (${data.confluenceCount})`} />
-        <SectionWrapper>
-            <div className="space-y-3">
-                {data.confluenceFactors.map((factor, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm text-primary/90 p-2 bg-primary/5 rounded-md border border-primary/10">
-                        <Zap size={14} className="text-amber-400" />
-                        <span>{factor}</span>
+      {mode === '5' && data.supermodeAnalysis ? (
+        <SupermodeDashboard analysis={data.supermodeAnalysis} />
+      ) : (
+        <>
+            <SectionWrapper>
+                <div className="grid grid-cols-1 gap-2">
+                    <div className="flex justify-between items-center p-2">
+                        <span className="font-headline text-lg text-primary/80">Live Price:</span>
+                        <span className={cn("font-mono text-3xl font-bold flex items-center gap-2 transition-colors duration-300",
+                            priceDirection === 'up' && 'text-green-400',
+                            priceDirection === 'down' && 'text-red-400',
+                        )} style={{
+                            textShadow: priceDirection !== 'neutral' ? `0 0 10px currentColor` : 'none'
+                        }}>
+                              <span className={cn(
+                                "w-4 h-4 rounded-full transition-all",
+                                priceDirection === 'up' && 'bg-green-500 shadow-[0_0_8px_theme(colors.green.500)] animate-pulse',
+                                priceDirection === 'down' && 'bg-red-500 shadow-[0_0_8px_theme(colors.red.500)] animate-pulse',
+                                priceDirection === 'neutral' && 'bg-gray-500'
+                             )}></span>
+                            ${displayPrice.toFixed(isCrypto ? 2 : 4)}
+                        </span>
                     </div>
-                ))}
-                {data.liquidityMatrix && <LiquidityTargetAlert prediction={data.liquidityMatrix.prediction} />}
+
+                    <LevelRow label={data.isBullish ? 'Long Entry' : 'Short Entry'} value={data.entry} isHit={hitTargets.entry} type="entry" icon={<LogIn size={18} />} />
+                    <LevelRow label="Stop-Loss" value={data.sl} type="sl" icon={<Shield size={18} />} />
+                    <LevelRow label="Take-Profit 1" value={data.tp1} isHit={hitTargets.tp1} type="tp" icon={<Target size={18} />} />
+                    <LevelRow label="Take-Profit 2" value={data.tp2} isHit={hitTargets.tp2} type="tp" icon={<Target size={18} />} />
+                    
+                    <div className="flex justify-between text-base pt-2 px-2"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono font-bold">1 : {data.riskReward.toFixed(1)}</span></div>
+                </div>
+            </SectionWrapper>
+            
+            { (mode === '3' || mode === '4') && aiInsight && <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} />}
+            
+            <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />
+            
+            <QuantumPivotsMatrix data={data.multiTimeframeSR} livePrice={realtimePrice} />
+
+            <QuantumEntryMatrix data={data} livePrice={realtimePrice} />
+
+            {data.orderBlock && <QuantumOrderBlockMatrix orderBlock={data.orderBlock} entryPrice={entryPriceNum} />}
+
+            <KeyLevels data={data} />
+
+            {mode === '4' && data.sniperZone && (
+              <Alert className="border-primary bg-gradient-to-br from-primary/20 via-black to-accent/20 text-primary shadow-[0_0_25px_hsl(var(--primary)_/_0.6)] scanner-glow">
+                  <Crosshair className="h-5 w-5 text-primary" />
+                  <AlertTitle className="font-headline text-lg text-primary">
+                      Quantum Sniper Zone ({data.isBullish ? "Long" : "Short"})
+                  </AlertTitle>
+                  <AlertDescription className="font-mono text-xl mt-1 text-white/90">
+                      ${data.sniperZone.min} - ${data.sniperZone.max}
+                  </AlertDescription>
+              </Alert>
+            )}
+
+            {data.goldenPullbackZone && (
+              <Alert className="border-amber-400 bg-gradient-to-br from-yellow-900/40 to-black text-amber-300 shadow-[0_0_15px_hsl(38_92%_50%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(38_92%_50%_/_0.8)]">
+                  <Target className="h-5 w-5 text-amber-300" />
+                  <AlertTitle className="font-headline text-lg text-amber-300">
+                      Golden {data.isBullish ? "Long" : "Short"} Re-Entry Zone
+                  </AlertTitle>
+                  <AlertDescription className="font-mono text-xl mt-1 text-white/90">
+                      ${data.goldenPullbackZone.min} - ${data.goldenPullbackZone.max}
+                  </AlertDescription>
+              </Alert>
+            )}
+
+            {data.goldenReverseZone && (
+              <Alert className="border-purple-400 bg-gradient-to-br from-purple-900/40 to-black text-purple-300 shadow-[0_0_15px_hsl(271_76%_53%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(271_76%_53%_/_0.8)]">
+                  <ShieldAlert className="h-5 w-5 text-purple-300" />
+                  <AlertTitle className="font-headline text-lg text-purple-300">
+                      Golden {data.isBullish ? "Short" : "Long"} Reverse Zone
+                  </AlertTitle>
+                  <AlertDescription className="font-mono text-xl mt-1 text-white/90">
+                      ${data.goldenReverseZone.min} - ${data.goldenReverseZone.max}
+                  </AlertDescription>
+              </Alert>
+            )}
+            
+            {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
+            
+            <InstitutionalInterest data={data} livePrice={displayPrice} />
+
+            <ConfidenceBreakdown 
+              breakdown={data.confidenceBreakdown} 
+              confidence={data.confidence}
+              isBullish={data.isBullish} 
+            />
+              
+            <div>
+              <SectionHeader icon={<BarChart />} title="Multi-Timeframe Analysis" />
+              <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
             </div>
-        </SectionWrapper>
-      </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <SectionHeader icon={<BookOpen />} title="Pattern Recognition" />
+                <SectionWrapper>
+                  <h5 className="font-bold text-primary">{data.chartPattern.name}</h5>
+                  <p className="text-xs text-foreground/80 mt-1">{data.chartPattern.description}</p>
+                </SectionWrapper>
+              </div>
+              <div>
+                <SectionHeader icon={<CheckCircle2 />} title="Trader's Checklist" />
+                <SectionWrapper>
+                    <SmartMoneyConcepts data={data} />
+                </SectionWrapper>
+              </div>
+            </div>
+            
+            <div>
+              <SectionHeader icon={<Zap />} title={`Quantum Signals Detected (${data.confluenceCount})`} />
+              <SectionWrapper>
+                  <div className="space-y-3">
+                      {data.confluenceFactors.map((factor, i) => (
+                          <div key={i} className="flex items-center gap-2 text-sm text-primary/90 p-2 bg-primary/5 rounded-md border border-primary/10">
+                              <Zap size={14} className="text-amber-400" />
+                              <span>{factor}</span>
+                          </div>
+                      ))}
+                      {data.liquidityMatrix && <LiquidityTargetAlert prediction={data.liquidityMatrix.prediction} />}
+                  </div>
+              </SectionWrapper>
+            </div>
+        </>
+      )}
 
       <div className="flex justify-between items-center mt-6">
         <small className="text-foreground/50">Generated: {new Date().toLocaleString()}</small>
@@ -475,3 +413,4 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+

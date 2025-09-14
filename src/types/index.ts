@@ -1,4 +1,5 @@
 
+
 import type { GenerateAiInsightInput as GenkitGenerateAiInsightInput, GenerateAiInsightOutput as GenkitGenerateAiInsightOutput } from "@/ai/flows/generate-ai-insight";
 import type { OracleInsightInput as GenkitOracleInsightInput } from "@/ai/flows/oracle-insight";
 
@@ -257,6 +258,24 @@ export interface LiquidityMatrixData {
     currentPrice: number;
 }
 
+export interface SupermodeTimeframeData {
+    entry: string;
+    sl: string;
+    tp1: string;
+    supplyZone: [string, string];
+    demandZone: [string, string];
+    confidence: number;
+}
+
+export interface SupermodeAnalysis {
+    isBullish: boolean;
+    setups: {
+        '5m': SupermodeTimeframeData;
+        '15m': SupermodeTimeframeData;
+        '1h': SupermodeTimeframeData;
+    }
+}
+
 
 export interface SignalData {
   symbol: string;
@@ -281,10 +300,6 @@ export interface SignalData {
   val: string;
   s1: string;
   r1: string;
-  r2: string;
-  r3: string;
-  s2: string;
-  s3: string;
   buyVolume: string;
   sellVolume: string;
   volumeImbalance: string;
@@ -314,4 +329,5 @@ export interface SignalData {
   superTrendAnalysis: SuperTrendAnalysis;
   liquidityMatrix?: LiquidityMatrixData;
   advancedStrengthDashboard?: AdvancedStrengthDashboardData;
+  supermodeAnalysis?: SupermodeAnalysis;
 }

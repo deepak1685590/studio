@@ -389,6 +389,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
                     <SelectItem value="2">2 - Pro Signal</SelectItem>
                     <SelectItem value="3">3 - Elite Mode (AI-Powered)</SelectItem>
                     <SelectItem value="4">4 - Multi-Layer Confirmation</SelectItem>
+                    <SelectItem value="5">5 - Supermode (MTF Dashboard)</SelectItem>
                   </SelectContent>
                 </Select>
             </div>
