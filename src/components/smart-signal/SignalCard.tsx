@@ -20,6 +20,7 @@ import QuantumSuperTrendMatrix from './QuantumSuperTrendMatrix';
 import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 import QuantumOrderBlockMatrix from './QuantumOrderBlockMatrix';
 import PredictiveAnalysis from './PredictiveAnalysis';
+import QuantumSummary from './QuantumSummary';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -317,6 +318,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
           </div>
         </div>
       </header>
+
+      { (mode === '3' || mode === '4') && <QuantumSummary insight={aiInsight} /> }
       
       {isNearEntry && !hitTargets.entry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
 

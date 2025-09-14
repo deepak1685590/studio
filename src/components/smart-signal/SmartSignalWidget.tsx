@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSignalData } from '@/lib/technical-analysis';
-import type { SignalData, BookTicker, GenerateAiInsightOutput } from '@/types';
+import type { SignalData, BookTicker, GenerateAiInsightOutput, GenerateAiInsightInput } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
 import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Wallet } from 'lucide-react';
@@ -22,6 +22,7 @@ import TradingSimulator from './TradingSimulator';
 import TrendRibbon from './TrendRibbon';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
+import { generateAiInsight } from '@/ai/flows/generate-ai-insight';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -78,6 +79,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     setRealtimePrice(null);
     setLiveTradeData(null);
     setBookTicker(null);
+    setAiInsight(null);
     setPriceDirection('neutral');
     previousPriceRef.current = null;
     
@@ -96,10 +98,8 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       return;
     }
     
-    // Check if the current symbol is a supported crypto asset for WebSocket connection.
     const isCrypto = cryptoAssetsForWebsocket.includes(currentSymbol.toUpperCase());
 
-    // Establish WebSocket connection ONLY for supported crypto assets
     if (isCrypto && typeof window !== 'undefined') {
       const wsSymbol = currentSymbol.toLowerCase() + 'usdt';
       const streams = `${wsSymbol}@trade/${wsSymbol}@bookTicker`;
@@ -112,7 +112,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
         const stream = message.stream;
         const messageData = message.data;
         
-        // Ensure the message is for the currently active symbol before processing
         if (currentSymbolRef.current.toLowerCase() + 'usdt' !== messageData.s.toLowerCase()) {
             return;
         }
@@ -158,17 +157,53 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     }
 
     try {
-      // The getSignalData function handles fetching real vs mock data.
-      // Force mock for non-crypto to avoid direct API calls from client for Forex/Indices.
       const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, !isCrypto);
       onSignalDataChange(data);
-      if (!isCrypto) { // For non-websocket assets, set price directly from the fetched data
+      if (!isCrypto) {
         setRealtimePrice(data.price);
         previousPriceRef.current = data.price;
       }
+      
+      // If Elite Mode or higher, fetch AI insight
+      if (parseInt(mode, 10) >= 3 && !data.sidewaysMarket) {
+          const insightInput: GenerateAiInsightInput = {
+            symbol: data.symbol,
+            price: data.price,
+            isBullish: data.isBullish,
+            action: data.action,
+            entry: parseFloat(data.entry),
+            sl: parseFloat(data.sl),
+            tp1: parseFloat(data.tp1),
+            tp2: parseFloat(data.tp2),
+            confluenceCount: data.confluenceCount,
+            demandZone: `$${data.demandZone[0]} - ${data.demandZone[1]}`,
+            fvg: `$${data.fvg[0]} - ${data.fvg[1]}`,
+            volumeImbalance: data.volumeImbalance,
+            multiTimeframeAnalysis: {
+                '5m': data.multiTimeframeAnalysis['5m']?.trend || 'Neutral',
+                '15m': data.multiTimeframeAnalysis['15m']?.trend || 'Neutral',
+                '1H': data.multiTimeframeAnalysis['1H']?.trend || 'Neutral',
+                '4H': data.multiTimeframeAnalysis['4H']?.trend || 'Neutral',
+                'Daily': data.multiTimeframeAnalysis['Daily']?.trend || 'Neutral',
+            },
+            chartPatternName: data.chartPattern.name,
+            trendStrength: data.trendStrength.score,
+            momentum: data.momentum.score,
+            marketSession: "New York", 
+            volatilityRegime: "Medium", 
+          };
+          
+          try {
+            const result = await generateAiInsight(insightInput);
+            setAiInsight(result);
+          } catch(e) {
+             console.error("AI Insight fetch failed:", e);
+             toast({ title: "AI Error", description: "Could not retrieve AI analysis.", variant: "destructive" });
+          }
+      }
+
     } catch (error) {
       console.error("Error generating signal:", error);
-      // Fallback to mock data on any failure.
       const mockData = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, true);
       onSignalDataChange(mockData);
       setRealtimePrice(mockData.price);
@@ -185,7 +220,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   }, [symbol]);
 
   useEffect(() => {
-    // Cleanup WebSocket on component unmount
     return () => {
       if (ws.current) {
         ws.current.close();
@@ -445,6 +479,3 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 };
 
 export default SmartSignalWidget;
-    
-
-    
