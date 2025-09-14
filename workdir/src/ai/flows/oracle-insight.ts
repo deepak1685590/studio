@@ -10,6 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const OracleInsightInputSchema = z.object({
@@ -80,7 +81,7 @@ Generate your riddle now for ${input.symbol}.`;
     }
 
     const {output} = await ai.generate({
-      model: 'google/gemini-flash-1.5',
+      model: googleAI.model('gemini-pro'),
       prompt: promptText,
       output: {
         format: 'json',

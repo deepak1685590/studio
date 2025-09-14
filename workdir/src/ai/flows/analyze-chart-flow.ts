@@ -10,6 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const AnalyzeChartInputSchema = z.object({
@@ -47,7 +48,7 @@ const analyzeChartFlow = ai.defineFlow(
   },
   async ({ symbol, chartImageUri }) => {
     const { output } = await ai.generate({
-      model: 'google/gemini-flash-1.5',
+      model: googleAI.model('gemini-pro-vision'),
       output: {
         format: 'json',
         schema: AnalyzeChartOutputSchema,

@@ -10,6 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const AnalyzeCodeInputSchema = z.object({
@@ -35,7 +36,7 @@ const analyzeCodeFlow = ai.defineFlow(
   },
   async ({ codeOrError }) => {
     const { output } = await ai.generate({
-      model: 'google/gemini-flash-1.5',
+      model: googleAI.model('gemini-pro'),
       output: {
         format: 'json',
         schema: AnalyzeCodeOutputSchema,
