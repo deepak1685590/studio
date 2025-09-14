@@ -113,7 +113,11 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
             
           <TabsContent value="elite-ai">
             <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4 max-w-4xl mx-auto">
-                <EliteAiInsight data={eliteAiInsightData} />
+                {isLoading && <p className="text-center">Generating signal before AI analysis can be engaged...</p>}
+                {!isLoading && !signalData && <p className="text-center text-destructive">Could not load signal data. AI analysis is unavailable.</p>}
+                {!isLoading && signalData && eliteAiInsightData && (
+                    <EliteAiInsight data={eliteAiInsightData} />
+                )}
             </div>
           </TabsContent>
         </Tabs>

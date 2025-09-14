@@ -43,73 +43,21 @@ export type GenerateAiInsightInput = z.infer<typeof GenerateAiInsightInputSchema
 
 const GenerateAiInsightOutputSchema = z.object({
   executiveSummary: z.object({
-    primaryBias: z.string(),
-    setupStrength: z.string(),
-    keyLevels: z.string(),
-    opportunityGrade: z.enum(['Institutional', 'Professional', 'Retail']),
-    timeHorizon: z.string(),
+    primaryBias: z.string().describe("The primary market bias (e.g., 'Bullish Continuation', 'Bearish Reversal')."),
+    setupStrength: z.string().describe("The perceived strength of this trading setup (e.g., 'High-Conviction', 'Moderate')."),
+    opportunityGrade: z.enum(['A+', 'A', 'B+', 'B', 'C']).describe("A letter grade for the quality of the opportunity."),
   }),
   tradeSetup: z.object({
     entryPrice: z.string().describe("The AI's optimized primary entry price."),
-    secondaryEntryPrice: z.string().optional().describe("An optional secondary entry price based on multi-layer confirmation, if a suitable one exists."),
     stopLoss: z.string().describe("The AI's recommended stop-loss level."),
     takeProfit1: z.string().describe("The AI's primary take-profit target."),
     takeProfit2: z.string().describe("The AI's secondary take-profit target."),
-    tradeRationale: z.string().describe("A brief rationale for the chosen entry and target levels."),
+    tradeRationale: z.string().describe("A brief, powerful rationale for the chosen entry and target levels."),
   }).describe("The AI-generated trade plan with precise levels."),
   predictiveAnalysis: z.object({
-    primaryScenario: z.string().describe("A detailed description of the most likely price action scenario over the specified timeframe."),
-    predictedTarget: z.object({
-        shortTerm: z.string().describe("The AI's price target for a short-term timeframe (e.g., 5-15 minutes)."),
-        intraday: z.string().describe("The AI's price target for an intraday timeframe (e.g., 1-4 hours)."),
-        swing: z.string().describe("The AI's price target for a swing trade timeframe (e.g., Daily/Weekly)."),
-    }).describe("The AI's primary price targets broken down by different timeframes."),
-    timeframe: z.string().describe("The estimated time it will take to reach the predicted target, prefixed with 'Long:' or 'Short:' based on the overall trade bias (e.g., 'Long: 1-3 hours', 'Short: 4-8 hours')."),
+    primaryScenario: z.string().describe("A concise, high-impact description of the most likely price action scenario."),
     successProbability: z.string().describe("The AI's confidence in the primary scenario, as a percentage."),
-    invalidationLevel: z.string().describe("The price level at which the primary scenario would be considered invalid."),
-    keyCatalysts: z.string().describe("The key technical or fundamental catalysts that could trigger the predicted move."),
     alternativeScenario: z.string().describe("A brief description of a plausible alternative scenario if the primary prediction is invalidated.")
-  }),
-  technicalAnalysis: z.object({
-    multiTimeframe: z.string(),
-    volumeProfile: z.string(),
-    marketMicrostructure: z.string(),
-  }),
-  riskManagement: z.object({
-    positionSizing: z.string(),
-    dynamicLevels: z.string(),
-  }),
-  sentimentAndFlow: z.object({
-    onChainMetrics: z.string(),
-    marketSentiment: z.string(),
-  }),
-  probabilityAssessment: z.object({
-    successMatrix: z.string(),
-    alternativeScenarios: z.string(),
-  }),
-  advancedConfluence: z.object({
-    indicators: z.string(),
-    patterns: z.string(),
-  }),
-  institutionalBehavior: z.object({
-    smartMoney: z.string(),
-    correlation: z.string(),
-  }),
-  executionStrategy: z.object({
-    entryTactics: z.string(),
-    exitStrategy: z.string(),
-  }),
-  marketContext: z.object({
-    macroFactors: z.string(),
-    technicalCatalysts: z.string(),
-  }),
-  performanceTracking: z.object({
-    tradeManagementKPIs: z.string(),
-    learningMetrics: z.string(),
-  }),
-  alertSystem: z.object({
-    preEntry: z.string(),
-    inTrade: z.string(),
   }),
 });
 export type GenerateAiInsightOutput = z.infer<typeof GenerateAiInsightOutputSchema>;
@@ -155,20 +103,10 @@ const generateAiInsightFlow = ai.defineFlow(
   },
   async (input) => {
     const errorPayload: GenerateAiInsightOutput = {
-        executiveSummary: { primaryBias: "Error", setupStrength: "N/A", keyLevels: "N/A", opportunityGrade: "Retail", timeHorizon: "The AI model encountered an unrecoverable error." },
+        executiveSummary: { primaryBias: "Error", setupStrength: "N/A", opportunityGrade: "C", timeHorizon: "The AI model encountered an unrecoverable error." },
         tradeSetup: { entryPrice: "N/A", stopLoss: "N/A", takeProfit1: "N/A", takeProfit2: "N/A", tradeRationale: "N/A" },
-        predictiveAnalysis: { primaryScenario: "N/A", predictedTarget: { shortTerm: "N/A", intraday: "N/A", swing: "N/A" }, timeframe: "N/A", successProbability: "N/A", invalidationLevel: "N/A", keyCatalysts: "N/A", alternativeScenario: "N/A" },
-        technicalAnalysis: { multiTimeframe: "N/A", volumeProfile: "N/A", marketMicrostructure: "N/A" },
-        riskManagement: { positionSizing: "N/A", dynamicLevels: "N/A" },
-        sentimentAndFlow: { onChainMetrics: "N/A", marketSentiment: "N/A" },
-        probabilityAssessment: { successMatrix: "N/A", alternativeScenarios: "N/A" },
-        advancedConfluence: { indicators: "N/A", patterns: "N/A" },
-        institutionalBehavior: { smartMoney: "N/A", correlation: "N/A" },
-        executionStrategy: { entryTactics: "N/A", exitStrategy: "N/A" },
-        marketContext: { macroFactors: "N/A", technicalCatalysts: "N/A" },
-        performanceTracking: { tradeManagementKPIs: "N/A", learningMetrics: "N/A" },
-        alertSystem: { preEntry: "N/A", inTrade: "N/A" }
-    };
+        predictiveAnalysis: { primaryScenario: "N/A", successProbability: "N/A", alternativeScenario: "N/A" }
+    } as any; // Using 'any' to bypass strict type check for the error `timeHorizon` field
 
     try {
       // Primary model attempt
@@ -179,19 +117,15 @@ const generateAiInsightFlow = ai.defineFlow(
             format: 'json',
             schema: GenerateAiInsightOutputSchema,
         },
-        prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a comprehensive trading analysis report for {{{symbol}}}.
-        First, use the getMarketNews tool to fetch the latest headlines for {{{symbol}}}.
+        prompt: `You are ELITE-AI, a world-class institutional trading strategist. Your task is to generate a concise, high-impact trading analysis report for {{{symbol}}}.
+        First, use the getMarketNews tool to fetch the latest headlines for {{{symbol}}} to gauge sentiment.
         Then, synthesize ALL the provided data into the structured JSON format below.
         
-        **Crucially, based on your holistic analysis of all provided data, you must derive and populate the 'tradeSetup' section with your own optimized primary entry, stop-loss, and take-profit levels. Provide a brief rationale for your choices.**
-        
-        **If you identify a secondary, high-probability entry point based on multi-layer confirmation (like a confluence of Fibonacci levels, pivot points, or key moving averages from the provided data), populate the optional 'secondaryEntryPrice' field. Otherwise, omit it.**
-
-        For the 'predictedTarget', provide distinct price targets for short-term (scalp/5-15m), intraday (1-4h), and swing (daily/weekly) timeframes based on the overall analysis.
+        **Crucially, based on your holistic analysis of all provided data, you must derive and populate the 'tradeSetup' section with your own optimized primary entry, stop-loss, and take-profit levels. Provide a brief but powerful rationale for your choices.**
 
         ## Analysis Parameters
         - Asset: {{{symbol}}}
-        - Current Price: $
+        - Current Price: {{{price}}}
         - Analysis Timestamp: ${new Date().toISOString()}
         - Market Session: {{{marketSession}}}
         - Volatility Regime: {{{volatilityRegime}}}
@@ -219,10 +153,9 @@ const generateAiInsightFlow = ai.defineFlow(
          fallbackPayload.executiveSummary = {
              primaryBias: "Summary (Fallback Model)",
              setupStrength: "N/A",
-             keyLevels: "N/A",
-             opportunityGrade: "Retail",
+             opportunityGrade: "C",
              timeHorizon: fallbackOutput.summary
-         };
+         } as any;
          return fallbackPayload;
 
        } catch (fallbackError) {
@@ -231,9 +164,9 @@ const generateAiInsightFlow = ai.defineFlow(
          // Check for specific quota error
          const errorMessage = fallbackError instanceof Error ? fallbackError.message : "An unknown internal error occurred.";
          if (errorMessage.includes("429") || errorMessage.includes("QuotaFailure")) {
-            errorPayload.executiveSummary.timeHorizon = "The daily API quota has been exceeded. This feature will be available again tomorrow. Please check your billing details for more information.";
+            (errorPayload.executiveSummary as any).timeHorizon = "The daily API quota has been exceeded. This feature will be available again tomorrow. Please check your billing details for more information.";
          } else {
-            errorPayload.executiveSummary.timeHorizon = `Primary model failed and fallback also failed: ${errorMessage}`;
+            (errorPayload.executiveSummary as any).timeHorizon = `Primary model failed and fallback also failed: ${errorMessage}`;
          }
          return errorPayload;
        }

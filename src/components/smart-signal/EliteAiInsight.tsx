@@ -4,18 +4,32 @@
 import React, { useState, useEffect } from 'react';
 import { generateAiInsight, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import { Button } from '@/components/ui/button';
-import { Copy, BrainCircuit, Rocket } from 'lucide-react';
+import { Copy, BrainCircuit, Rocket, Target, AlertTriangle, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import PredictiveAnalysis from './PredictiveAnalysis';
 import { Input } from '../ui/input';
 import { getSignalData } from '@/lib/technical-analysis';
 import type { SignalData } from '@/types';
+import { cn } from '@/lib/utils';
 
 interface EliteAiInsightProps {
   data: GenerateAiInsightInput | null;
 }
+
+const GradeBadge: React.FC<{ grade: string }> = ({ grade }) => {
+  const gradeColors: { [key: string]: string } = {
+    'A+': 'bg-green-500/80 text-white shadow-[0_0_15px_theme(colors.green.500)]',
+    'A': 'bg-green-500/40 text-green-300',
+    'B+': 'bg-cyan-500/40 text-cyan-300',
+    'B': 'bg-yellow-500/40 text-yellow-300',
+    'C': 'bg-orange-500/40 text-orange-300',
+  };
+  return (
+    <div className={cn("w-16 h-16 rounded-full flex items-center justify-center font-headline text-3xl border-2 border-current", gradeColors[grade] || 'bg-gray-500/40 text-gray-300')}>
+      {grade}
+    </div>
+  );
+};
 
 const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData }) => {
   const [insight, setInsight] = useState<GenerateAiInsightOutput | null>(null);
@@ -42,18 +56,12 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData }) =>
       setInsight(null);
       try {
         const result = await generateAiInsight(data);
-        if (result.executiveSummary.primaryBias === "Error") {
+        if ((result.executiveSummary as any).timeHorizon) { // Check for fallback/error field
+            const isError = result.executiveSummary.primaryBias === "Error";
             toast({
-                title: "AI Analysis Error",
-                description: result.executiveSummary.timeHorizon,
-                variant: "destructive",
-                duration: 8000
-            });
-        } else if (result.executiveSummary.primaryBias === "Summary (Fallback Model)") {
-             toast({
-                title: "AI Model Busy",
-                description: "Primary model is busy. Displaying a condensed summary from a high-speed model.",
-                variant: "default",
+                title: isError ? "AI Analysis Error" : "AI Model Busy",
+                description: (result.executiveSummary as any).timeHorizon,
+                variant: isError ? "destructive" : "default",
                 duration: 8000
             });
         }
@@ -69,8 +77,9 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData }) =>
     
   const handleGenerate = async () => {
     toast({ title: "Generating New Report", description: `Fetching signal data for ${symbol.toUpperCase()}...` });
+    setLoading(true);
     try {
-      const signalData: SignalData = await getSignalData(symbol.toUpperCase(), '3', '15m');
+      const signalData: SignalData = await getSignalData(symbol.toUpperCase(), '3', '15m', false); // Explicitly request live data
       const insightInput: GenerateAiInsightInput = {
         symbol: signalData.symbol,
         price: signalData.price,
@@ -100,71 +109,41 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData }) =>
       setCurrentData(insightInput);
     } catch (error) {
       console.error('Error generating signal for AI insight:', error);
-      toast({ title: "Error", description: `Could not fetch data for ${symbol.toUpperCase()}.`, variant: "destructive" });
+      toast({ title: "Error", description: `Could not fetch data for ${symbol.toUpperCase()}. Displaying last known data or mock data.`, variant: "destructive" });
       setLoading(false);
     }
   };
 
-
   const copyToClipboard = () => {
     if (!insight) return;
-    const fullText = Object.entries(insight)
-      .map(([section, content]) => {
-        const title = section.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
-        const sectionContent = Object.entries(content)
-          .map(([key, value]) => {
-            if (typeof value === 'object' && value !== null) {
-                const subContent = Object.entries(value).map(([subKey, subValue]) => `  - ${subKey}: ${subValue}`).join('\n');
-                return `${key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:\n${subContent}`;
-            }
-            return `${key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}: ${value}`
-          })
-          .join('\n');
-        return `## ${title}\n${sectionContent}`;
-      })
-      .join('\n\n');
+    const { executiveSummary, tradeSetup, predictiveAnalysis } = insight;
+    const fullText = `
+## Executive Summary
+- Primary Bias: ${executiveSummary.primaryBias}
+- Setup Strength: ${executiveSummary.setupStrength}
+- Opportunity Grade: ${executiveSummary.opportunityGrade}
+
+## AI-Optimized Trade Setup
+- Entry Price: ${tradeSetup.entryPrice}
+- Stop-Loss: ${tradeSetup.stopLoss}
+- Take-Profit 1: ${tradeSetup.takeProfit1}
+- Take-Profit 2: ${tradeSetup.takeProfit2}
+- Rationale: ${tradeSetup.tradeRationale}
+
+## Predictive Analysis
+- Primary Scenario: ${predictiveAnalysis.primaryScenario}
+- Success Probability: ${predictiveAnalysis.successProbability}
+- Alternative Scenario: ${predictiveAnalysis.alternativeScenario}
+    `;
     navigator.clipboard.writeText(fullText.trim());
     toast({ title: 'Success', description: 'Elite AI Report copied to clipboard!' });
   };
-
-  const renderSection = (title: string, content: Record<string, string | object | undefined>) => (
-    <AccordionItem value={title}>
-      <AccordionTrigger className="font-headline text-primary/90 text-md">{title}</AccordionTrigger>
-      <AccordionContent className="space-y-2 text-sm text-foreground/80 pl-2">
-        {Object.entries(content).map(([key, value]) => {
-          if (typeof value === 'object' && value !== null) {
-            return (
-              <div key={key}>
-                <strong className="text-primary/70 block">{key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:</strong>
-                <div className="pl-4">
-                  {Object.entries(value).map(([subKey, subValue]) => (
-                    <div key={subKey}>
-                      <strong className="text-primary/60">{subKey.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:</strong>
-                      <p className="whitespace-pre-wrap">{subValue}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          }
-          return (
-             value && (
-              <div key={key}>
-                <strong className="text-primary/70 block">{key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:</strong>
-                <p className="whitespace-pre-wrap">{value as string}</p>
-              </div>
-            )
-          )
-        })}
-      </AccordionContent>
-    </AccordionItem>
-  );
   
   const LoadingState = () => (
      <div className="space-y-4">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton key={i} className="h-10 w-full" />
-      ))}
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-28 w-full" />
     </div>
   )
 
@@ -178,52 +157,55 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData }) =>
     }
 
     if (insight) {
-      if (insight.executiveSummary.primaryBias === "Error") {
+      if ((insight.executiveSummary as any).timeHorizon) { // Check for fallback/error field
+        const isError = insight.executiveSummary.primaryBias === "Error";
         return (
-           <div className="text-center text-destructive-foreground bg-destructive/30 p-4 rounded-md border border-destructive">
-             <strong>AI Analysis Failed:</strong>
-             <p className="mt-2">{insight.executiveSummary.timeHorizon}</p>
+           <div className={cn("text-center p-4 rounded-md border", isError ? "text-destructive-foreground bg-destructive/30 border-destructive" : "text-foreground bg-accent/20 border-accent")}>
+             <strong>{isError ? "AI Analysis Failed" : "AI Model Busy"}</strong>
+             <p className="mt-2">{(insight.executiveSummary as any).timeHorizon}</p>
           </div>
         )
       }
-
-      if (insight.executiveSummary.primaryBias === "Summary (Fallback Model)") {
-        return (
-             <div className="p-4 bg-gradient-to-r from-accent/20 to-primary/20 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.5)]">
-              <h4 className="font-headline text-lg text-accent flex items-center gap-2 mb-2">
-                  Executive Summary (Fallback Model)
-              </h4>
-              <p className="text-sm text-foreground/90">{insight.executiveSummary.timeHorizon}</p>
-              <p className="text-xs text-foreground/60 mt-3">Full analysis is unavailable due to high model demand. This is a condensed report from a high-speed model.</p>
-            </div>
-        )
-      }
+      
+      const { executiveSummary, tradeSetup, predictiveAnalysis } = insight;
 
       return (
         <div className="space-y-4">
-            <PredictiveAnalysis analysis={insight.predictiveAnalysis} isBullish={currentData.isBullish} />
+            <div className="p-4 bg-gradient-to-r from-accent/20 to-primary/20 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.5)] flex items-center gap-4">
+                <GradeBadge grade={executiveSummary.opportunityGrade} />
+                <div className="flex-1">
+                    <h4 className="font-headline text-lg text-accent">Executive Summary</h4>
+                    <p><strong>Bias:</strong> {executiveSummary.primaryBias}</p>
+                    <p><strong>Strength:</strong> {executiveSummary.setupStrength}</p>
+                </div>
+            </div>
+            
+            <div className="p-4 bg-black/30 rounded-lg border border-primary/20">
+                 <h4 className="font-headline text-md text-primary mb-2">AI-Optimized Trade Setup</h4>
+                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div>Entry: <strong className="font-mono float-right">{tradeSetup.entryPrice}</strong></div>
+                    <div>Stop-Loss: <strong className="font-mono float-right text-red-400">{tradeSetup.stopLoss}</strong></div>
+                    <div>Take-Profit 1: <strong className="font-mono float-right text-green-400">{tradeSetup.takeProfit1}</strong></div>
+                    <div>Take-Profit 2: <strong className="font-mono float-right text-green-400">{tradeSetup.takeProfit2}</strong></div>
+                 </div>
+                 <p className="text-xs italic text-foreground/70 mt-2"><strong>Rationale:</strong> {tradeSetup.tradeRationale}</p>
+            </div>
 
-            <Accordion type="single" collapsible defaultValue="Executive Summary">
-              {renderSection("Executive Summary", insight.executiveSummary)}
-              {insight.tradeSetup && renderSection("AI-Optimized Trade Setup", insight.tradeSetup)}
-              {renderSection("Technical Analysis", insight.technicalAnalysis)}
-              {renderSection("Risk Management", insight.riskManagement)}
-              {renderSection("Sentiment & Flow", insight.sentimentAndFlow)}
-              {renderSection("Probability Assessment", insight.probabilityAssessment)}
-              {renderSection("Advanced Confluence", insight.advancedConfluence)}
-              {renderSection("Institutional Behavior", insight.institutionalBehavior)}
-              {renderSection("Execution Strategy", insight.executionStrategy)}
-              {renderSection("Market Context", insight.marketContext)}
-              {renderSection("Performance Tracking", insight.performanceTracking)}
-              {renderSection("Alert System", insight.alertSystem)}
-            </Accordion>
+            <div className="p-4 bg-black/30 rounded-lg border border-primary/20 space-y-2">
+                 <h4 className="font-headline text-md text-primary flex items-center justify-between">
+                    <span>Predictive Analysis</span>
+                    <span className="font-mono text-lg text-green-400">{predictiveAnalysis.successProbability} Success</span>
+                 </h4>
+                 <p className="text-sm"><strong className="text-primary/80"><Lightbulb size={14} className="inline-block mr-1"/> Primary Scenario:</strong> {predictiveAnalysis.primaryScenario}</p>
+                 <p className="text-sm"><strong className="text-yellow-400/80"><AlertTriangle size={14} className="inline-block mr-1"/> Alternative:</strong> {predictiveAnalysis.alternativeScenario}</p>
+            </div>
         </div>
       );
     }
     
     return (
       <div className="text-center text-destructive-foreground bg-destructive/30 p-4 rounded-md border border-destructive">
-          The AI failed to generate the report. This might be due to a network issue or an internal error. Please try again by refreshing the signal.
+          The AI failed to generate the report. This might be due to a network issue or an internal error. Please try again.
       </div>
     );
   };
@@ -234,7 +216,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData }) =>
         <h4 className="font-headline text-lg text-primary flex items-center gap-2">
           <BrainCircuit /> Elite AI Analysis Report
         </h4>
-        {insight && insight.executiveSummary.primaryBias !== "Error" && insight.executiveSummary.primaryBias !== "Summary (Fallback Model)" && (
+        {insight && !(insight.executiveSummary as any).timeHorizon && (
             <Button onClick={copyToClipboard} variant="outline" size="sm" className="gap-2 border-primary/50 hover:bg-primary/20" disabled={!insight}>
             <Copy size={14} /> Copy Report
             </Button>
