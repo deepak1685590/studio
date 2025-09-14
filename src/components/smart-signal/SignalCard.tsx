@@ -2,8 +2,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
-import type { SignalData, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/types';
-import { generateAiInsight } from '@/ai/flows/generate-ai-insight';
+import type { SignalData, GenerateAiInsightOutput } from '@/types';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
 import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp, Layers, MoveVertical, GitBranch, GitPullRequest, Replace, Shield, LogIn } from 'lucide-react';
@@ -46,6 +45,7 @@ interface SignalCardProps {
     realtimePrice: number | null;
     priceDirection: 'up' | 'down' | 'neutral';
     mode: string;
+    aiInsight: GenerateAiInsightOutput | null;
 }
 
 const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isBullish: boolean; }> = ({ livePrice, entryPrice, isBullish }) => {
@@ -241,14 +241,12 @@ const LevelRow: React.FC<{
 };
 
 
-const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
+const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode, aiInsight }) => {
   
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
   const isCrypto = !data.symbol.includes('/');
   const [hitTargets, setHitTargets] = useState({ entry: false, tp1: false, tp2: false });
-  const [aiInsight, setAiInsight] = useState<GenerateAiInsightOutput | null>(null);
-  const [isLoadingAi, setIsLoadingAi] = useState(false);
-
+  
   const entryPriceNum = useMemo(() => parseFloat(data.entry), [data.entry]);
   const tp1PriceNum = useMemo(() => parseFloat(data.tp1), [data.tp1]);
   const tp2PriceNum = useMemo(() => parseFloat(data.tp2), [data.tp2]);
@@ -256,54 +254,9 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
   useEffect(() => {
     setHitTargets({ entry: false, tp1: false, tp2: false });
-    setAiInsight(null);
   }, [data]);
   
    useEffect(() => {
-    const fetchAiInsight = async () => {
-      if ((mode === '3' || mode === '4') && data && !data.sidewaysMarket) {
-        setIsLoadingAi(true);
-        try {
-          const insightInput: GenerateAiInsightInput = {
-              symbol: data.symbol,
-              price: data.price,
-              isBullish: data.isBullish,
-              action: data.action,
-              entry: parseFloat(data.entry),
-              sl: parseFloat(data.sl),
-              tp1: parseFloat(data.tp1),
-              tp2: parseFloat(data.tp2),
-              confluenceCount: data.confluenceCount,
-              demandZone: `$${data.demandZone[0]} - ${data.demandZone[1]}`,
-              fvg: `$${data.fvg[0]} - ${data.fvg[1]}`,
-              volumeImbalance: data.volumeImbalance,
-              multiTimeframeAnalysis: {
-                '5m': data.multiTimeframeAnalysis['5m']?.trend || 'Neutral',
-                '15m': data.multiTimeframeAnalysis['15m']?.trend || 'Neutral',
-                '1H': data.multiTimeframeAnalysis['1H']?.trend || 'Neutral',
-                '4H': data.multiTimeframeAnalysis['4H']?.trend || 'Neutral',
-                'Daily': data.multiTimeframeAnalysis['Daily']?.trend || 'Neutral',
-              },
-              chartPatternName: data.chartPattern.name,
-              trendStrength: data.trendStrength.score,
-              momentum: data.momentum.score,
-              marketSession: "New York", 
-              volatilityRegime: "Medium", 
-          };
-          const result = await generateAiInsight(insightInput);
-          setAiInsight(result);
-        } catch (error) {
-          console.error("Failed to fetch Elite AI Insight for SignalCard:", error);
-          setAiInsight(null);
-        } finally {
-          setIsLoadingAi(false);
-        }
-      }
-    };
-    fetchAiInsight();
-  }, [data, mode]);
-
-  useEffect(() => {
     if (realtimePrice === null) return;
 
     setHitTargets(prev => {
@@ -396,7 +349,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </SectionWrapper>
       
-      { (mode === '3' || mode === '4') && aiInsight && <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} isBullish={data.isBullish}/>}
+      { (mode === '3' || mode === '4') && aiInsight && <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} />}
       
       <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />
       

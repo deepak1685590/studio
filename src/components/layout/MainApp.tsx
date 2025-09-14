@@ -18,7 +18,7 @@ import AdvancedStrengthDashboard from '../tools/AdvancedStrengthDashboard';
 import SubspaceLiquidityMatrix from '../tools/SubspaceLiquidityMatrix';
 import type { SignalData } from '@/types';
 import EliteAiInsight from '../smart-signal/EliteAiInsight';
-import type { GenerateAiInsightInput, OracleInsightInput } from '@/types';
+import type { GenerateAiInsightInput } from '@/types';
 
 interface MainAppProps {
   initialSymbol?: string;
@@ -116,7 +116,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
                 {isLoading && <p className="text-center">Generating signal before AI analysis can be engaged...</p>}
                 {!isLoading && !signalData && <p className="text-center text-destructive">Could not load signal data. AI analysis is unavailable.</p>}
                 {!isLoading && signalData && eliteAiInsightData && (
-                    <EliteAiInsight data={eliteAiInsightData} />
+                    <EliteAiInsight data={eliteAiInsightData} setSignalData={setSignalData} />
                 )}
             </div>
           </TabsContent>

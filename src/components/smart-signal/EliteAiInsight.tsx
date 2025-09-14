@@ -4,21 +4,21 @@
 import React, { useState, useEffect } from 'react';
 import { generateAiInsight, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import { Button } from '@/components/ui/button';
-import { Copy, BrainCircuit, Rocket, Target, Lightbulb, AlertTriangle } from 'lucide-react';
+import { Copy, BrainCircuit, Rocket } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
-import { getSignalData } from '@/lib/technical-analysis';
-import type { SignalData } from '@/types';
 import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { cn } from '@/lib/utils';
-
+import PredictiveAnalysis from './PredictiveAnalysis';
+import { getSignalData } from '@/lib/technical-analysis';
+import type { SignalData } from '@/types';
 
 interface EliteAiInsightProps {
   data: GenerateAiInsightInput | null;
+  setSignalData: (data: SignalData | null) => void;
 }
 
-const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData }) => {
+const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData, setSignalData }) => {
   const [insight, setInsight] = useState<GenerateAiInsightOutput | null>(null);
   const [loading, setLoading] = useState(false);
   const [symbol, setSymbol] = useState(initialData?.symbol || 'BTC');
@@ -73,6 +73,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData }) =>
     setLoading(true);
     try {
       const signalData: SignalData = await getSignalData(symbol.toUpperCase(), '3', '15m', false); // Explicitly request live data
+      setSignalData(signalData); // Update parent component
       const insightInput: GenerateAiInsightInput = {
         symbol: signalData.symbol,
         price: signalData.price,
@@ -189,24 +190,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData }) =>
                 </CardContent>
             </Card>
             
-            <Card className="bg-black/20 border-primary/30">
-                 <CardHeader>
-                    <CardTitle className="font-headline text-primary/90 text-md flex items-center justify-between">
-                        <div className="flex items-center gap-2"><Target /> Predictive Analysis</div>
-                        <span className="font-mono text-lg text-green-400">{predictiveAnalysis.successProbability} Success</span>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                     <div>
-                        <strong className="text-primary/80 flex items-center gap-1"><Lightbulb size={14}/> Primary Scenario:</strong>
-                        <p className="text-foreground/90 italic">"{predictiveAnalysis.primaryScenario}"</p>
-                    </div>
-                    <div>
-                        <strong className="text-yellow-400 flex items-center gap-1"><AlertTriangle size={14}/> Alternative Scenario:</strong>
-                        <p className="text-foreground/90">{predictiveAnalysis.alternativeScenario}</p>
-                    </div>
-                </CardContent>
-            </Card>
+            <PredictiveAnalysis analysis={predictiveAnalysis} />
 
         </div>
       );
