@@ -19,7 +19,7 @@ import SubspaceLiquidityMatrix from '../tools/SubspaceLiquidityMatrix';
 import type { SignalData } from '@/types';
 import EliteAiInsight from '../smart-signal/EliteAiInsight';
 import OracleInsight from '../smart-signal/OracleInsight';
-import type { GenerateAiInsightInput, GenerateAiInsightOutput, OracleInsightInput } from '@/types';
+import type { GenerateAiInsightInput, OracleInsightInput } from '@/types';
 
 interface MainAppProps {
   initialSymbol?: string;
@@ -39,7 +39,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
     }
   }, [initialSymbol]);
 
-  const eliteAiInsightData: GenerateAiInsightInput | null = signalData ? {
+  const eliteAiInsightData: GenerateAiInsightInput | null = !isLoading && signalData ? {
     symbol: signalData.symbol,
     price: signalData.price,
     isBullish: signalData.isBullish,
@@ -66,7 +66,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
     volatilityRegime: "Medium", 
   } : null;
 
-  const oracleInsightData: OracleInsightInput | null = signalData ? {
+  const oracleInsightData: OracleInsightInput | null = !isLoading && signalData ? {
     symbol: signalData.symbol,
     price: signalData.price,
     isBullish: signalData.isBullish,
@@ -80,14 +80,14 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
       {user?.isAdmin && <AdminDashboard />}
       <div className="max-w-7xl mx-auto">
         <Tabs defaultValue="quantum-engine" className="w-full">
-          <div className="flex items-center justify-between bg-black/50 border-2 border-primary/50 rounded-lg p-3 px-4 mb-6">
-            <TabsList className="grid w-full grid-cols-4">
+          <div className="flex items-center justify-between gap-4 bg-black/50 border-2 border-primary/50 rounded-lg p-3 px-4 mb-6">
+            <TabsList className="grid flex-grow grid-cols-4">
               <TabsTrigger value="quantum-engine" className="font-headline"><BrainCircuit size={16} className="mr-2"/>Quantum Engine</TabsTrigger>
               <TabsTrigger value="strength-dashboard" className="font-headline"><Gauge size={16} className="mr-2"/>Strength Dashboard</TabsTrigger>
               <TabsTrigger value="liquidity-matrix" className="font-headline"><Droplets size={16} className="mr-2"/>Liquidity Matrix</TabsTrigger>
               <TabsTrigger value="elite-ai" className="font-headline"><Sparkles size={16} className="mr-2"/>Elite AI</TabsTrigger>
             </TabsList>
-            <Button variant="ghost" size="sm" onClick={() => router.push('/scanner')}>
+            <Button variant="ghost" size="sm" onClick={() => router.push('/scanner')} className="flex-shrink-0">
                 <AreaChart size={16} className="mr-2"/>
                 Open Market Scanner
             </Button>
@@ -121,16 +121,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
           </TabsContent>
             
           <TabsContent value="elite-ai">
-            <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4 max-w-4xl mx-auto">
-                {isLoading && <p className="text-center">Generating signal before AI analysis can be engaged...</p>}
-                {!isLoading && !signalData && <p className="text-center text-destructive">Could not load signal data. AI analysis is unavailable.</p>}
-                {!isLoading && signalData && eliteAiInsightData && (
-                    <EliteAiInsight data={eliteAiInsightData} />
-                )}
-                 {!isLoading && signalData && oracleInsightData && (signalData.mode === '4') && (
-                    <OracleInsight data={oracleInsightData} />
-                )}
-            </div>
+             <EliteAiInsight key={`elite-${selectedSymbol}`} symbol={selectedSymbol} />
           </TabsContent>
         </Tabs>
 
