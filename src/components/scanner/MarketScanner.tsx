@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { getSignalData } from '@/lib/technical-analysis';
 import type { SignalData } from '@/types';
-import { AreaChart, Search, Sparkles, TrendingDown, TrendingUp, Check, Activity, ChevronDown, Award, Gem, Fish } from 'lucide-react';
+import { AreaChart, Search, Sparkles, TrendingDown, TrendingUp, Check, Activity, ChevronDown, Award, Gem, Fish, Target, LogIn } from 'lucide-react';
 import { useIsMounted } from '@/hooks/useIsMounted';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -79,7 +79,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
             const symbol = assetList[i];
             try {
                 const data = await getSignalData(symbol, '2', '15m');
-                const opportunityData = {
+                const opportunityData: Opportunity = {
                     symbol: data.symbol,
                     isBullish: data.isBullish,
                     entry: data.entry,
@@ -118,7 +118,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
             let finalOpportunities = filteredOpportunities.sort((a,b) => b.confidenceBreakdown.overall - a.confidenceBreakdown.overall);
             let toastDescription = `Found ${finalOpportunities.length} setups matching your criteria.`;
 
-            // **FIX**: If filters result in zero opportunities, show the top 5 unfiltered results instead.
+            // If filters result in zero opportunities, show the top 5 unfiltered results instead.
             if (finalOpportunities.length === 0 && allResults.length > 0) {
                 finalOpportunities = allResults
                     .filter(op => !op.sidewaysMarket)
@@ -222,9 +222,11 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                                 <TableRow>
                                     <TableHead>Asset</TableHead>
                                     <TableHead>Trend</TableHead>
-                                    <TableHead>Confidence</TableHead>
+                                    <TableHead className="text-center">Confidence</TableHead>
+                                    <TableHead>Entry</TableHead>
+                                    <TableHead>Target</TableHead>
                                     <TableHead>Alerts</TableHead>
-                                    <TableHead>Action</TableHead>
+                                    <TableHead className="text-right">Action</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -232,13 +234,13 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                                     <Collapsible asChild key={op.symbol}>
                                         <>
                                             <TableRow className="align-middle" data-state={op.confidenceBreakdown.overall >= 85 ? 'selected' : ''}>
-                                                <TableCell className="font-bold">{op.symbol}</TableCell>
+                                                <TableCell className="font-bold font-headline">{op.symbol}</TableCell>
                                                 <TableCell>
                                                     <TrendBadge opportunity={op} />
                                                 </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-mono font-bold text-primary">{op.confidenceBreakdown.overall}%</span>
+                                                <TableCell className="text-center">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <span className="font-mono font-bold text-primary text-lg">{op.confidenceBreakdown.overall}%</span>
                                                         <CollapsibleTrigger asChild>
                                                             <Button variant="ghost" size="sm" className="h-6 w-6 p-0 data-[state=open]:rotate-180 transition-transform">
                                                                 <ChevronDown className="h-4 w-4" />
@@ -246,8 +248,10 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                                                         </CollapsibleTrigger>
                                                     </div>
                                                 </TableCell>
+                                                <TableCell className="font-mono text-cyan-300"><LogIn size={12} className="inline-block mr-1"/>{op.entry}</TableCell>
+                                                <TableCell className="font-mono text-purple-300"><Target size={12} className="inline-block mr-1"/>{op.tp1}</TableCell>
                                                 <TableCell><AlertIcons op={op} /></TableCell>
-                                                <TableCell>
+                                                <TableCell className="text-right">
                                                     <Button size="sm" onClick={() => handleAnalyze(op.symbol)} className="bg-accent/80 hover:bg-accent text-xs">
                                                         <Activity size={14} className="mr-1"/> Analyze
                                                     </Button>
@@ -255,7 +259,7 @@ const MarketScanner: React.FC<MarketScannerProps> = ({ onSelectSymbol }) => {
                                             </TableRow>
                                             <CollapsibleContent asChild>
                                                 <tr>
-                                                    <TableCell colSpan={5} className="p-0">
+                                                    <TableCell colSpan={7} className="p-0">
                                                         <div className="p-2 px-4 bg-black/40 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
                                                             <div>
                                                                 <h5 className="text-xs font-bold mb-1">Pattern: <span className="text-primary/80">{op.chartPattern.name}</span></h5>
