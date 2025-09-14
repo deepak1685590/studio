@@ -9,7 +9,7 @@ import { getSignalData } from '@/lib/technical-analysis';
 import type { SignalData, BookTicker } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
-import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Layers, Wallet } from 'lucide-react';
+import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timeframe, LiveTradeData } from '@/types';
 import jsPDF from 'jspdf';
@@ -31,6 +31,7 @@ interface SmartSignalWidgetProps {
   signalData: SignalData | null;
 }
 
+// Define the list of symbols that are supported by the WebSocket connection.
 const cryptoAssetsForWebsocket = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC'];
 
 const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ 
@@ -94,6 +95,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       return;
     }
     
+    // Check if the current symbol is a supported crypto asset for WebSocket connection.
     const isCrypto = cryptoAssetsForWebsocket.includes(currentSymbol.toUpperCase());
 
     // Establish WebSocket connection ONLY for supported crypto assets
@@ -155,10 +157,11 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     }
 
     try {
-      // The getSignalData function already handles fetching real vs mock data internally.
+      // The getSignalData function handles fetching real vs mock data.
+      // Force mock for non-crypto to avoid direct API calls from client for Forex/Indices.
       const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, !isCrypto);
       onSignalDataChange(data);
-      if (!isCrypto) { // For non-websocket assets, set price from data
+      if (!isCrypto) { // For non-websocket assets, set price directly from the fetched data
         setRealtimePrice(data.price);
         previousPriceRef.current = data.price;
       }
@@ -444,12 +447,3 @@ export default SmartSignalWidget;
     
 
     
-
-
-
-
-    
-
-
-
-
