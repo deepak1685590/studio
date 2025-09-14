@@ -4,14 +4,15 @@
 import React, { useState, useEffect } from 'react';
 import { generateAiInsight, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import { Button } from '@/components/ui/button';
-import { Copy, BrainCircuit, Rocket } from 'lucide-react';
+import { Copy, BrainCircuit, Rocket, Target, Lightbulb, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import PredictiveAnalysis from './PredictiveAnalysis';
-import { Input } from '../ui/input';
 import { getSignalData } from '@/lib/technical-analysis';
 import type { SignalData } from '@/types';
+import { Input } from '../ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { cn } from '@/lib/utils';
+
 
 interface EliteAiInsightProps {
   data: GenerateAiInsightInput | null;
@@ -106,65 +107,22 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData }) =>
     }
   };
 
-
   const copyToClipboard = () => {
     if (!insight) return;
-    const fullText = Object.entries(insight)
-      .map(([section, content]) => {
-        const title = section.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
-        const sectionContent = Object.entries(content)
-          .map(([key, value]) => {
-            if (typeof value === 'object' && value !== null) {
-                const subContent = Object.entries(value).map(([subKey, subValue]) => `  - ${subKey.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}: ${subValue}`).join('\n');
-                return `${key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:\n${subContent}`;
-            }
-            return `- ${key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}: ${value}`
-          })
-          .join('\n');
-        return `## ${title}\n${sectionContent}`;
-      })
-      .join('\n\n');
-    navigator.clipboard.writeText(fullText.trim());
+    const { executiveSummary, tradeSetup, predictiveAnalysis } = insight;
+    const summaryText = `## Executive Summary\n- Primary Bias: ${executiveSummary.primaryBias}\n- Setup Strength: ${executiveSummary.setupStrength}\n- Opportunity Grade: ${executiveSummary.opportunityGrade}\n- Time Horizon: ${executiveSummary.timeHorizon}`;
+    const setupText = `## AI-Optimized Trade Setup\n- Entry Price: ${tradeSetup.entryPrice}\n- Stop-Loss: ${tradeSetup.stopLoss}\n- Take-Profit 1: ${tradeSetup.takeProfit1}\n- Take-Profit 2: ${tradeSetup.takeProfit2}\n- Rationale: ${tradeSetup.tradeRationale}`;
+    const predictiveText = `## Predictive Analysis\n- Primary Scenario: ${predictiveAnalysis.primaryScenario}\n- Success Probability: ${predictiveAnalysis.successProbability}\n- Alternative Scenario: ${predictiveAnalysis.alternativeScenario}`;
+    const fullText = [summaryText, setupText, predictiveText].join('\n\n');
+    navigator.clipboard.writeText(fullText);
     toast({ title: 'Success', description: 'Elite AI Report copied to clipboard!' });
   };
-
-  const renderSection = (title: string, content: Record<string, string | object | undefined>) => (
-    <AccordionItem value={title}>
-      <AccordionTrigger className="font-headline text-primary/90 text-md">{title.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}</AccordionTrigger>
-      <AccordionContent className="space-y-3 text-sm text-foreground/80 pl-2 border-l-2 border-primary/20">
-        {Object.entries(content).map(([key, value]) => {
-          if (typeof value === 'object' && value !== null) {
-            return (
-              <div key={key}>
-                <strong className="text-primary/80 block">{key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:</strong>
-                <div className="pl-4 space-y-1">
-                  {Object.entries(value).map(([subKey, subValue]) => (
-                    <p key={subKey}>
-                      <span className="text-primary/70 font-semibold">{subKey.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:</span> {subValue}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            );
-          }
-          return (
-             value && (
-              <div key={key}>
-                <strong className="text-primary/80 block">{key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}:</strong>
-                <p className="whitespace-pre-wrap pl-2">{value as string}</p>
-              </div>
-            )
-          )
-        })}
-      </AccordionContent>
-    </AccordionItem>
-  );
   
   const LoadingState = () => (
      <div className="space-y-4">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton key={i} className="h-10 w-full" />
-      ))}
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-28 w-full" />
     </div>
   )
 
@@ -198,25 +156,58 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData }) =>
             </div>
         )
       }
+      
+      const { executiveSummary, tradeSetup, predictiveAnalysis } = insight;
 
       return (
         <div className="space-y-4">
-            <PredictiveAnalysis analysis={insight.predictiveAnalysis} />
+            <Card className="bg-gradient-to-r from-primary/10 to-transparent border-primary/50">
+                <CardHeader>
+                    <CardTitle className="font-headline text-primary/90 text-md">Executive Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div><strong className="text-primary/70">Primary Bias:</strong> {executiveSummary.primaryBias}</div>
+                    <div><strong className="text-primary/70">Setup Strength:</strong> {executiveSummary.setupStrength}</div>
+                    <div><strong className="text-primary/70">Opportunity Grade:</strong> {executiveSummary.opportunityGrade}</div>
+                    <div><strong className="text-primary/70">Time Horizon:</strong> {executiveSummary.timeHorizon}</div>
+                </CardContent>
+            </Card>
 
-            <Accordion type="single" collapsible className="w-full" defaultValue="executiveSummary">
-              {renderSection("executiveSummary", insight.executiveSummary)}
-              {insight.tradeSetup && renderSection("tradeSetup", insight.tradeSetup)}
-              {renderSection("technicalAnalysis", insight.technicalAnalysis)}
-              {renderSection("riskManagement", insight.riskManagement)}
-              {renderSection("sentimentAndFlow", insight.sentimentAndFlow)}
-              {renderSection("probabilityAssessment", insight.probabilityAssessment)}
-              {renderSection("advancedConfluence", insight.advancedConfluence)}
-              {renderSection("institutionalBehavior", insight.institutionalBehavior)}
-              {renderSection("executionStrategy", insight.executionStrategy)}
-              {renderSection("marketContext", insight.marketContext)}
-              {renderSection("performanceTracking", insight.performanceTracking)}
-              {renderSection("alertSystem", insight.alertSystem)}
-            </Accordion>
+            <Card className="bg-gradient-to-r from-accent/10 to-transparent border-accent/50">
+                <CardHeader>
+                    <CardTitle className="font-headline text-accent/90 text-md">AI-Optimized Trade Setup</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><strong className="text-accent/70">Entry Price:</strong> <span className="font-mono">{tradeSetup.entryPrice}</span></div>
+                        {tradeSetup.secondaryEntryPrice && <div><strong className="text-accent/70">Secondary Entry:</strong> <span className="font-mono">{tradeSetup.secondaryEntryPrice}</span></div>}
+                        <div><strong className="text-accent/70">Stop-Loss:</strong> <span className="font-mono">{tradeSetup.stopLoss}</span></div>
+                        <div><strong className="text-accent/70">Take-Profit 1:</strong> <span className="font-mono">{tradeSetup.takeProfit1}</span></div>
+                        <div><strong className="text-accent/70">Take-Profit 2:</strong> <span className="font-mono">{tradeSetup.takeProfit2}</span></div>
+                    </div>
+                    <p><strong className="text-accent/70">Rationale:</strong> {tradeSetup.tradeRationale}</p>
+                </CardContent>
+            </Card>
+            
+            <Card className="bg-black/20 border-primary/30">
+                 <CardHeader>
+                    <CardTitle className="font-headline text-primary/90 text-md flex items-center justify-between">
+                        <div className="flex items-center gap-2"><Target /> Predictive Analysis</div>
+                        <span className="font-mono text-lg text-green-400">{predictiveAnalysis.successProbability} Success</span>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                     <div>
+                        <strong className="text-primary/80 flex items-center gap-1"><Lightbulb size={14}/> Primary Scenario:</strong>
+                        <p className="text-foreground/90 italic">"{predictiveAnalysis.primaryScenario}"</p>
+                    </div>
+                    <div>
+                        <strong className="text-yellow-400 flex items-center gap-1"><AlertTriangle size={14}/> Alternative Scenario:</strong>
+                        <p className="text-foreground/90">{predictiveAnalysis.alternativeScenario}</p>
+                    </div>
+                </CardContent>
+            </Card>
+
         </div>
       );
     }
@@ -262,5 +253,3 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData }) =>
 };
 
 export default EliteAiInsight;
-
-    

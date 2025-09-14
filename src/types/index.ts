@@ -308,5 +308,3 @@ export interface SignalData {
   liquidityMatrix?: LiquidityMatrixData;
   advancedStrengthDashboard?: AdvancedStrengthDashboardData;
 }
-
-    
