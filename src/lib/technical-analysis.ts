@@ -1,28 +1,6 @@
 
-
-
-
-
-
-
-
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock } from '@/types';
-
-async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
-  const { timeout = 8000 } = options;
-  
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-
-  const response = await fetch(resource, {
-    ...options,
-    signal: controller.signal  
-  });
-  clearTimeout(id);
-
-  return response;
-}
-
+import { getKlines as fetchKlinesFromServer } from '@/app/actions/getKlines';
 
 const getMockKlines = (price: number, interval: Timeframe) => {
   const klines = [];
@@ -377,26 +355,38 @@ const generateAdvancedStrengthData = (price: number, closes: number[], volumes: 
     };
 };
 
-const generateOrderBlock = (swingHigh: number, swingLow: number, isBullish: boolean, seed: string): OrderBlock => {
+const generateOrderBlock = (swingHigh: number, swingLow: number, price: number, isBullish: boolean, seed: string): OrderBlock => {
     let top, bottom;
-    const range = swingHigh - swingLow;
     if (isBullish) {
-        // A bullish OB is a down-candle before an up-move. We simulate this near a swing low.
         bottom = swingLow * (1 + pseudoRandom(seed + 'ob_bottom') * 0.005);
         top = bottom * (1 + pseudoRandom(seed + 'ob_range') * 0.01);
     } else {
-        // A bearish OB is an up-candle before a down-move. We simulate this near a swing high.
         top = swingHigh * (1 - pseudoRandom(seed + 'ob_top') * 0.005);
         bottom = top * (1 - pseudoRandom(seed + 'ob_range') * 0.01);
     }
     const meanThreshold = (top + bottom) / 2;
 
+    const statusSeed = pseudoRandom(seed + 'ob_status');
+    let status: OrderBlock['status'] = 'FRESH';
+    if (price < bottom && isBullish) status = 'BROKEN';
+    if (price > top && !isBullish) status = 'BROKEN';
+    if (status !== 'BROKEN' && statusSeed < 0.4) status = 'MITIGATED';
+    
+    const contextSeed = pseudoRandom(seed + 'ob_context');
+    let context: string;
+    if (contextSeed < 0.33) context = 'Created after liquidity sweep';
+    else if (contextSeed < 0.66) context = 'Formed at break of structure';
+    else context = 'High volume institutional interest zone';
+
     return {
         type: isBullish ? 'BULLISH' : 'BEARISH',
+        status,
         top: top.toFixed(isCrypto(seed) ? 2 : 4),
         bottom: bottom.toFixed(isCrypto(seed) ? 2 : 4),
         meanThreshold: meanThreshold.toFixed(isCrypto(seed) ? 2 : 4),
-        significance: "High probability reversal zone based on institutional order flow."
+        volume: parseFloat((pseudoRandom(seed + 'ob_vol') * 20 + 5).toFixed(1)), // 5M to 25M
+        age: `${Math.floor(pseudoRandom(seed + 'ob_age') * 15 + 3)} candles ago`,
+        context
     };
 };
 
@@ -413,15 +403,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     let price, klines: any[], symbolWithUSDT = symbol.toUpperCase().replace('/', '') + (isCrypto(symbol) ? "USDT" : "");
     const analysisSeed = `${symbol}-${timeframe}`;
     
-    const timeframeToInterval = {
-      '5m': '5m',
-      '15m': '15m',
-      '1h': '1h',
-      '4h': '4h',
-      '1d': '1d',
-    };
-    const apiInterval = timeframeToInterval[timeframe] || '15m';
-
     const useMockData = forceMock || !isCrypto(symbol);
 
     if (useMockData) {
@@ -434,17 +415,16 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         klines = getMockKlines(price, timeframe);
     } else {
         try {
-            const priceResponse = await fetchWithTimeout(`https://api.binance.com/api/v3/ticker/price?symbol=${symbolWithUSDT}`, { timeout: 3000 });
-            if (!priceResponse.ok) throw new Error('Price fetch failed');
-            const priceData = await priceResponse.json();
-            price = parseFloat(priceData.price);
-            
-            const klinesResponse = await fetchWithTimeout(`https://api.binance.com/api/v3/klines?symbol=${symbolWithUSDT}&interval=${apiInterval}&limit=200`, { timeout: 5000 });
-            if (!klinesResponse.ok) throw new Error('Klines fetch failed');
-            klines = await klinesResponse.json();
+            // Use the server action to fetch klines
+            klines = await fetchKlinesFromServer(symbolWithUSDT, timeframe);
+            if (!klines || klines.length === 0) {
+                throw new Error('Server action returned no klines');
+            }
+            // Use the last close price from the fetched klines as the current price
+            price = parseFloat(klines[klines.length - 1][4]);
         } catch (err) {
-            console.warn(`Binance API failed for ${symbolWithUSDT}, using mock data.`, err);
-            return getSignalData(symbol, mode, timeframe, true);
+            console.warn(`Server action for ${symbolWithUSDT} failed, using mock data.`, err);
+            return getSignalData(symbol, mode, timeframe, true); // Fallback to mock data
         }
     }
     
@@ -470,7 +450,11 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
 
     const r1 = (2 * pivot) - swingLow;
+    const r2 = pivot + (swingHigh - swingLow);
+    const r3 = swingHigh + 2 * (pivot - swingLow);
     const s1 = (2 * pivot) - swingHigh;
+    const s2 = pivot - (swingHigh - swingLow);
+    const s3 = swingLow - 2 * (swingHigh - pivot);
 
     const atrPeriod = 14;
     let trSum = 0;
@@ -640,7 +624,11 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             vah: vah.toFixed(4),
             val: val.toFixed(4),
             s1: s1.toFixed(4),
+            s2: s2.toFixed(4),
+            s3: s3.toFixed(4),
             r1: r1.toFixed(4),
+            r2: r2.toFixed(4),
+            r3: r3.toFixed(4),
             buyVolume: buyVolume.toFixed(0),
             sellVolume: sellVolume.toFixed(0),
             volumeImbalance: "Neutral",
@@ -813,7 +801,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         confluenceFactors.push(`🎯 QUANTUM SNIPER ZONE IDENTIFIED`);
     }
 
-    const orderBlock = generateOrderBlock(swingHigh, swingLow, isBullish, analysisSeed);
+    const orderBlock = generateOrderBlock(swingHigh, swingLow, price, isBullish, analysisSeed);
 
 
     return {
@@ -838,7 +826,11 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         vah: vah.toFixed(4),
         val: val.toFixed(4),
         s1: s1.toFixed(4),
+        s2: s2.toFixed(4),
+        s3: s3.toFixed(4),
         r1: r1.toFixed(4),
+        r2: r2.toFixed(4),
+        r3: r3.toFixed(4),
         buyVolume: buyVolume.toFixed(0),
         sellVolume: sellVolume.toFixed(0),
         volumeImbalance,

@@ -96,10 +96,13 @@ export interface SniperZone {
 
 export interface OrderBlock {
     type: 'BULLISH' | 'BEARISH';
+    status: 'FRESH' | 'MITIGATED' | 'BROKEN';
     top: string;
     bottom: string;
     meanThreshold: string;
-    significance: string;
+    volume: number; // Volume in millions USD
+    age: string; // e.g., "5 candles ago"
+    context: string; // e.g., "Created after liquidity sweep"
 }
 
 export interface ConfidenceBreakdown {
@@ -278,6 +281,10 @@ export interface SignalData {
   val: string;
   s1: string;
   r1: string;
+  r2: string;
+  r3: string;
+  s2: string;
+  s3: string;
   buyVolume: string;
   sellVolume: string;
   volumeImbalance: string;
