@@ -80,7 +80,7 @@ Generate your riddle now for ${input.symbol}.`;
     }
 
     const {output} = await ai.generate({
-      model: 'googleai/gemini-1.5-flash-latest',
+      model: 'google/gemini-1.5-flash-latest',
       prompt: promptText,
       output: {
         format: 'json',

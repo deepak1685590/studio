@@ -86,7 +86,7 @@ const fallbackGenerator = ai.definePrompt({
     name: 'fallbackGenerator',
     input: { schema: GenerateAiInsightInputSchema },
     output: { schema: z.object({ summary: z.string() }) },
-    model: 'google/gemini-flash-1.5',
+    model: 'google/gemini-1.5-flash-latest',
     prompt: `You are a high-speed market analysis AI. The primary analysis model is unavailable.
     Provide a concise, single-paragraph executive summary based on the following data for {{{symbol}}}.
     - Trend: {{{isBullish}}} (True=Bullish)
@@ -113,7 +113,7 @@ const generateAiInsightFlow = ai.defineFlow(
     try {
       // Primary model attempt
       const { output } = await ai.generate({
-        model: 'google/gemini-flash-1.5',
+        model: 'google/gemini-1.5-flash-latest',
         tools: [getMarketNews],
         output: {
             format: 'json',
