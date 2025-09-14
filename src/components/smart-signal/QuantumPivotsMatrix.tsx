@@ -16,6 +16,8 @@ const QuantumPivotsMatrix: React.FC<QuantumPivotsMatrixProps> = ({ data, livePri
   const timeframes = Object.keys(data) as (keyof MultiTimeframeSR)[];
 
   const PriceCell: React.FC<{ price: number }> = ({ price }) => {
+    if (!price || price === 0) return <TableCell className="text-center font-mono text-foreground/30">-</TableCell>;
+
     const proximity = livePrice ? Math.abs(livePrice - price) / price : 1;
     let cellClass = "";
     if (proximity < 0.001) { // within 0.1%
@@ -43,12 +45,20 @@ const QuantumPivotsMatrix: React.FC<QuantumPivotsMatrixProps> = ({ data, livePri
                     <div className={cn("w-3 h-3 rounded-full border-2", isResistance ? 'border-red-500 bg-red-500/30' : 'border-green-500 bg-green-500/30')}></div>
                     {type}{index + 1}
                 </TableHead>
-                {timeframes.map(tf => <PriceCell key={tf} price={data[tf][type][index] || 0} />)}
+                {timeframes.map(tf => <PriceCell key={tf} price={data[tf]?.[type]?.[index] || 0} />)}
             </TableRow>
         ))}
         </>
       )
   }
+
+  // Ensure we have data to render
+  if (!timeframes || timeframes.length === 0 || !data[timeframes[0]]) {
+    return <div className="text-center text-foreground/50">Pivot data is unavailable.</div>;
+  }
+
+  const resistanceLevels = data[timeframes[0]].R || [];
+  const supportLevels = data[timeframes[0]].S || [];
 
   return (
     <div className="bg-black/30 rounded-lg border border-primary/20 p-4 space-y-3">
@@ -62,12 +72,14 @@ const QuantumPivotsMatrix: React.FC<QuantumPivotsMatrixProps> = ({ data, livePri
                 </TableRow>
             </TableHeader>
             <TableBody>
-                <LevelRow levels={data[timeframes[0]].R} type='R' />
+                <LevelRow levels={resistanceLevels} type='R' />
                 
                 <TableRow className="bg-primary/10 text-primary font-bold border-y-2 border-primary scanner-glow">
                     <TableHead className="font-bold flex items-center gap-1"><Target size={14}/> Confirmed Target</TableHead>
                     {timeframes.map(tf => {
-                        const targetPrice = data[tf].probableTarget;
+                        const targetPrice = data[tf]?.probableTarget;
+                        if (!targetPrice) return <TableCell key={tf} className="text-center font-mono text-lg">-</TableCell>;
+                        
                         const isResistance = data[tf].R.includes(targetPrice);
                         return (
                             <TableCell key={tf} className={cn("text-center font-mono text-lg", isResistance ? 'text-red-300' : 'text-green-300')}>
@@ -77,7 +89,7 @@ const QuantumPivotsMatrix: React.FC<QuantumPivotsMatrixProps> = ({ data, livePri
                     })}
                 </TableRow>
 
-                <LevelRow levels={data[timeframes[0]].S} type='S' />
+                <LevelRow levels={supportLevels} type='S' />
             </TableBody>
         </Table>
         {livePrice && (
