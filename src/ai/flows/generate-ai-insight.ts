@@ -59,8 +59,11 @@ const GenerateAiInsightOutputSchema = z.object({
   }).describe("The AI-generated trade plan with precise levels."),
   predictiveAnalysis: z.object({
     primaryScenario: z.string().describe("A detailed description of the most likely price action scenario over the specified timeframe."),
-    successProbability: z.string().describe("The AI's confidence in the primary scenario, as a percentage."),
-    alternativeScenario: z.string().describe("A brief description of a plausible alternative scenario if the primary prediction is invalidated.")
+    successProbability: z.string().describe("The AI's confidence in the primary scenario, as a percentage (e.g., '75%')."),
+    confidenceScore: z.number().describe("The AI's confidence in the primary scenario, as a numerical score from 0 to 100."),
+    alternativeScenario: z.string().describe("A brief description of a plausible alternative scenario if the primary prediction is invalidated."),
+    keyDrivers: z.array(z.string()).describe("A list of 2-3 key technical or fundamental factors driving this prediction."),
+    invalidationPoint: z.string().describe("The specific price level or condition that would invalidate the primary scenario (e.g., 'A sustained break below $65,000').")
   }),
 });
 export type GenerateAiInsightOutput = z.infer<typeof GenerateAiInsightOutputSchema>;
@@ -108,7 +111,7 @@ const generateAiInsightFlow = ai.defineFlow(
     const errorPayload: GenerateAiInsightOutput = {
         executiveSummary: { primaryBias: "Error", setupStrength: "N/A", opportunityGrade: "Retail", timeHorizon: "The AI model encountered an unrecoverable error." },
         tradeSetup: { entryPrice: "N/A", stopLoss: "N/A", takeProfit1: "N/A", takeProfit2: "N/A", tradeRationale: "N/A" },
-        predictiveAnalysis: { primaryScenario: "N/A", successProbability: "N/A", alternativeScenario: "N/A" },
+        predictiveAnalysis: { primaryScenario: "N/A", successProbability: "N/A", confidenceScore: 0, alternativeScenario: "N/A", keyDrivers: [], invalidationPoint: "N/A" },
     };
 
     try {
