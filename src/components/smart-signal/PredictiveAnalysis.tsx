@@ -4,7 +4,6 @@
 import React from 'react';
 import type { GenerateAiInsightOutput } from '@/types';
 import { Target, Lightbulb, AlertTriangle } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface PredictiveAnalysisProps {
   analysis: GenerateAiInsightOutput['predictiveAnalysis'];
@@ -35,3 +34,5 @@ const PredictiveAnalysis: React.FC<PredictiveAnalysisProps> = ({ analysis }) => 
 };
 
 export default PredictiveAnalysis;
+
+    
