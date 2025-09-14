@@ -18,7 +18,6 @@ import AdvancedStrengthDashboard from '../tools/AdvancedStrengthDashboard';
 import SubspaceLiquidityMatrix from '../tools/SubspaceLiquidityMatrix';
 import type { SignalData } from '@/types';
 import EliteAiInsight from '../smart-signal/EliteAiInsight';
-import OracleInsight from '../smart-signal/OracleInsight';
 import type { GenerateAiInsightInput, OracleInsightInput } from '@/types';
 
 interface MainAppProps {
@@ -65,14 +64,6 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
     marketSession: "New York", 
     volatilityRegime: "Medium", 
   } : null;
-
-  const oracleInsightData: OracleInsightInput | null = !isLoading && signalData ? {
-    symbol: signalData.symbol,
-    price: signalData.price,
-    isBullish: signalData.isBullish,
-    volatility: signalData.trendStrength.score,
-  } : null;
-
 
   return (
     <div className="p-4 pb-16">
@@ -121,7 +112,13 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
           </TabsContent>
             
           <TabsContent value="elite-ai">
-             <EliteAiInsight key={`elite-${selectedSymbol}`} symbol={selectedSymbol} />
+            <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4 max-w-4xl mx-auto">
+                {isLoading && <p className="text-center">Generating signal before AI analysis can be engaged...</p>}
+                {!isLoading && !signalData && <p className="text-center text-destructive">Could not load signal data. AI analysis is unavailable.</p>}
+                {!isLoading && signalData && eliteAiInsightData && (
+                    <EliteAiInsight data={eliteAiInsightData} />
+                )}
+            </div>
           </TabsContent>
         </Tabs>
 
