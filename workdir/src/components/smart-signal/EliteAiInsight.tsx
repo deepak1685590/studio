@@ -4,24 +4,40 @@
 import React, { useState, useEffect } from 'react';
 import { generateAiInsight, GenerateAiInsightInput, GenerateAiInsightOutput } from '@/ai/flows/generate-ai-insight';
 import { Button } from '@/components/ui/button';
-import { Copy, BrainCircuit } from 'lucide-react';
+import { Copy, BrainCircuit, Rocket } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import PredictiveAnalysis from './PredictiveAnalysis';
+import { Input } from '../ui/input';
+import { getSignalData } from '@/lib/technical-analysis';
+import type { SignalData } from '@/types';
 
 interface EliteAiInsightProps {
-  data: GenerateAiInsightInput;
+  data: GenerateAiInsightInput | null;
 }
 
-const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
+const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data: initialData }) => {
   const [insight, setInsight] = useState<GenerateAiInsightOutput | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [symbol, setSymbol] = useState(initialData?.symbol || 'BTC');
+  const [currentData, setCurrentData] = useState(initialData);
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchInsight = async () => {
-      if (!data) return;
+    setCurrentData(initialData);
+    if (initialData?.symbol) {
+      setSymbol(initialData.symbol);
+    }
+  }, [initialData]);
+
+  useEffect(() => {
+    if (currentData) {
+      fetchInsight(currentData);
+    }
+  }, [currentData]);
+
+  const fetchInsight = async (data: GenerateAiInsightInput) => {
       setLoading(true);
       setInsight(null);
       try {
@@ -50,9 +66,44 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
         setLoading(false);
       }
     };
-
-    fetchInsight();
-  }, [data, toast]);
+    
+  const handleGenerate = async () => {
+    toast({ title: "Generating New Report", description: `Fetching signal data for ${symbol.toUpperCase()}...` });
+    try {
+      const signalData: SignalData = await getSignalData(symbol.toUpperCase(), '3', '15m', false); // Explicitly request live data
+      const insightInput: GenerateAiInsightInput = {
+        symbol: signalData.symbol,
+        price: signalData.price,
+        isBullish: signalData.isBullish,
+        action: signalData.action,
+        entry: parseFloat(signalData.entry),
+        sl: parseFloat(signalData.sl),
+        tp1: parseFloat(signalData.tp1),
+        tp2: parseFloat(signalData.tp2),
+        confluenceCount: signalData.confluenceCount,
+        demandZone: `$${signalData.demandZone[0]} - ${signalData.demandZone[1]}`,
+        fvg: `$${signalData.fvg[0]} - ${signalData.fvg[1]}`,
+        volumeImbalance: signalData.volumeImbalance,
+        multiTimeframeAnalysis: {
+          '5m': signalData.multiTimeframeAnalysis['5m']?.trend || 'Neutral',
+          '15m': signalData.multiTimeframeAnalysis['15m']?.trend || 'Neutral',
+          '1H': signalData.multiTimeframeAnalysis['1H']?.trend || 'Neutral',
+          '4H': signalData.multiTimeframeAnalysis['4H']?.trend || 'Neutral',
+          'Daily': signalData.multiTimeframeAnalysis['Daily']?.trend || 'Neutral',
+        },
+        chartPatternName: signalData.chartPattern.name,
+        trendStrength: signalData.trendStrength.score,
+        momentum: signalData.momentum.score,
+        marketSession: "New York", 
+        volatilityRegime: "Medium", 
+      };
+      setCurrentData(insightInput);
+    } catch (error) {
+      console.error('Error generating signal for AI insight:', error);
+      toast({ title: "Error", description: `Could not fetch data for ${symbol.toUpperCase()}. Displaying last known data or mock data.`, variant: "destructive" });
+      setLoading(false);
+    }
+  };
 
 
   const copyToClipboard = () => {
@@ -118,6 +169,10 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
   )
 
   const renderContent = () => {
+    if (!currentData) {
+        return <div className="text-center text-foreground/70">Enter a symbol and click "Generate Analysis" to begin.</div>;
+    }
+    
     if (loading) {
       return <LoadingState />;
     }
@@ -146,7 +201,7 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
 
       return (
         <div className="space-y-4">
-            <PredictiveAnalysis analysis={insight.predictiveAnalysis} isBullish={data.isBullish} />
+            <PredictiveAnalysis analysis={insight.predictiveAnalysis} isBullish={currentData.isBullish} />
 
             <Accordion type="single" collapsible defaultValue="Executive Summary">
               {renderSection("Executive Summary", insight.executiveSummary)}
@@ -174,8 +229,8 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
   };
 
   return (
-    <div className="p-5 bg-gradient-to-br from-blue-900/30 to-purple-900/30 border-2 border-primary rounded-xl shadow-[0_0_20px_var(--primary)]">
-      <div className="flex items-center justify-between mb-4">
+    <div className="p-5 bg-gradient-to-br from-blue-900/30 to-purple-900/30 border-2 border-primary rounded-xl shadow-[0_0_20px_var(--primary)] space-y-4">
+      <div className="flex items-center justify-between">
         <h4 className="font-headline text-lg text-primary flex items-center gap-2">
           <BrainCircuit /> Elite AI Analysis Report
         </h4>
@@ -185,7 +240,23 @@ const EliteAiInsight: React.FC<EliteAiInsightProps> = ({ data }) => {
             </Button>
         )}
       </div>
-      {renderContent()}
+      
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Input 
+            value={symbol}
+            onChange={(e) => setSymbol(e.target.value)}
+            placeholder="Enter asset (e.g., BTC, EUR/USD)"
+            className="bg-input text-foreground border-primary/50"
+        />
+        <Button onClick={handleGenerate} disabled={loading} className="font-headline scanner-glow">
+          <Rocket className="mr-2" />
+          {loading ? 'Analyzing...' : 'Generate Analysis'}
+        </Button>
+      </div>
+
+      <div className="pt-4">
+        {renderContent()}
+      </div>
     </div>
   );
 };
