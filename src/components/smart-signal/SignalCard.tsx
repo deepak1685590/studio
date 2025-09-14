@@ -286,7 +286,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
   const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; 
   const trendColor = data.isBullish ? 'text-green-400' : 'text-red-400';
-  
+  const showSummary = (mode === '3' || mode === '4') && aiInsight?.executiveSummary.primaryBias !== 'Error';
+
   return (
     <div id="signal-card-content" className={cn(
         "mt-5 p-5 bg-black/70 border-2 rounded-xl text-sm leading-relaxed shadow-lg space-y-4",
@@ -319,7 +320,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </header>
 
-      { (mode === '3' || mode === '4') && <QuantumSummary insight={aiInsight} /> }
+      { showSummary && <QuantumSummary insight={aiInsight} /> }
       
       {isNearEntry && !hitTargets.entry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
 
