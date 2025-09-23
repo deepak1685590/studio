@@ -6,12 +6,8 @@ import type { SignalData } from '@/types';
 import { cn } from '@/lib/utils';
 import { Magnet, GitPullRequest, GitBranch, Replace, CheckCircle2, Target } from 'lucide-react';
 
-const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
-  <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
-);
-
 const SMC_Item = ({ icon, title, level, description, isCrypto }: { icon: React.ReactNode, title: string, level: string, description: string, isCrypto: boolean }) => (
-    <div className="flex items-start gap-3 p-3 bg-black/30 rounded-md border border-primary/10">
+    <div className="flex items-start gap-3">
       <div className="p-2 bg-black rounded-full border border-primary/50 mt-1">
         {icon}
       </div>
@@ -39,36 +35,39 @@ const SmartMoneyConcepts: React.FC<SmartMoneyConceptsProps> = ({ data }) => {
   ];
 
   return (
-    <div className="space-y-4">
-        <SMC_Item 
-            icon={<GitPullRequest size={20} />} 
-            title="Liquidity Grab" 
-            level={liquidity.level}
-            description={liquidity.description}
-            isCrypto={isCrypto}
-        />
-        <SMC_Item 
-            icon={<GitBranch size={20} />} 
-            title="Break of Structure (BOS)" 
-            level={smartMoneyConcepts.bos}
-            description={isBullish ? "Confirmation of upward trend continuation." : "Confirmation of downward trend continuation."}
-            isCrypto={isCrypto}
-        />
-        <SMC_Item 
-            icon={<Replace size={20} />} 
-            title="Change of Character (CHOCH)" 
-            level={smartMoneyConcepts.choch}
-            description="Indicates a potential trend reversal has occurred."
-            isCrypto={isCrypto}
-        />
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            {checklistItems.map((item, index) => (
-                 <div key={index} className="flex items-center gap-2 text-xs p-1.5 bg-black/30 rounded-md">
-                    {item.passed ? <CheckCircle2 className="text-green-400 size-4" /> : <CheckCircle2 className="text-foreground/30 size-4" />}
-                    <span className={cn(item.passed ? "text-green-400/90" : "text-foreground/50")}>{item.label}</span>
-                </div>
-            ))}
+    <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+                <SMC_Item 
+                    icon={<GitPullRequest size={20} />} 
+                    title="Liquidity Grab" 
+                    level={liquidity.level}
+                    description={liquidity.description}
+                    isCrypto={isCrypto}
+                />
+                <SMC_Item 
+                    icon={<GitBranch size={20} />} 
+                    title="Break of Structure (BOS)" 
+                    level={smartMoneyConcepts.bos}
+                    description={isBullish ? "Confirms upward trend continuation." : "Confirms downward trend continuation."}
+                    isCrypto={isCrypto}
+                />
+                <SMC_Item 
+                    icon={<Replace size={20} />} 
+                    title="Change of Character (CHOCH)" 
+                    level={smartMoneyConcepts.choch}
+                    description="Indicates a potential trend reversal."
+                    isCrypto={isCrypto}
+                />
+            </div>
+            <div className="space-y-2">
+                {checklistItems.map((item, index) => (
+                     <div key={index} className="flex items-center gap-2 text-sm p-2 bg-black/30 rounded-md">
+                        {item.passed ? <CheckCircle2 className="text-green-400 size-4 flex-shrink-0" /> : <CheckCircle2 className="text-foreground/30 size-4 flex-shrink-0" />}
+                        <span className={cn(item.passed ? "text-green-400/90" : "text-foreground/50")}>{item.label}</span>
+                    </div>
+                ))}
+            </div>
         </div>
         
         <div className={cn(

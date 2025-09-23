@@ -276,6 +276,22 @@ export interface SupermodeAnalysis {
     }
 }
 
+export type IndicatorSignal = 'Buy' | 'Sell' | 'Neutral' | 'Overbought' | 'Oversold';
+export interface IndicatorData {
+    name: string;
+    value: string;
+    signal: IndicatorSignal;
+    notes: string;
+}
+export interface IndicatorChecklist {
+    summary: {
+        buy: number;
+        sell: number;
+        neutral: number;
+    };
+    indicators: IndicatorData[];
+}
+
 
 export interface SignalData {
   symbol: string;
@@ -299,7 +315,11 @@ export interface SignalData {
   vah: string;
   val: string;
   s1: string;
+  s2: string;
+  s3: string;
   r1: string;
+  r2: string;
+  r3: string;
   buyVolume: string;
   sellVolume: string;
   volumeImbalance: string;
@@ -330,4 +350,5 @@ export interface SignalData {
   liquidityMatrix?: LiquidityMatrixData;
   advancedStrengthDashboard?: AdvancedStrengthDashboardData;
   supermodeAnalysis?: SupermodeAnalysis;
+  indicatorChecklist: IndicatorChecklist;
 }

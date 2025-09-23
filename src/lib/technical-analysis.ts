@@ -1,5 +1,6 @@
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock } from '@/types';
+
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock, IndicatorChecklist, IndicatorData, IndicatorSignal } from '@/types';
 import { getKlines as fetchKlinesFromServer } from '@/app/actions/getKlines';
 
 const getMockKlines = (price: number, interval: Timeframe) => {
@@ -64,6 +65,83 @@ const pseudoRandom = (seedStr: string): number => {
     h4 = Math.imul(h2 ^ (h4 >>> 19), 2869860233);
     return ((h1^h2^h3^h4)>>>0) / 4294967296;
 }
+
+const generateIndicatorChecklist = (isBullish: boolean, momentum: Momentum, seed: string): IndicatorChecklist => {
+    const indicators: IndicatorData[] = [];
+    const summary = { buy: 0, sell: 0, neutral: 0 };
+
+    const addIndicator = (name: string, value: string, signal: IndicatorSignal, notes: string) => {
+        indicators.push({ name, value, signal, notes });
+        if (signal === 'Buy') summary.buy++;
+        else if (signal === 'Sell') summary.sell++;
+        else summary.neutral++;
+    };
+    
+    // RSI
+    let rsiSignal: IndicatorSignal = 'Neutral';
+    if (momentum.score > 70) rsiSignal = 'Overbought';
+    else if (momentum.score > 55) rsiSignal = 'Buy';
+    else if (momentum.score < 30) rsiSignal = 'Oversold';
+    else if (momentum.score < 45) rsiSignal = 'Sell';
+    addIndicator('RSI (14)', momentum.score.toFixed(2), rsiSignal, `Balanced; watch for >70 or <30 for extremes.`);
+
+    // Stochastic
+    const stochK = pseudoRandom(seed + 'stochK') * 100;
+    let stochSignal: IndicatorSignal = stochK > 80 ? 'Overbought' : stochK < 20 ? 'Oversold' : (isBullish ? 'Buy' : 'Sell');
+    addIndicator('Stochastic (9,6)', stochK.toFixed(2), stochSignal, 'Extreme high—potential reversal risk.');
+
+    // Stoch RSI
+    const stochRSIK = pseudoRandom(seed + 'stochRSIK') * 100;
+    let stochRSISignal: IndicatorSignal = stochRSIK > 80 ? 'Overbought' : stochRSIK < 20 ? 'Oversold' : (isBullish ? 'Buy' : 'Sell');
+    addIndicator('Stochastic RSI (14)', stochRSIK.toFixed(2), stochRSISignal, 'Signals exhaustion; crossover could trigger reversal.');
+
+    // MACD
+    const macdValue = (pseudoRandom(seed + 'macd') - 0.5) * 500;
+    addIndicator('MACD (12,26)', macdValue.toFixed(2), isBullish ? 'Buy' : 'Sell', `Histogram ${isBullish ? 'expanding' : 'contracting'}.`);
+
+    // ADX
+    const adxValue = pseudoRandom(seed + 'adx') * 50 + 15;
+    addIndicator('ADX (14)', adxValue.toFixed(2), adxValue > 25 ? (isBullish ? 'Buy' : 'Sell') : 'Neutral', 'Moderate trend strength; >40 would confirm direction.');
+    
+    // Williams %R
+    const willR = pseudoRandom(seed + 'willR') * -100;
+    let willRSignal: IndicatorSignal = willR > -20 ? 'Overbought' : willR < -80 ? 'Oversold' : 'Neutral';
+    addIndicator('Williams %R', willR.toFixed(2), willRSignal, 'Near threshold—reversal pressure likely.');
+
+    // CCI
+    const cciValue = (pseudoRandom(seed + 'cci') - 0.5) * 300;
+    let cciSignal: IndicatorSignal = cciValue > 100 ? 'Buy' : cciValue < -100 ? 'Sell' : 'Neutral';
+    addIndicator('CCI (14)', cciValue.toFixed(2), cciSignal, 'Supports momentum continuation.');
+
+    // ATR
+    const atrValue = pseudoRandom(seed + 'atr') * 500;
+    addIndicator('ATR (14)', atrValue.toFixed(2), 'Neutral', 'Indicates current market volatility.');
+
+    // Highs/Lows
+    const hlValue = (pseudoRandom(seed + 'hl') - 0.5) * 500;
+    addIndicator('Highs/Lows (14)', hlValue.toFixed(2), isBullish ? 'Buy' : 'Sell', 'Price action in recent bars.');
+    
+    // Ultimate Oscillator
+    const uoValue = pseudoRandom(seed + 'uo') * 100;
+    addIndicator('Ultimate Oscillator', uoValue.toFixed(2), uoValue > 70 ? 'Overbought' : uoValue < 30 ? 'Oversold' : 'Buy', 'Buying pressure intact.');
+
+    // ROC
+    const rocValue = (pseudoRandom(seed + 'roc') - 0.4) * 2;
+    addIndicator('ROC', rocValue.toFixed(2), rocValue > 0 ? 'Buy' : 'Sell', 'Positive rate of change.');
+    
+    // Bull/Bear Power
+    const bbpValue = (pseudoRandom(seed + 'bbp') - 0.5) * 1000;
+    addIndicator('Bull/Bear Power (13)', bbpValue.toFixed(2), bbpValue > 0 ? 'Buy' : 'Sell', 'Bulls dominating closes.');
+    
+    // Moving Averages
+    addIndicator('EMA (10)', '', isBullish ? 'Buy' : 'Sell', 'Short-term trend indicator.');
+    addIndicator('EMA (20)', '', isBullish ? 'Buy' : 'Sell', 'Medium-term trend indicator.');
+    addIndicator('EMA (50)', '', isBullish ? 'Buy' : 'Sell', 'Long-term trend indicator.');
+    addIndicator('SMA (200)', '', isBullish ? 'Buy' : 'Sell', 'Very long-term trend.');
+
+    return { summary, indicators };
+};
+
 
 const generateLiquidityMatrixData = (price: number, swingHigh: number, swingLow: number, isBullish: boolean, seed: string): LiquidityMatrixData => {
     const buySide: LiquidityLevel[] = [];
@@ -598,6 +676,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         confluenceFactors.unshift(`🚨 WHALE SIGHTING: Significant volume spike detected!`);
     }
 
+    const indicatorChecklist = generateIndicatorChecklist(isBullish, momentum, analysisSeed);
 
     
     // If market is ranging, we don't generate a directional signal.
@@ -653,6 +732,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             multiTimeframeSR,
             liquidityMatrix,
             advancedStrengthDashboard,
+            indicatorChecklist,
         };
     }
 
@@ -868,5 +948,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         multiTimeframeSR,
         liquidityMatrix,
         advancedStrengthDashboard,
+        indicatorChecklist,
     };
 };

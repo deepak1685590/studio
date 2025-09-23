@@ -5,9 +5,9 @@ import React, { useMemo, useState, useEffect } from 'react';
 import type { SignalData, GenerateAiInsightOutput } from '@/types';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, XCircle, BarChart, BookOpen, Scaling, Magnet, Building, GitCommitHorizontal, Timer, Target, Zap, Check, ShieldAlert, BrainCircuit, Crosshair, ArrowRight, TrendingDown, TrendingUp, Layers, MoveVertical, GitBranch, GitPullRequest, Replace, Shield, LogIn } from 'lucide-react';
+import { Download, CheckCircle2, BarChart, BookOpen, Scaling, Magnet, Building, Timer, Target, Zap, Shield, LogIn, ListChecks } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import ConfidenceBreakdown from './ConfidenceBreakdown';
 import WhaleAlert from './WhaleAlert';
@@ -15,7 +15,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import SidewaysMarketAlert from './SidewaysMarketAlert';
 import KeyLevels from './KeyLevels';
 import QuantumEntryMatrix from './QuantumEntryMatrix';
-import LiquidityTargetAlert from './LiquidityTargetAlert';
 import QuantumSuperTrendMatrix from './QuantumSuperTrendMatrix';
 import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 import QuantumOrderBlockMatrix from './QuantumOrderBlockMatrix';
@@ -23,6 +22,7 @@ import PredictiveAnalysis from './PredictiveAnalysis';
 import QuantumSummary from './QuantumSummary';
 import SmartMoneyConcepts from './SmartMoneyConcepts';
 import SupermodeDashboard from './SupermodeDashboard';
+import IndicatorChecklist from './IndicatorChecklist';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -62,86 +62,6 @@ const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isB
                 <p className="text-sm font-mono">
                     Live: ${livePrice.toFixed(isCrypto ? 2 : 4)} → {entryLabel}: ${entryPrice.toFixed(isCrypto ? 2 : 4)}
                 </p>
-            </div>
-        </div>
-    );
-};
-
-const InstitutionalInterest: React.FC<{ data: SignalData; livePrice: number | null }> = ({ data, livePrice }) => {
-    const { supplyZone, demandZone, fvg } = data;
-    const isCrypto = !data.price.toString().includes('.');
-    
-    const supplyLow = parseFloat(supplyZone[1]);
-    const supplyHigh = parseFloat(supplyZone[0]);
-    const demandLow = parseFloat(demandZone[1]);
-    const demandHigh = parseFloat(demandZone[0]);
-
-    const isPriceInSupply = livePrice !== null && livePrice >= supplyLow && livePrice <= supplyHigh;
-    const isPriceInDemand = livePrice !== null && livePrice >= demandLow && livePrice <= demandHigh;
-
-    return (
-        <div>
-            <SectionHeader icon={<Building />} title="Institutional Interest" />
-            <div className="relative p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
-                <div className={cn(
-                    "p-3 rounded-lg border-2 text-center bg-red-500/20 border-red-500 shadow-[0_0_15px_theme(colors.red.500)] transition-all duration-300",
-                    isPriceInSupply && "animate-pulse shadow-[0_0_25px_theme(colors.red.500)] border-white/80"
-                )}>
-                    <h5 className="font-headline text-lg text-white">SUPPLY ZONE</h5>
-                    <p className="font-mono text-xl text-white/90">${supplyLow.toFixed(isCrypto ? 2 : 4)} - ${supplyHigh.toFixed(isCrypto ? 2 : 4)}</p>
-                </div>
-
-                <div className="relative h-40 flex items-center justify-center">
-                    <div className="h-full w-full bg-purple-500/20 border-y-2 border-dashed border-purple-500/50 flex flex-col items-center justify-center p-2 gap-2">
-                        <div className="text-center">
-                            <h5 className="font-headline text-purple-300">FVG (Fair Value Gap)</h5>
-                            <p className="font-mono text-sm text-purple-300/80">${parseFloat(fvg[1]).toFixed(isCrypto ? 2 : 4)} - ${parseFloat(fvg[0]).toFixed(isCrypto ? 2 : 4)}</p>
-                        </div>
-                         <Alert className="border-cyan-400 bg-cyan-900/40 text-cyan-300 p-2">
-                            <Layers className="h-4 w-4 text-cyan-300" />
-                            <AlertTitle className="font-headline text-sm text-cyan-300">
-                                FVG Long Breakout
-                            </AlertTitle>
-                            <AlertDescription className="font-mono text-base text-white/90">
-                                ${data.fvg[1]}
-                            </AlertDescription>
-                        </Alert>
-                         <Alert className="border-orange-400 bg-orange-900/40 text-orange-300 p-2">
-                            <Layers className="h-4 w-4 text-orange-300" />
-                            <AlertTitle className="font-headline text-sm text-orange-300">
-                                FVG Short Breakdown
-                            </AlertTitle>
-                            <AlertDescription className="font-mono text-base text-white/90">
-                                ${data.fvg[0]}
-                            </AlertDescription>
-                        </Alert>
-                    </div>
-                    {livePrice !== null && (
-                        <div 
-                            className="absolute w-full h-0.5 bg-primary transition-all duration-200 ease-linear z-10"
-                            style={{ 
-                                top: `${( (supplyHigh - livePrice) / (supplyHigh - demandLow) ) * 100}%`,
-                                boxShadow: '0 0 10px hsl(var(--primary))' 
-                            }}
-                        >
-                            <div className="absolute right-0 -top-3 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded">
-                                LIVE: ${livePrice.toFixed(isCrypto ? 2 : 4)}
-                            </div>
-                        </div>
-                    )}
-                </div>
-                
-                <div className={cn(
-                    "p-3 rounded-lg border-2 text-center bg-green-500/20 border-green-500 shadow-[0_0_15px_theme(colors.green.500)] transition-all duration-300",
-                    isPriceInDemand && "animate-pulse shadow-[0_0_25px_theme(colors.green.500)] border-white/80"
-                )}>
-                    <h5 className="font-headline text-lg text-white">DEMAND ZONE</h5>
-                    <p className="font-mono text-xl text-white/90">${demandLow.toFixed(isCrypto ? 2 : 4)} - ${demandHigh.toFixed(isCrypto ? 2 : 4)}</p>
-                </div>
-
-                <div className="text-center text-sm text-foreground/80 pt-2">
-                    {data.volumeImbalance}
-                </div>
             </div>
         </div>
     );
@@ -241,7 +161,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <div className="flex justify-between items-center">
           <div className='flex items-center gap-3'>
             <div className={cn("flex items-center justify-center w-12 h-12 rounded-full", data.isBullish ? 'bg-green-500/20' : 'bg-red-500/20')}>
-              {data.isBullish ? <TrendingUp className="w-8 h-8 text-green-400" /> : <TrendingDown className="w-8 h-8 text-red-400" />}
+              {data.isBullish ? <Scaling className="w-8 h-8 text-green-400" /> : <Scaling className="w-8 h-8 text-red-400" />}
             </div>
             <div>
               <h3 className="font-headline text-2xl text-foreground">{data.symbol}</h3>
@@ -309,46 +229,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             {data.orderBlock && <QuantumOrderBlockMatrix orderBlock={data.orderBlock} entryPrice={entryPriceNum} />}
 
             <KeyLevels data={data} />
-
-            {mode === '4' && data.sniperZone && (
-              <Alert className="border-primary bg-gradient-to-br from-primary/20 via-black to-accent/20 text-primary shadow-[0_0_25px_hsl(var(--primary)_/_0.6)] scanner-glow">
-                  <Crosshair className="h-5 w-5 text-primary" />
-                  <AlertTitle className="font-headline text-lg text-primary">
-                      Quantum Sniper Zone ({data.isBullish ? "Long" : "Short"})
-                  </AlertTitle>
-                  <AlertDescription className="font-mono text-xl mt-1 text-white/90">
-                      ${data.sniperZone.min} - ${data.sniperZone.max}
-                  </AlertDescription>
-              </Alert>
-            )}
-
-            {data.goldenPullbackZone && (
-              <Alert className="border-amber-400 bg-gradient-to-br from-yellow-900/40 to-black text-amber-300 shadow-[0_0_15px_hsl(38_92%_50%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(38_92%_50%_/_0.8)]">
-                  <Target className="h-5 w-5 text-amber-300" />
-                  <AlertTitle className="font-headline text-lg text-amber-300">
-                      Golden {data.isBullish ? "Long" : "Short"} Re-Entry Zone
-                  </AlertTitle>
-                  <AlertDescription className="font-mono text-xl mt-1 text-white/90">
-                      ${data.goldenPullbackZone.min} - ${data.goldenPullbackZone.max}
-                  </AlertDescription>
-              </Alert>
-            )}
-
-            {data.goldenReverseZone && (
-              <Alert className="border-purple-400 bg-gradient-to-br from-purple-900/40 to-black text-purple-300 shadow-[0_0_15px_hsl(271_76%_53%_/_0.5)] transition-shadow duration-300 hover:shadow-[0_0_25px_hsl(271_76%_53%_/_0.8)]">
-                  <ShieldAlert className="h-5 w-5 text-purple-300" />
-                  <AlertTitle className="font-headline text-lg text-purple-300">
-                      Golden {data.isBullish ? "Short" : "Long"} Reverse Zone
-                  </AlertTitle>
-                  <AlertDescription className="font-mono text-xl mt-1 text-white/90">
-                      ${data.goldenReverseZone.min} - ${data.goldenReverseZone.max}
-                  </AlertDescription>
-              </Alert>
-            )}
             
-            {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
-            
-            <InstitutionalInterest data={data} livePrice={displayPrice} />
+            <IndicatorChecklist data={data.indicatorChecklist} />
 
             <ConfidenceBreakdown 
               breakdown={data.confidenceBreakdown} 
@@ -361,36 +243,10 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
               <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <SectionHeader icon={<BookOpen />} title="Pattern Recognition" />
-                <SectionWrapper>
-                  <h5 className="font-bold text-primary">{data.chartPattern.name}</h5>
-                  <p className="text-xs text-foreground/80 mt-1">{data.chartPattern.description}</p>
-                </SectionWrapper>
-              </div>
-              <div>
-                <SectionHeader icon={<CheckCircle2 />} title="Trader's Checklist" />
-                <SectionWrapper>
-                    <SmartMoneyConcepts data={data} />
-                </SectionWrapper>
-              </div>
-            </div>
-            
-            <div>
-              <SectionHeader icon={<Zap />} title={`Quantum Signals Detected (${data.confluenceCount})`} />
-              <SectionWrapper>
-                  <div className="space-y-3">
-                      {data.confluenceFactors.map((factor, i) => (
-                          <div key={i} className="flex items-center gap-2 text-sm text-primary/90 p-2 bg-primary/5 rounded-md border border-primary/10">
-                              <Zap size={14} className="text-amber-400" />
-                              <span>{factor}</span>
-                          </div>
-                      ))}
-                      {data.liquidityMatrix && <LiquidityTargetAlert prediction={data.liquidityMatrix.prediction} />}
-                  </div>
-              </SectionWrapper>
-            </div>
+            <SectionWrapper>
+              <SectionHeader icon={<ListChecks />} title="Trader's Checklist" />
+              <SmartMoneyConcepts data={data} />
+            </SectionWrapper>
         </>
       )}
 
@@ -413,4 +269,3 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
-
