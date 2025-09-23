@@ -71,16 +71,17 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
       {user?.isAdmin && <AdminDashboard />}
       <div className="max-w-7xl mx-auto">
         <Tabs defaultValue="quantum-engine" className="w-full">
-          <div className="flex items-center justify-between gap-4 bg-black/50 border-2 border-primary/50 rounded-lg p-3 px-4 mb-6">
-            <TabsList className="grid flex-grow grid-cols-4">
-              <TabsTrigger value="quantum-engine" className="font-headline"><BrainCircuit size={16} className="mr-2"/>Quantum Engine</TabsTrigger>
-              <TabsTrigger value="strength-dashboard" className="font-headline"><Gauge size={16} className="mr-2"/>Strength Dashboard</TabsTrigger>
-              <TabsTrigger value="liquidity-matrix" className="font-headline"><Droplets size={16} className="mr-2"/>Liquidity Matrix</TabsTrigger>
-              <TabsTrigger value="elite-ai" className="font-headline"><Sparkles size={16} className="mr-2"/>Elite AI</TabsTrigger>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-black/50 border-2 border-primary/50 rounded-lg p-3 px-4 mb-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="quantum-engine" className="font-headline"><BrainCircuit size={16} className="mr-2"/><span className="hidden sm:inline">Quantum Engine</span><span className="sm:hidden">Quantum</span></TabsTrigger>
+              <TabsTrigger value="strength-dashboard" className="font-headline"><Gauge size={16} className="mr-2"/><span className="hidden sm:inline">Strength Dashboard</span><span className="sm:hidden">Strength</span></TabsTrigger>
+              <TabsTrigger value="liquidity-matrix" className="font-headline"><Droplets size={16} className="mr-2"/><span className="hidden sm:inline">Liquidity Matrix</span><span className="sm:hidden">Liquidity</span></TabsTrigger>
+              <TabsTrigger value="elite-ai" className="font-headline"><Sparkles size={16} className="mr-2"/><span className="hidden sm:inline">Elite AI</span><span className="sm:hidden">AI</span></TabsTrigger>
             </TabsList>
-            <Button variant="ghost" size="sm" onClick={() => router.push('/scanner')} className="flex-shrink-0">
+            <Button variant="ghost" size="sm" onClick={() => router.push('/scanner')} className="flex-shrink-0 w-full sm:w-auto">
                 <AreaChart size={16} className="mr-2"/>
-                Open Market Scanner
+                <span className="hidden md:inline">Open Market Scanner</span>
+                <span className="md:hidden">Scanner</span>
             </Button>
           </div>
           
