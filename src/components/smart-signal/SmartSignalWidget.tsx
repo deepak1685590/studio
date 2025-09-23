@@ -98,9 +98,9 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       return;
     }
     
-    const isCrypto = cryptoAssetsForWebsocket.includes(currentSymbol.toUpperCase());
+    const isSupportedCrypto = cryptoAssetsForWebsocket.includes(currentSymbol.toUpperCase());
 
-    if (isCrypto && typeof window !== 'undefined') {
+    if (isSupportedCrypto && typeof window !== 'undefined') {
       const wsSymbol = currentSymbol.toLowerCase() + 'usdt';
       const streams = `${wsSymbol}@trade/${wsSymbol}@bookTicker`;
       const socket = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
@@ -157,9 +157,9 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     }
 
     try {
-      const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, !isCrypto);
+      const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, !isSupportedCrypto);
       onSignalDataChange(data);
-      if (!isCrypto) {
+      if (!isSupportedCrypto) {
         setRealtimePrice(data.price);
         previousPriceRef.current = data.price;
       }
