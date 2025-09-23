@@ -229,8 +229,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             {data.orderBlock && <QuantumOrderBlockMatrix orderBlock={data.orderBlock} entryPrice={entryPriceNum} />}
 
             <KeyLevels data={data} />
-            
-            <IndicatorChecklist data={data.indicatorChecklist} />
 
             <ConfidenceBreakdown 
               breakdown={data.confidenceBreakdown} 
@@ -249,6 +247,9 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             </SectionWrapper>
         </>
       )}
+
+      {/* Indicator Checklist is now outside the conditional block to show in all modes */}
+      <IndicatorChecklist data={data.indicatorChecklist} />
 
       <div className="flex justify-between items-center mt-6">
         <small className="text-foreground/50">Generated: {new Date().toLocaleString()}</small>
