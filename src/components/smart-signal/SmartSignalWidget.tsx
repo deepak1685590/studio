@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -180,27 +181,12 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
             symbol: data.symbol,
             price: data.price,
             isBullish: data.isBullish,
-            action: data.action,
-            entry: parseFloat(data.entry),
-            sl: parseFloat(data.sl),
-            tp1: parseFloat(data.tp1),
-            tp2: parseFloat(data.tp2),
-            confluenceCount: data.confluenceCount,
-            demandZone: `$${data.demandZone[0]} - ${data.demandZone[1]}`,
-            fvg: `$${data.fvg[0]} - ${data.fvg[1]}`,
-            volumeImbalance: data.volumeImbalance,
-            multiTimeframeAnalysis: {
-                '5m': data.multiTimeframeAnalysis['5m']?.trend || 'Neutral',
-                '15m': data.multiTimeframeAnalysis['15m']?.trend || 'Neutral',
-                '1H': data.multiTimeframeAnalysis['1H']?.trend || 'Neutral',
-                '4H': data.multiTimeframeAnalysis['4H']?.trend || 'Neutral',
-                'Daily': data.multiTimeframeAnalysis['Daily']?.trend || 'Neutral',
-            },
             chartPatternName: data.chartPattern.name,
             trendStrength: data.trendStrength.score,
             momentum: data.momentum.score,
-            marketSession: "New York", 
-            volatilityRegime: "Medium", 
+            entry: parseFloat(data.entry),
+            sl: parseFloat(data.sl),
+            tp1: parseFloat(data.tp1),
         };
         const insightResult = await generateAiInsight(insightInput);
         setAiInsight(insightResult);

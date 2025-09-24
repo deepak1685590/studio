@@ -1,5 +1,6 @@
 
 
+
 import type { GenerateAiInsightInput as GenkitGenerateAiInsightInput, GenerateAiInsightOutput as GenkitGenerateAiInsightOutput } from "@/ai/flows/generate-ai-insight";
 import type { OracleInsightInput as GenkitOracleInsightInput } from "@/ai/flows/oracle-insight";
 
