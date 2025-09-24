@@ -6,7 +6,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import type { SignalData, GenerateAiInsightOutput, HistoricalLevels } from '@/types';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, BarChart, BookOpen, Scaling, Magnet, Building, Timer, Target, Zap, Shield, LogIn, TrendingUp, TrendingDown } from 'lucide-react';
+import { Download, CheckCircle2, BarChart, BookOpen, Scaling, Magnet, Building, Timer, Target, Zap, Shield, LogIn, TrendingUp, TrendingDown, Layers } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -15,14 +15,12 @@ import WhaleAlert from './WhaleAlert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import SidewaysMarketAlert from './SidewaysMarketAlert';
 import KeyLevels from './KeyLevels';
-import QuantumEntryMatrix from './QuantumEntryMatrix';
-import QuantumOrderBlockMatrix from './QuantumOrderBlockMatrix';
-import SmartMoneyConcepts from './SmartMoneyConcepts';
 import PredictiveAnalysis from './PredictiveAnalysis';
 import QuantumSummary from './QuantumSummary';
 import SupermodeDashboard from './SupermodeDashboard';
 import IndicatorChecklist from './IndicatorChecklist';
 import LiquidityTargetAlert from './LiquidityTargetAlert';
+import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -258,9 +256,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                     <div className="flex justify-between text-base pt-2 px-2"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono font-bold">1 : {data.riskReward.toFixed(1)}</span></div>
                 </div>
             </div>
-            
-            <QuantumEntryMatrix data={data} livePrice={realtimePrice} />
-
         </div>
         <div className="space-y-4">
              <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
@@ -268,29 +263,28 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 <Alert className="bg-transparent border-primary/30">
                   <p><strong className={cn("font-bold", trendColor)}>{data.chartPattern.name}:</strong> {data.chartPattern.description}</p>
                 </Alert>
+                 <div className="pt-2">
+                    <p className="text-sm"><strong>Liquidity: </strong>{data.liquidity.description}</p>
+                 </div>
                 <ConfidenceBreakdown 
                   breakdown={data.confidenceBreakdown} 
                   confidence={data.confidence}
                   isBullish={data.isBullish} 
                 />
             </div>
-
-            {data.orderBlock && (
-                <QuantumOrderBlockMatrix orderBlock={data.orderBlock} entryPrice={entryPriceNum} />
-            )}
         </div>
       </div>
       
       {data.historicalLevels && <MarketStructureLevels levels={data.historicalLevels} livePrice={displayPrice} isCrypto={isCrypto} />}
       
-      <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
-        <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
-        <SmartMoneyConcepts data={data} />
-      </div>
-
       {renderModeSpecificContent()}
       
       {data.liquidityMatrix?.prediction && <LiquidityTargetAlert prediction={data.liquidityMatrix.prediction} />}
+
+      <div>
+        <SectionHeader icon={<Layers />} title="Quantum Pivots Matrix (Multi-Timeframe)" />
+        <QuantumPivotsMatrix data={data.multiTimeframeSR} livePrice={realtimePrice} />
+      </div>
 
       <div>
         <SectionHeader icon={<BarChart />} title="Multi-Timeframe Analysis" />
