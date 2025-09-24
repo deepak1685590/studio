@@ -180,15 +180,13 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     if (mode === '5' && data.supermodeAnalysis) {
       return <SupermodeDashboard analysis={data.supermodeAnalysis} />;
     }
-    if (mode === '4' && data.indicatorChecklist) {
-      return <IndicatorChecklist data={data.indicatorChecklist} />;
-    }
+    // The IndicatorChecklist is now rendered unconditionally below.
     return null;
   }
 
   return (
     <div id="signal-card-content" className={cn(
-        "mt-5 p-5 bg-black/70 border-2 rounded-xl text-sm leading-relaxed shadow-lg space-y-4",
+        "mt-5 p-5 bg-black/70 border-2 rounded-xl text-sm leading-relaxed shadow-lg space-y-6",
         data.isBullish ? "border-green-400 shadow-green-400/20" : "border-red-500 shadow-red-500/20"
     )}>
       <header className={cn(
@@ -280,6 +278,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
         <SmartMoneyConcepts data={data} />
       </div>
+
+      {data.indicatorChecklist && <IndicatorChecklist data={data.indicatorChecklist} />}
 
       <div>
         <SectionHeader icon={<Layers />} title="Quantum Pivots Matrix (Multi-Timeframe)" />
