@@ -1,8 +1,8 @@
 
-
 export type { GenerateAiInsightInput, GenerateAiInsightOutput } from "@/ai/flows/generate-ai-insight";
 export type { OracleInsightInput } from "@/ai/flows/oracle-insight";
 export type { LiquidityMatrixData } from '@/types/liquidity';
+export type { AdvancedStrengthDashboardData } from '@/types/dashboard';
 
 export interface User {
   username: string;
@@ -196,65 +196,13 @@ export interface SuperTrendAnalysis {
     exitSignal: number;
 }
 
-export interface AdvancedStrengthDashboardData {
-    marketPhase: 'BREAKOUT' | 'BREAKDOWN' | 'CONSOLIDATION' | 'BULLISH TREND' | 'BEARISH TREND' | 'NEUTRAL';
-    price: string;
-    priceChangePercent: number;
-    marketSentiment: {
-        score: number;
-        label: string;
-        emoji: string;
-    };
-    momentum: {
-        rsi: number;
-        trend: '📈' | '📉';
-    };
-    longPower: number;
-    shortPower: number;
-    overallStrength: number;
-    trendAnalysis: {
-        strength: number;
-        direction: 1 | -1;
-        momentum: 'ACCELERATING' | 'DECELERATING' | 'STABLE';
-    };
-    volatility: {
-        percent: number;
-        label: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW';
-    };
-    volumeStatus: {
-        status: 'SPIKE' | 'DRY' | 'HIGH' | 'NORMAL' | 'LOW';
-        changePercent: number;
-    };
-    volumeValue: number;
-    rsiStatus: {
-        status: 'OVERBOUGHT' | 'OVERSOLD' | 'NEUTRAL' | 'Strong' | 'Weak';
-        divergence: 'BULLISH' | 'BEARISH' | 'NONE';
-    };
-    stochRsi: {
-        k: number;
-        d: number;
-        crossover: 'BULL_CROSS' | 'BEAR_CROSS' | 'NONE';
-    };
-}
-
-export interface LiquidityLevel {
-    price: number;
-    volume: number;
-    type: 'POOL' | 'STOP_HUNT';
-}
-
-export interface LiquidityPrediction {
-    targetPrice: number;
-    confidence: 'High' | 'Medium' | 'Low';
-    timeframe: string;
-    reason: string;
-}
-
-export interface LiquidityMatrixData {
-    buySide: LiquidityLevel[];
-    sellSide: LiquidityLevel[];
-    prediction: LiquidityPrediction;
-    currentPrice: number;
+export interface HistoricalLevels {
+    tdh: number; // Today's Day High
+    tdl: number; // Today's Day Low
+    pdh: number; // Previous Day High
+    pdl: number; // Previous Day Low
+    pwh: number; // Previous Week High
+    pwl: number; // Previous Week Low
 }
 
 export interface SupermodeTimeframeData {
@@ -291,14 +239,6 @@ export interface IndicatorChecklist {
     indicators: IndicatorData[];
 }
 
-export interface HistoricalLevels {
-    tdh: number; // Today's Day High
-    tdl: number; // Today's Day Low
-    pdh: number; // Previous Day High
-    pdl: number; // Previous Day Low
-    pwh: number; // Previous Week High
-    pwl: number; // Previous Week Low
-}
 
 export interface SignalData {
   symbol: string;

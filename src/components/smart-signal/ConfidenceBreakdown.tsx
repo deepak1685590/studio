@@ -5,8 +5,8 @@ import React from 'react';
 import type { SignalData } from '@/types';
 import { BrainCircuit, TrendingUp, TrendingDown, Gauge, Flame, Volume, Zap, Rocket, Waves, Activity, AlertTriangle, GitCommitHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import VerticalStrengthMeter from '../tools/VerticalStrengthMeter';
 import InfoPod from './InfoPod';
+import HorizontalStrengthMeter from './HorizontalStrengthMeter';
 
 const MarketPhaseHeader: React.FC<{ phase: SignalData['advancedStrengthDashboard']['marketPhase'] }> = ({ phase }) => {
     const phaseConfig = {
@@ -79,55 +79,41 @@ const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ data, livePri
         <MarketPhaseHeader phase={adv.marketPhase} />
         {adv.rsiStatus.divergence && adv.rsiStatus.divergence !== 'NONE' && <DivergenceAlert type={adv.rsiStatus.divergence} />}
 
-        <div className="flex flex-col md:flex-row items-center justify-center gap-4 mt-3">
-            {/* Left Pods */}
-            <div className="w-full md:w-1/3 space-y-2">
+        <div className="space-y-3 mt-3">
+             <HorizontalStrengthMeter 
+                long={adv.longPower} 
+                short={adv.shortPower}
+             />
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <InfoPod
                     title="Price"
                     icon={<Activity size={16}/>}
                     value={displayPrice.toFixed(isCrypto ? 2 : 4)}
                     valueClassName={priceColor}
+                    isSmall
                 />
                 <InfoPod
                     title="RSI (14)"
                     icon={<Gauge size={16}/>}
                     value={adv.momentum.rsi.toFixed(0)}
                     valueClassName={rsiColor}
+                    isSmall
                 />
-                <InfoPod
-                    title="Long Power"
-                    icon={<TrendingUp size={16} />}
-                    value={`${adv.longPower.toFixed(0)}%`}
-                    valueClassName="text-green-400"
-                />
-            </div>
-
-            {/* Center Meter */}
-            <div className="h-64 w-full md:w-auto">
-                 <VerticalStrengthMeter strength={adv.overallStrength} />
-            </div>
-
-            {/* Right Pods */}
-            <div className="w-full md:w-1/3 space-y-2">
                 <InfoPod
                     title="Trend (ADX)"
                     icon={<TrendingUp size={16}/>}
                     value={adv.trendAnalysis.strength.toFixed(0)}
                     valueClassName={adxColor}
+                    isSmall
                 />
                 <InfoPod
                     title="Volatility (ATR)"
                     icon={<Flame size={16} />}
                     value={`${adv.volatility.percent.toFixed(2)}%`}
                     valueClassName={volColor}
+                    isSmall
                 />
-                 <InfoPod
-                    title="Short Power"
-                    icon={<TrendingDown size={16} />}
-                    value={`${adv.shortPower.toFixed(0)}%`}
-                    valueClassName="text-red-400"
-                />
-            </div>
+             </div>
         </div>
     </div>
   );
