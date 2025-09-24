@@ -30,35 +30,6 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
   const [tradeSize, setTradeSize] = useState('10000');
   const [isAutoTrading, setIsAutoTrading] = useLocalStorage('trading-sim-autotrade', false);
 
-  // Auto-trading logic
-  useEffect(() => {
-    if (isAutoTrading && signalData && livePrice) {
-      // Auto-close existing position when a new signal arrives for a DIFFERENT symbol
-      if (position && position.symbol !== signalData.symbol) {
-        closePosition(true); // `true` indicates an auto-close
-      }
-
-      // Auto-open new position if none exists for the current signal
-      if (!position) {
-        const newTradeType = signalData.isBullish ? 'long' : 'short';
-        openPosition(newTradeType, true); // `true` indicates an auto-open
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signalData, isAutoTrading, livePrice]);
-
-
-  useEffect(() => {
-    if (position && livePrice) {
-      const pnlValue = position.type === 'long'
-        ? (livePrice - position.entryPrice) * position.quantity
-        : (position.entryPrice - livePrice) * position.quantity;
-      setPnl(pnlValue);
-    } else {
-      setPnl(0);
-    }
-  }, [position, livePrice]);
-
   const openPosition = (type: 'long' | 'short', isAuto: boolean = false) => {
     if (position) {
       if (!isAuto) toast({ title: "Error", description: "You already have an open position.", variant: "destructive" });
@@ -86,9 +57,14 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
   };
 
   const closePosition = (isAuto: boolean = false) => {
-    if (!position || !livePrice) return;
+    if (!position) return;
+    
+    const exitPrice = livePrice || (position.type === 'long' ? parseFloat(signalData.tp1) : parseFloat(signalData.sl));
+    const calculatedPnl = position.type === 'long'
+        ? (exitPrice - position.entryPrice) * position.quantity
+        : (position.entryPrice - exitPrice) * position.quantity;
 
-    const newBalance = balance + pnl;
+    const newBalance = balance + calculatedPnl;
     setBalance(newBalance);
 
     const newTrade: Trade = {
@@ -96,25 +72,53 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
       symbol: position.symbol,
       type: position.type,
       entryPrice: position.entryPrice,
-      exitPrice: livePrice,
+      exitPrice: exitPrice,
       size: position.size,
-      pnl: pnl,
+      pnl: calculatedPnl,
     };
-    setTradeHistory(prev => [newTrade, ...prev].slice(0, 50)); // Keep last 50 trades
+    setTradeHistory(prev => [newTrade, ...prev].slice(0, 50));
     
-    // Update stats
-    if (pnl > 0) {
+    if (calculatedPnl > 0) {
       setStats(prev => ({ ...prev, wins: prev.wins + 1 }));
-    } else if (pnl < 0) {
+    } else if (calculatedPnl < 0) {
       setStats(prev => ({ ...prev, losses: prev.losses + 1 }));
     }
     
     const toastTitle = isAuto ? "Auto-Trade: Position Closed" : "Position Closed";
-    toast({ title: toastTitle, description: `Closed ${position.symbol} position. P&L: $${pnl.toFixed(2)}.` });
+    toast({ title: toastTitle, description: `Closed ${position.symbol} position. P&L: $${calculatedPnl.toFixed(2)}.` });
     
     setPosition(null);
     setPnl(0);
   };
+
+  // This effect now ONLY triggers when the signalData object itself changes.
+  useEffect(() => {
+    if (isAutoTrading && signalData && !signalData.sidewaysMarket) {
+      // 1. If we have a position and the new signal is for a different symbol, close the old one.
+      if (position && position.symbol !== signalData.symbol) {
+        closePosition(true); // Close old position
+      }
+      
+      // 2. If we DO NOT have a position for the CURRENT symbol, open one.
+      if (!position || position.symbol !== signalData.symbol) {
+         const newTradeType = signalData.isBullish ? 'long' : 'short';
+         openPosition(newTradeType, true); // Open new position
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signalData, isAutoTrading]); // Dependencies are now correctly isolated.
+
+
+  useEffect(() => {
+    if (position && livePrice) {
+      const pnlValue = position.type === 'long'
+        ? (livePrice - position.entryPrice) * position.quantity
+        : (position.entryPrice - livePrice) * position.quantity;
+      setPnl(pnlValue);
+    } else {
+      setPnl(0);
+    }
+  }, [position, livePrice]);
   
   const resetBalance = () => {
     setBalance(INITIAL_BALANCE);
