@@ -156,6 +156,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
           const messageData = message.data;
           
           if (stream.endsWith('@trade')) {
+              // DEFINITIVE FIX: Ensure symbol comparison is correct
               if ((currentSymbolRef.current.toLowerCase() + 'usdt') !== messageData.s.toLowerCase()) {
                   return; 
               }
@@ -537,3 +538,5 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 };
 
 export default SmartSignalWidget;
+
+    

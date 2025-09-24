@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -163,3 +164,5 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
 };
 
 export default MainApp;
+
+    
