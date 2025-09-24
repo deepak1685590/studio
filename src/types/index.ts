@@ -293,6 +293,8 @@ export interface IndicatorChecklist {
 }
 
 export interface HistoricalLevels {
+    tdh: number; // Today's Day High
+    tdl: number; // Today's Day Low
     pdh: number; // Previous Day High
     pdl: number; // Previous Day Low
     pwh: number; // Previous Week High

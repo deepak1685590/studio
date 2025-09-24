@@ -718,6 +718,10 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const indicatorChecklist = generateIndicatorChecklist(isBullish, momentum, analysisSeed);
 
     // --- Historical Levels ---
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const todayKlines = klines.filter(k => k[0] >= today.getTime());
+
     const candlesPerDay = (24 * 60) / {'5m': 5, '15m': 15, '1h': 60, '4h': 240, '1d': 1440}[timeframe];
     const previousDayKlines = klines.slice(Math.max(0, klines.length - candlesPerDay * 2), klines.length - candlesPerDay);
     const previousWeekKlines = klines.slice(Math.max(0, klines.length - candlesPerDay * 10), klines.length - candlesPerDay * 5);
@@ -726,6 +730,8 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const getLow = (data: any[]) => data.length > 0 ? Math.min(...data.map(k => parseFloat(k[3]))) : swingLow * (1 + pseudoRandom(analysisSeed + 'pl')*0.02);
     
     const historicalLevels: HistoricalLevels = {
+        tdh: getHigh(todayKlines),
+        tdl: getLow(todayKlines),
         pdh: getHigh(previousDayKlines),
         pdl: getLow(previousDayKlines),
         pwh: getHigh(previousWeekKlines) * (1 + pseudoRandom(analysisSeed + 'pwh')*0.02), // add slight variance

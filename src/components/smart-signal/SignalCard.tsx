@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -104,6 +105,8 @@ const LevelRow: React.FC<{
 
 const MarketStructureLevels: React.FC<{ levels: HistoricalLevels; livePrice: number; isCrypto: boolean; }> = ({ levels, livePrice, isCrypto }) => {
     const format = (price: number) => price.toFixed(isCrypto ? 2 : 4);
+    const tdhBroken = livePrice > levels.tdh;
+    const tdlBroken = livePrice < levels.tdl;
     const pdhBroken = livePrice > levels.pdh;
     const pdlBroken = livePrice < levels.pdl;
     const pwhBroken = livePrice > levels.pwh;
@@ -112,18 +115,26 @@ const MarketStructureLevels: React.FC<{ levels: HistoricalLevels; livePrice: num
     return (
         <SectionWrapper>
             <SectionHeader icon={<Landmark />} title="Market Structure" />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                 <div className={cn("p-2 rounded-md transition-all", tdhBroken ? "bg-green-500/20 border border-green-400" : "bg-black/30")}>
+                    <div className="text-xs text-foreground/70">Today's High (TDH)</div>
+                    <div className="font-mono font-bold text-lg">{format(levels.tdh)}</div>
+                </div>
                 <div className={cn("p-2 rounded-md transition-all", pdhBroken ? "bg-green-500/20 border border-green-400" : "bg-black/30")}>
                     <div className="text-xs text-foreground/70">Previous Day High (PDH)</div>
                     <div className="font-mono font-bold text-lg">{format(levels.pdh)}</div>
                 </div>
-                <div className={cn("p-2 rounded-md transition-all", pdlBroken ? "bg-red-500/20 border border-red-400" : "bg-black/30")}>
-                    <div className="text-xs text-foreground/70">Previous Day Low (PDL)</div>
-                    <div className="font-mono font-bold text-lg">{format(levels.pdl)}</div>
-                </div>
                  <div className={cn("p-2 rounded-md transition-all", pwhBroken ? "bg-green-500/20 border border-green-400" : "bg-black/30")}>
                     <div className="text-xs text-foreground/70">Previous Week High (PWH)</div>
                     <div className="font-mono font-bold text-lg">{format(levels.pwh)}</div>
+                </div>
+                <div className={cn("p-2 rounded-md transition-all", tdlBroken ? "bg-red-500/20 border border-red-400" : "bg-black/30")}>
+                    <div className="text-xs text-foreground/70">Today's Low (TDL)</div>
+                    <div className="font-mono font-bold text-lg">{format(levels.tdl)}</div>
+                </div>
+                <div className={cn("p-2 rounded-md transition-all", pdlBroken ? "bg-red-500/20 border border-red-400" : "bg-black/30")}>
+                    <div className="text-xs text-foreground/70">Previous Day Low (PDL)</div>
+                    <div className="font-mono font-bold text-lg">{format(levels.pdl)}</div>
                 </div>
                  <div className={cn("p-2 rounded-md transition-all", pwlBroken ? "bg-red-500/20 border border-red-400" : "bg-black/30")}>
                     <div className="text-xs text-foreground/70">Previous Week Low (PWL)</div>
@@ -258,8 +269,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />
             
             <QuantumPivotsMatrix data={data.multiTimeframeSR} livePrice={realtimePrice} />
-
-            <QuantumEntryMatrix data={data} livePrice={realtimePrice} />
 
             {data.orderBlock && <QuantumOrderBlockMatrix orderBlock={data.orderBlock} entryPrice={entryPriceNum} />}
 
