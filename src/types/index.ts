@@ -359,5 +359,5 @@ export interface SignalData {
   advancedStrengthDashboard?: AdvancedStrengthDashboardData;
   supermodeAnalysis?: SupermodeAnalysis;
   indicatorChecklist: IndicatorChecklist;
-  historicalLevels: HistoricalLevels;
+  historicalLevels?: HistoricalLevels;
 }
