@@ -59,7 +59,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showChart, setShowChart] = useState(true);
-  const [showLiquidityMatrix, setShowLiquidityMatrix] = useState(true);
+  const [showLiquidityMatrix, setShowLiquidityMatrix] = useState(false);
 
   const { toast } = useToast();
 
