@@ -3,16 +3,16 @@
 
 import React from 'react';
 import type { SignalData } from '@/types';
-import { BrainCircuit, TrendingUp, TrendingDown, Gauge, Flame, Volume, Activity, AlertTriangle } from 'lucide-react';
+import { BrainCircuit, TrendingUp, TrendingDown, Gauge, Flame, Volume, Activity, AlertTriangle, GitCommitHorizontal, Rocket, Zap, Waves, Snowflake } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import InfoPod from './InfoPod';
 import HorizontalStrengthMeter from './HorizontalStrengthMeter';
 
 const MarketPhaseHeader: React.FC<{ phase: SignalData['advancedStrengthDashboard']['marketPhase'] }> = ({ phase }) => {
     const phaseConfig = {
-        'BREAKOUT': { icon: <TrendingUp />, color: 'text-green-400', shadow: 'shadow-[0_0_15px_theme(colors.green.400)]' },
-        'BREAKDOWN': { icon: <TrendingDown />, color: 'text-red-400', shadow: 'shadow-[0_0_15px_theme(colors.red.400)]' },
-        'CONSOLIDATION': { icon: <Activity />, color: 'text-yellow-400', shadow: 'shadow-[0_0_15px_theme(colors.yellow.400)]' },
+        'BREAKOUT': { icon: <Rocket />, color: 'text-green-400', shadow: 'shadow-[0_0_15px_theme(colors.green.400)]' },
+        'BREAKDOWN': { icon: <Zap />, color: 'text-red-400', shadow: 'shadow-[0_0_15px_theme(colors.red.400)]' },
+        'CONSOLIDATION': { icon: <Waves />, color: 'text-yellow-400', shadow: 'shadow-[0_0_15px_theme(colors.yellow.400)]' },
         'BULLISH TREND': { icon: <TrendingUp />, color: 'text-cyan-400', shadow: 'shadow-[0_0_15px_theme(colors.cyan.400)]' },
         'BEARISH TREND': { icon: <TrendingDown />, color: 'text-orange-400', shadow: 'shadow-[0_0_15px_theme(colors.orange.400)]' },
         'NEUTRAL': { icon: <Activity />, color: 'text-primary', shadow: 'shadow-[0_0_15px_hsl(var(--primary))]' },
@@ -64,18 +64,26 @@ const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ data, livePri
   const rsiColor = adv.rsiStatus.status === 'OVERBOUGHT' ? 'text-red-400' : adv.rsiStatus.status === 'OVERSOLD' ? 'text-green-400' : 'text-primary/80';
   const adxColor = adv.trendAnalysis.momentum === 'ACCELERATING' ? 'text-green-400' : 'text-primary/80';
   const volColor = adv.volatility.label === 'HIGH' || adv.volatility.label === 'EXTREME' ? 'text-orange-400' : 'text-primary/80';
+  const stochColor = adv.stochRsi.crossover === 'BULL_CROSS' ? 'text-cyan-400' : adv.stochRsi.crossover === 'BEAR_CROSS' ? 'text-orange-400' : 'text-primary/80';
+  const volumeStatusColor = adv.volumeStatus.status === 'SPIKE' || adv.volumeStatus.status === 'HIGH' ? 'text-amber-400' : 'text-primary/80';
+  const sentimentColor = adv.marketSentiment.score > 1 ? 'text-green-400' : adv.marketSentiment.score < -1 ? 'text-red-400' : 'text-yellow-400';
 
   return (
     <div className="p-4 bg-black/30 rounded-lg border border-primary/20">
         <MarketPhaseHeader phase={adv.marketPhase} />
         {adv.rsiStatus.divergence && adv.rsiStatus.divergence !== 'NONE' && <DivergenceAlert type={adv.rsiStatus.divergence} />}
+        
+        <div className="text-center p-2 mb-2">
+            <div className="text-xs text-foreground/70">Market Sentiment</div>
+            <div className={cn("font-headline text-lg", sentimentColor)}>{adv.marketSentiment.label}</div>
+        </div>
 
         <div className="space-y-3 mt-3">
              <HorizontalStrengthMeter 
                 long={adv.longPower} 
                 short={adv.shortPower}
              />
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 <InfoPod
                     title="Price"
                     icon={<Activity size={16}/>}
@@ -86,14 +94,21 @@ const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ data, livePri
                 <InfoPod
                     title="RSI (14)"
                     icon={<Gauge size={16}/>}
-                    value={adv.momentum.rsi.toFixed(0)}
+                    value={`${adv.momentum.rsi.toFixed(0)}`}
                     valueClassName={rsiColor}
+                    isSmall
+                />
+                <InfoPod
+                    title="Stoch RSI"
+                    icon={<GitCommitHorizontal size={16}/>}
+                    value={`${adv.stochRsi.k.toFixed(0)}/${adv.stochRsi.d.toFixed(0)}`}
+                    valueClassName={stochColor}
                     isSmall
                 />
                 <InfoPod
                     title="Trend (ADX)"
                     icon={<TrendingUp size={16}/>}
-                    value={adv.trendAnalysis.strength.toFixed(0)}
+                    value={`${adv.trendAnalysis.strength.toFixed(0)}`}
                     valueClassName={adxColor}
                     isSmall
                 />
@@ -102,6 +117,13 @@ const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ data, livePri
                     icon={<Flame size={16} />}
                     value={`${adv.volatility.percent.toFixed(2)}%`}
                     valueClassName={volColor}
+                    isSmall
+                />
+                 <InfoPod
+                    title="Volume"
+                    icon={<Volume size={16} />}
+                    value={adv.volumeStatus.status}
+                    valueClassName={volumeStatusColor}
                     isSmall
                 />
              </div>

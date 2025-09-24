@@ -1,5 +1,6 @@
 
 
+
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock, IndicatorChecklist, IndicatorData, IndicatorSignal, SupermodeAnalysis, HistoricalLevels } from '@/types';
 import { getKlines as fetchKlinesFromServer } from '@/app/actions/getKlines';
 
@@ -515,6 +516,7 @@ const generateSuperTrendAnalysis = (price: number, atr: number, isBullish: boole
 
 const generateAdvancedStrengthData = (
     klines: any[], 
+    isCrypto: boolean,
     rsiLength = 14, 
     maFastLength = 12, 
     maSlowLength = 26,
@@ -529,30 +531,28 @@ const generateAdvancedStrengthData = (
     const prevClose = closes[closes.length - 2];
     const priceChangePercent = ((price - prevClose) / prevClose) * 100;
 
-    // 2. Momentum
+    // 2. Momentum (RSI)
     const rsi = calculateRSI(closes, rsiLength);
-    const momentumSma = calculateRSI(closes, 5); // Using RSI as a proxy for SMA of RSI
-    const momentumTrend = rsi > momentumSma ? "📈" : "📉";
+    const momentumSma = calculateRSI(closes.slice(0, -1), 5); 
+    const momentumTrend = rsi > momentumSma ? "UP" : rsi < momentumSma ? "DOWN" : "NEUTRAL";
 
     // 3. Long/Short Power
-    const longPower = Math.min(100, Math.max(0, (rsi - 50) * 2));
-    const shortPower = Math.min(100, Math.max(0, (50 - rsi) * 2));
-    const overallStrength = Math.round(longPower > shortPower ? longPower : -shortPower);
+    const longPower = Math.floor(Math.min(100, Math.max(0, (rsi - 20) / 60 * 100)));
+    const shortPower = Math.floor(Math.min(100, Math.max(0, (80 - rsi) / 60 * 100)));
+    const overallStrength = Math.round((longPower + (100 - shortPower)) / 2);
 
     // 4. Volume
     const volSma = volumes.slice(-volLength).reduce((a, b) => a + b, 0) / volLength;
     const latestVolume = volumes[volumes.length - 1];
     const volChangePct = volSma > 0 ? ((latestVolume - volSma) / volSma) * 100 : 0;
-    const volSpike = latestVolume > volSma * 2;
-    const volDrying = latestVolume < volSma * 0.5;
     let volStatus: 'SPIKE' | 'DRY' | 'HIGH' | 'NORMAL' | 'LOW';
-    if (volSpike) volStatus = 'SPIKE';
-    else if (volDrying) volStatus = 'DRY';
-    else if (latestVolume > volSma) volStatus = 'HIGH';
-    else if (latestVolume < volSma) volStatus = 'LOW';
+    if (latestVolume > volSma * 2.5) volStatus = 'SPIKE';
+    else if (latestVolume < volSma * 0.5) volStatus = 'DRY';
+    else if (latestVolume > volSma * 1.5) volStatus = 'HIGH';
+    else if (latestVolume < volSma * 0.8) volStatus = 'LOW';
     else volStatus = 'NORMAL';
 
-    // 5. Volatility
+    // 5. Volatility (ATR)
     const atr = calculateATR(klines, atrLength);
     const atrPercent = (atr / price) * 100;
     let volLabel: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW' = 'LOW';
@@ -560,51 +560,39 @@ const generateAdvancedStrengthData = (
     else if (atrPercent > 1.5) volLabel = "HIGH";
     else if (atrPercent > 0.7) volLabel = "MEDIUM";
     
-    // 6. Trend Analysis
-    const calculateEMA = (data: number[], period: number) => {
-        const k = 2 / (period + 1);
-        let emaArray = [data[0]];
-        for (let i = 1; i < data.length; i++) {
-            emaArray.push((data[i] * k) + (emaArray[i-1] * (1-k)));
-        }
-        return emaArray;
-    };
-    const fastMaValues = calculateEMA(closes, maFastLength);
-    const slowMaValues = calculateEMA(closes, maSlowLength);
-    const fastMa = fastMaValues[fastMaValues.length - 1];
-    const slowMa = slowMaValues[slowMaValues.length - 1];
-    const trendStrength = Math.abs(fastMa - slowMa) / price * 1000;
-    const trendDirection = fastMa > slowMa ? 1 : -1;
-    const trendAcceleration = (fastMa - fastMaValues[fastMaValues.length - 2]) - (slowMa - slowMaValues[slowMaValues.length - 2]);
-    const trendMomentum = trendAcceleration > 0 ? "ACCELERATING" : "DECELERATING";
+    // 6. Trend Analysis (ADX)
+    const { adx, pdi, mdi } = calculateADX(klines, 14);
+    const trendDirection = pdi > mdi ? 1 : -1;
+    const adxMomentum = calculateADX(klines.slice(0, -1)).adx;
+    const trendMomentum = adx > adxMomentum ? "ACCELERATING" : adx < adxMomentum ? "DECELERATING" : "STABLE";
 
     // 7. Sentiment Score
-    const sma20 = closes.slice(-20).reduce((a,b) => a+b, 0) / 20;
-    const bullishSignals = (rsi > 50 ? 1 : 0) + (latestVolume > volSma ? 1 : 0) + (trendDirection > 0 ? 1 : 0) + (price > sma20 ? 1 : 0);
-    const bearishSignals = (rsi < 50 ? 1 : 0) + (latestVolume < volSma ? 1 : 0) + (trendDirection < 0 ? 1 : 0) + (price < sma20 ? 1 : 0);
+    const bullishSignals = (rsi > 52 ? 1 : 0) + (latestVolume > volSma ? 0.5 : 0) + (pdi > mdi ? 1 : 0) + (price > calculateEMA(closes, 50) ? 1 : 0) + (volStatus === 'SPIKE' && price > prevClose ? 1 : 0);
+    const bearishSignals = (rsi < 48 ? 1 : 0) + (latestVolume < volSma ? 0.5 : 0) + (mdi > pdi ? 1 : 0) + (price < calculateEMA(closes, 50) ? 1 : 0) + (volStatus === 'SPIKE' && price < prevClose ? 1 : 0);
     const sentimentScore = bullishSignals - bearishSignals;
-    const sentimentEmoji = sentimentScore >= 2 ? "🚀" : sentimentScore >= 1 ? "📈" : sentimentScore <= -2 ? "💥" : sentimentScore <= -1 ? "📉" : "⚖️";
+    let sentimentLabel = 'NEUTRAL ⚖️';
+    if (sentimentScore >= 3) sentimentLabel = 'STRONG BULL 🚀';
+    else if (sentimentScore >= 1.5) sentimentLabel = 'BULLISH 📈';
+    else if (sentimentScore <= -3) sentimentLabel = 'STRONG BEAR 💥';
+    else if (sentimentScore <= -1.5) sentimentLabel = 'BEARISH 📉';
 
     // 8. Market Phase
     let phase: AdvancedStrengthDashboardData['marketPhase'] = 'NEUTRAL';
-    const adx = calculateADX(klines).adx;
-    if (rsi > 70 && volSpike && atrPercent > 1.5) phase = "BREAKOUT";
-    else if (rsi < 30 && volSpike && atrPercent > 1.5) phase = "BREAKDOWN";
+    if (volStatus === 'SPIKE' && atrPercent > 1.5 && Math.abs(priceChangePercent) > 1) phase = trendDirection > 0 ? "BREAKOUT" : "BREAKDOWN";
     else if (atrPercent < 0.7 && adx < 20) phase = "CONSOLIDATION";
-    else if (rsi > 50 && trendDirection > 0 && adx > 25) phase = "BULLISH TREND";
-    else if (rsi < 50 && trendDirection < 0 && adx > 25) phase = "BEARISH TREND";
+    else if (pdi > mdi && adx > 25) phase = "BULLISH TREND";
+    else if (mdi > pdi && adx > 25) phase = "BEARISH TREND";
 
     // 9. RSI Status & Divergence
     let rsiStatus: AdvancedStrengthDashboardData['rsiStatus']['status'] = 'NEUTRAL';
     if (rsi >= 70) rsiStatus = 'OVERBOUGHT'; else if (rsi <= 30) rsiStatus = 'OVERSOLD'; else if (rsi >= 60) rsiStatus = 'Strong'; else if (rsi <= 40) rsiStatus = 'Weak';
-    
     let divergence: AdvancedStrengthDashboardData['rsiStatus']['divergence'] = 'NONE';
-    if(closes.length > 6) {
-      const prevRsi = calculateRSI(closes.slice(0, -5), rsiLength);
-      if (closes[closes.length - 1] > closes[closes.length - 6] && rsi < prevRsi) divergence = 'BEARISH';
-      if (closes[closes.length - 1] < closes[closes.length - 6] && rsi > prevRsi) divergence = 'BULLISH';
+    if(closes.length > 10) {
+      const lookback = 10;
+      const prevRsi = calculateRSI(closes.slice(0, -lookback), rsiLength);
+      if (price > closes[closes.length - 1 - lookback] && rsi < prevRsi) divergence = 'BEARISH';
+      if (price < closes[closes.length - 1 - lookback] && rsi > prevRsi) divergence = 'BULLISH';
     }
-
 
     // 10. Stoch RSI
     const stochRsi = calculateStochRSI(closes);
@@ -616,14 +604,14 @@ const generateAdvancedStrengthData = (
 
     return {
         marketPhase: phase,
-        price: price.toFixed(isCrypto(klines[0][0].toString()) ? 2 : 4),
+        price: price.toFixed(isCrypto ? 2 : 4),
         priceChangePercent,
-        marketSentiment: { score: sentimentScore, label: '', emoji: sentimentEmoji },
+        marketSentiment: { score: sentimentScore, label: sentimentLabel },
         momentum: { rsi, trend: momentumTrend },
         longPower,
         shortPower,
         overallStrength,
-        trendAnalysis: { strength: adx, direction: trendDirection, momentum: trendMomentum },
+        trendAnalysis: { strength: adx, momentum: trendMomentum },
         volatility: { percent: atrPercent, label: volLabel },
         volumeStatus: { status: volStatus, changePercent: volChangePct },
         volumeValue: latestVolume,
@@ -676,7 +664,7 @@ const isCrypto = (symbol: string): boolean => {
     return true; // Assume crypto
 }
 
-export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, forceMock = false): Promise<SignalData> => {
+export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, forceMock = false, livePrice?: number): Promise<SignalData> => {
     let price, klines: any[], symbolWithUSDT = symbol.toUpperCase().replace('/', '') + (isCrypto(symbol) ? "USDT" : "");
     const analysisSeed = `${symbol}-${timeframe}`;
     
@@ -701,6 +689,12 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             console.warn(`Server action for ${symbolWithUSDT} failed, using mock data.`, err);
             return getSignalData(symbol, mode, timeframe, true);
         }
+    }
+
+    if (livePrice) {
+      price = livePrice;
+      const lastKline = klines[klines.length - 1];
+      lastKline[4] = livePrice.toString(); // Update close price for live calculations
     }
     
     const closes = klines.map((k: any[]) => parseFloat(k[4]));
@@ -806,7 +800,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
     const superTrendAnalysis = generateSuperTrendAnalysis(price, atr, isBullish, trendStrength, momentum, analysisSeed);
     
-    const advancedStrengthDashboard = generateAdvancedStrengthData(klines);
+    const advancedStrengthDashboard = generateAdvancedStrengthData(klines, isCrypto(symbol));
 
     const confluenceFactors = [
         `MA Trend: ${isBullish ? 'Bullish' : 'Bearish'} (Price vs 50/200 EMA)`,
