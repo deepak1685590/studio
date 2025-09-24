@@ -1,4 +1,5 @@
 
+
 export interface AdvancedStrengthDashboardData {
     marketPhase: 'BREAKOUT' | 'BREAKDOWN' | 'CONSOLIDATION' | 'BULLISH TREND' | 'BEARISH TREND' | 'NEUTRAL';
     price: string;

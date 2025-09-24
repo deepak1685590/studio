@@ -34,7 +34,7 @@ const MarketPhaseHeader: React.FC<{ phase: AdvancedStrengthDashboardData['market
         'CONSOLIDATION': { icon: <Waves />, color: 'text-yellow-400', shadow: 'shadow-[0_0_15px_theme(colors.yellow.400)]' },
         'BULLISH TREND': { icon: <TrendingUp />, color: 'text-cyan-400', shadow: 'shadow-[0_0_15px_theme(colors.cyan.400)]' },
         'BEARISH TREND': { icon: <TrendingDown />, color: 'text-orange-400', shadow: 'shadow-[0_0_15px_theme(colors.orange.400)]' },
-        'NEUTRAL': { icon: <Activity />, color: 'text-primary', shadow: 'shadow-[0_0_15px_theme(colors.primary)]' },
+        'NEUTRAL': { icon: <Activity />, color: 'text-primary', shadow: 'shadow-[0_0_15px_hsl(var(--primary))]' },
     };
     const config = phaseConfig[phase] || phaseConfig['NEUTRAL'];
     
@@ -90,11 +90,16 @@ const AdvancedStrengthDashboard: React.FC<AdvancedStrengthDashboardProps> = ({ i
   }, [toast]);
 
   useEffect(() => {
-    fetchData(symbol);
-  }, [symbol, fetchData]);
+    fetchData(initialSymbol);
+  }, [initialSymbol, fetchData]);
   
   const handleSymbolInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedSymbol(e.target.value);
+    setSymbol(e.target.value);
+  }
+  
+  const handleAnalyzeClick = () => {
+    setSelectedSymbol(symbol);
+    fetchData(symbol);
   }
 
   const renderContent = () => {
@@ -107,8 +112,8 @@ const AdvancedStrengthDashboard: React.FC<AdvancedStrengthDashboardProps> = ({ i
 
     const trendColor = data.priceChangePercent >= 0 ? 'text-green-400' : 'text-red-400';
     const trendIcon = data.priceChangePercent >= 0 ? <TrendingUp className="inline-block" /> : <TrendingDown className="inline-block" />;
-    const sentimentColor = data.marketSentiment.score > 0 ? 'text-green-400' : data.marketSentiment.score < 0 ? 'text-red-400' : 'text-yellow-400';
-    const rsiColor = data.rsiStatus === 'OVERBOUGHT' ? 'text-red-400' : data.rsiStatus === 'OVERSOLD' ? 'text-green-400' : 'text-primary/80';
+    const sentimentColor = data.marketSentiment.score > 1 ? 'text-green-400' : data.marketSentiment.score < -1 ? 'text-red-400' : 'text-yellow-400';
+    const rsiColor = data.rsiStatus.status === 'OVERBOUGHT' ? 'text-red-400' : data.rsiStatus.status === 'OVERSOLD' ? 'text-green-400' : 'text-primary/80';
 
     return (
         <div className="space-y-4">
@@ -121,7 +126,7 @@ const AdvancedStrengthDashboard: React.FC<AdvancedStrengthDashboardProps> = ({ i
             />
             <DashboardRow label="Market Sentiment" value={data.marketSentiment.label} icon={<BrainCircuit />} valueClassName={sentimentColor} />
             
-            {data.divergence !== 'NONE' && <DivergenceAlert type={data.divergence} />}
+            {data.rsiStatus.divergence && data.rsiStatus.divergence !== 'NONE' && <DivergenceAlert type={data.rsiStatus.divergence} />}
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
                 <div className="md:col-span-2 space-y-2">
@@ -130,7 +135,7 @@ const AdvancedStrengthDashboard: React.FC<AdvancedStrengthDashboardProps> = ({ i
                     <DashboardRow label="Short Power" value={`${data.shortPower}%`} icon={<Snowflake className="text-red-400"/>} valueClassName="text-red-400" />
 
                     <h4 className="font-headline text-lg text-primary pt-2">Technical Indicators</h4>
-                    <DashboardRow label="RSI (14)" value={`${data.momentum.rsi.toFixed(0)} - ${data.rsiStatus}`} icon={<Gauge />} valueClassName={rsiColor}/>
+                    <DashboardRow label="RSI (14)" value={`${data.momentum.rsi.toFixed(0)} - ${data.rsiStatus.status}`} icon={<Gauge />} valueClassName={rsiColor}/>
                     <DashboardRow label="Stoch RSI (K/D)" value={`${data.stochRsi.k.toFixed(0)} / ${data.stochRsi.d.toFixed(0)}`} icon={<GitCommitHorizontal />} valueClassName={data.stochRsi.k > data.stochRsi.d ? 'text-cyan-400' : 'text-orange-400'} />
                     <DashboardRow label="Trend (ADX)" value={`${data.trendAnalysis.strength.toFixed(0)}% - ${data.trendAnalysis.momentum}`} icon={<TrendingUp />} valueClassName={data.trendAnalysis.momentum === 'ACCELERATING' ? 'text-green-400' : 'text-primary/80'} />
                     <DashboardRow label="Volatility (ATR)" value={`${data.volatility.label} (${data.volatility.percent.toFixed(2)}%)`} icon={<Activity />} valueClassName={data.volatility.label === 'HIGH' || data.volatility.label === 'EXTREME' ? 'text-orange-400' : 'text-primary/80'}/>
@@ -161,7 +166,7 @@ const AdvancedStrengthDashboard: React.FC<AdvancedStrengthDashboardProps> = ({ i
               placeholder="e.g. BTC, EUR/USD"
               className="bg-input text-foreground border-primary/50"
           />
-          <Button onClick={() => fetchData(symbol)} disabled={loading} className="font-headline scanner-glow">
+          <Button onClick={handleAnalyzeClick} disabled={loading} className="font-headline scanner-glow">
             <Search className="mr-2" />
             {loading ? 'Analyzing...' : 'Analyze'}
           </Button>

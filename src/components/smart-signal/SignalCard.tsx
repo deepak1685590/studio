@@ -9,11 +9,9 @@ import { Download, CheckCircle2, BookOpen, Layers, Magnet, Timer, Target, Zap, S
 import { Badge } from '@/components/ui/badge';
 import { Alert } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import ConfidenceBreakdown from './ConfidenceBreakdown';
 import WhaleAlert from './WhaleAlert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import SidewaysMarketAlert from './SidewaysMarketAlert';
-import KeyLevels from './KeyLevels';
 import SupermodeDashboard from './SupermodeDashboard';
 import IndicatorChecklist from './IndicatorChecklist';
 import SmartMoneyConcepts from './SmartMoneyConcepts';
@@ -247,14 +245,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             </div>
              {data.liquidityPrediction && <LiquidityTargetAlert prediction={data.liquidityPrediction} />}
         </div>
-      </div>
-      
-      <div>
-        <SectionHeader icon={<BrainCircuit />} title="AI Confidence Matrix" />
-        <ConfidenceBreakdown
-            data={data}
-            livePrice={realtimePrice}
-        />
       </div>
       
       {renderModeSpecificContent()}
