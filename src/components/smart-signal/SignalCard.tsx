@@ -3,10 +3,10 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
-import type { SignalData, GenerateAiInsightOutput, HistoricalLevels } from '@/types';
+import type { SignalData, GenerateAiInsightOutput } from '@/types';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, BarChart, BookOpen, Scaling, Magnet, Building, Timer, Target, Zap, Shield, LogIn, ListChecks, Landmark } from 'lucide-react';
+import { Download, CheckCircle2, BarChart, BookOpen, Scaling, Magnet, Building, Timer, Target, Zap, Shield, LogIn } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -16,23 +16,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import SidewaysMarketAlert from './SidewaysMarketAlert';
 import KeyLevels from './KeyLevels';
 import QuantumEntryMatrix from './QuantumEntryMatrix';
-import QuantumSuperTrendMatrix from './QuantumSuperTrendMatrix';
-import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 import QuantumOrderBlockMatrix from './QuantumOrderBlockMatrix';
-import PredictiveAnalysis from './PredictiveAnalysis';
-import QuantumSummary from './QuantumSummary';
 import SmartMoneyConcepts from './SmartMoneyConcepts';
-import SupermodeDashboard from './SupermodeDashboard';
-import IndicatorChecklist from './IndicatorChecklist';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
-);
-
-const SectionWrapper = ({ children, className }: { children: React.ReactNode, className?: string }) => (
-  <div className={cn('p-4 bg-black/30 rounded-lg border border-primary/30', className)}>
-    {children}
-  </div>
 );
 
 interface SignalCardProps {
@@ -103,49 +91,6 @@ const LevelRow: React.FC<{
   );
 };
 
-const MarketStructureLevels: React.FC<{ levels: HistoricalLevels; livePrice: number; isCrypto: boolean; }> = ({ levels, livePrice, isCrypto }) => {
-    const format = (price: number) => price.toFixed(isCrypto ? 2 : 4);
-    const tdhBroken = livePrice > levels.tdh;
-    const tdlBroken = livePrice < levels.tdl;
-    const pdhBroken = livePrice > levels.pdh;
-    const pdlBroken = livePrice < levels.pdl;
-    const pwhBroken = livePrice > levels.pwh;
-    const pwlBroken = livePrice < levels.pwl;
-
-    return (
-        <SectionWrapper>
-            <SectionHeader icon={<Landmark />} title="Market Structure" />
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                 <div className={cn("p-2 rounded-md transition-all", tdhBroken ? "bg-green-500/20 border border-green-400" : "bg-black/30")}>
-                    <div className="text-xs text-foreground/70">Today's High (TDH)</div>
-                    <div className="font-mono font-bold text-lg">{format(levels.tdh)}</div>
-                </div>
-                <div className={cn("p-2 rounded-md transition-all", pdhBroken ? "bg-green-500/20 border border-green-400" : "bg-black/30")}>
-                    <div className="text-xs text-foreground/70">Previous Day High (PDH)</div>
-                    <div className="font-mono font-bold text-lg">{format(levels.pdh)}</div>
-                </div>
-                 <div className={cn("p-2 rounded-md transition-all", pwhBroken ? "bg-green-500/20 border border-green-400" : "bg-black/30")}>
-                    <div className="text-xs text-foreground/70">Previous Week High (PWH)</div>
-                    <div className="font-mono font-bold text-lg">{format(levels.pwh)}</div>
-                </div>
-                <div className={cn("p-2 rounded-md transition-all", tdlBroken ? "bg-red-500/20 border border-red-400" : "bg-black/30")}>
-                    <div className="text-xs text-foreground/70">Today's Low (TDL)</div>
-                    <div className="font-mono font-bold text-lg">{format(levels.tdl)}</div>
-                </div>
-                <div className={cn("p-2 rounded-md transition-all", pdlBroken ? "bg-red-500/20 border border-red-400" : "bg-black/30")}>
-                    <div className="text-xs text-foreground/70">Previous Day Low (PDL)</div>
-                    <div className="font-mono font-bold text-lg">{format(levels.pdl)}</div>
-                </div>
-                 <div className={cn("p-2 rounded-md transition-all", pwlBroken ? "bg-red-500/20 border border-red-400" : "bg-black/30")}>
-                    <div className="text-xs text-foreground/70">Previous Week Low (PWL)</div>
-                    <div className="font-mono font-bold text-lg">{format(levels.pwl)}</div>
-                </div>
-            </div>
-        </SectionWrapper>
-    )
-};
-
-
 const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode, aiInsight }) => {
   
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
@@ -190,8 +135,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
   const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; 
   const trendColor = data.isBullish ? 'text-green-400' : 'text-red-400';
-  const showSummary = (mode === '3' || mode === '4' || mode === '5') && aiInsight?.executiveSummary.primaryBias !== 'Error' && aiInsight?.executiveSummary.timeHorizon !== "The daily API quota has been exceeded. This feature will be available again tomorrow. Please check your billing details for more information.";
-  const showPredictiveAnalysis = (mode === '3' || mode === '4' || mode === '5') && aiInsight && aiInsight.predictiveAnalysis && aiInsight.predictiveAnalysis.primaryScenario !== "N/A";
 
   return (
     <div id="signal-card-content" className={cn(
@@ -225,15 +168,13 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </header>
 
-      { showSummary && <QuantumSummary insight={aiInsight} /> }
+      {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
       
       {isNearEntry && !hitTargets.entry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
 
-      {mode === '5' && data.supermodeAnalysis ? (
-        <SupermodeDashboard analysis={data.supermodeAnalysis} />
-      ) : (
-        <>
-            <SectionWrapper>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+        <div className="space-y-4">
+            <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
                 <div className="grid grid-cols-1 gap-2">
                     <div className="flex justify-between items-center p-2">
                         <span className="font-headline text-lg text-primary/80">Live Price:</span>
@@ -260,40 +201,41 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                     
                     <div className="flex justify-between text-base pt-2 px-2"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono font-bold">1 : {data.riskReward.toFixed(1)}</span></div>
                 </div>
-            </SectionWrapper>
+            </div>
             
-            { showPredictiveAnalysis && <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} /> }
-            
-            <MarketStructureLevels levels={data.historicalLevels} livePrice={displayPrice} isCrypto={isCrypto} />
+            <QuantumEntryMatrix data={data} livePrice={realtimePrice} />
 
-            <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />
-            
-            <QuantumPivotsMatrix data={data.multiTimeframeSR} livePrice={realtimePrice} />
-
-            {data.orderBlock && <QuantumOrderBlockMatrix orderBlock={data.orderBlock} entryPrice={entryPriceNum} />}
-
-            <KeyLevels data={data} />
-
-            <ConfidenceBreakdown 
-              breakdown={data.confidenceBreakdown} 
-              confidence={data.confidence}
-              isBullish={data.isBullish} 
-            />
-              
-            <div>
-              <SectionHeader icon={<BarChart />} title="Multi-Timeframe Analysis" />
-              <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
+        </div>
+        <div className="space-y-4">
+             <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
+                <SectionHeader icon={<BookOpen />} title="Signal Thesis" />
+                <Alert className="bg-transparent border-primary/30">
+                  <p><strong className={cn("font-bold", trendColor)}>{data.chartPattern.name}:</strong> {data.chartPattern.description}</p>
+                </Alert>
+                <ConfidenceBreakdown 
+                  breakdown={data.confidenceBreakdown} 
+                  confidence={data.confidence}
+                  isBullish={data.isBullish} 
+                />
             </div>
 
-            <SectionWrapper>
-              <SectionHeader icon={<ListChecks />} title="Trader's Checklist" />
-              <SmartMoneyConcepts data={data} />
-            </SectionWrapper>
-        </>
-      )}
+            {data.orderBlock && (
+                <QuantumOrderBlockMatrix orderBlock={data.orderBlock} entryPrice={entryPriceNum} />
+            )}
+        </div>
+      </div>
+      
+      <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
+        <SectionHeader icon={<Building />} title="Smart Money Concepts" />
+        <SmartMoneyConcepts data={data} />
+      </div>
 
-      {/* Indicator Checklist is now outside the conditional block to show in all modes */}
-      <IndicatorChecklist data={data.indicatorChecklist} />
+      <div>
+        <SectionHeader icon={<BarChart />} title="Multi-Timeframe Analysis" />
+        <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
+      </div>
+
+      <KeyLevels data={data} />
 
       <div className="flex justify-between items-center mt-6">
         <small className="text-foreground/50">Generated: {new Date().toLocaleString()}</small>
