@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
-import type { SignalData, GenerateAiInsightOutput, HistoricalLevels } from '@/types';
+import type { SignalData, HistoricalLevels } from '@/types';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
 import { Download, CheckCircle2, BarChart, BookOpen, Scaling, Magnet, Building, Timer, Target, Zap, Shield, LogIn, TrendingUp, TrendingDown, Layers } from 'lucide-react';
@@ -68,7 +68,6 @@ interface SignalCardProps {
     realtimePrice: number | null;
     priceDirection: 'up' | 'down' | 'neutral';
     mode: string;
-    aiInsight: GenerateAiInsightOutput | null;
 }
 
 const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isBullish: boolean; }> = ({ livePrice, entryPrice, isBullish }) => {
@@ -129,7 +128,7 @@ const LevelRow: React.FC<{
   );
 };
 
-const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode, aiInsight }) => {
+const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
   
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
   const isCrypto = !data.symbol.includes('/');
@@ -203,8 +202,11 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             </div>
           </div>
           <div className="flex flex-col items-end gap-2 text-right">
-             <Badge variant="secondary" className="font-bold bg-accent/80 text-accent-foreground">
-              {data.action}
+             <Badge variant="secondary" className="font-bold bg-accent/80 text-accent-foreground text-base px-3 py-1.5">
+              {data.action.includes('Pullback') || data.action.includes('Rally') 
+                ? `${data.action} @ $${data.entry}`
+                : data.action
+              }
             </Badge>
              <Badge variant="outline" className="flex items-center gap-1 text-xs">
                 <Timer size={12} /> {data.timeframe.toUpperCase()}
@@ -272,7 +274,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <SmartMoneyConcepts data={data} livePrice={realtimePrice}/>
       </div>
 
-      {data.indicatorChecklist && <IndicatorChecklist data={data.indicatorChecklist} />}
+      <IndicatorChecklist data={data.indicatorChecklist} />
 
       <div>
         <SectionHeader icon={<Layers />} title="Quantum Pivots Matrix (Multi-Timeframe)" />
