@@ -33,19 +33,19 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
   // Auto-trading logic
   useEffect(() => {
     if (isAutoTrading && signalData && livePrice) {
-      // Auto-close existing position when a new signal arrives
+      // Auto-close existing position when a new signal arrives for a DIFFERENT symbol
       if (position && position.symbol !== signalData.symbol) {
         closePosition(true); // `true` indicates an auto-close
       }
 
-      // Auto-open new position
+      // Auto-open new position if none exists for the current signal
       if (!position) {
         const newTradeType = signalData.isBullish ? 'long' : 'short';
         openPosition(newTradeType, true); // `true` indicates an auto-open
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signalData, isAutoTrading]);
+  }, [signalData, isAutoTrading, livePrice]);
 
 
   useEffect(() => {
