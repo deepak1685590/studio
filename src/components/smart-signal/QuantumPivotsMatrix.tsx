@@ -61,7 +61,7 @@ const QuantumPivotsMatrix: React.FC<QuantumPivotsMatrixProps> = ({ data, livePri
   const supportLevels = data[timeframes[0]].S || [];
 
   return (
-    <div className="bg-black/30 rounded-lg border border-primary/20 p-4 space-y-3">
+    <div className="p-4 bg-black/30 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.3)] space-y-3">
         <Table>
             <TableHeader>
                 <TableRow>

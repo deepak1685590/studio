@@ -59,7 +59,7 @@ const QuantumEntryMatrix: React.FC<QuantumEntryMatrixProps> = ({ data, livePrice
   const entryPriceColor = isBullish ? 'text-green-300' : 'text-red-300';
 
   return (
-    <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
+    <div className="p-4 bg-black/30 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.3)]">
       <h4 className="font-headline text-lg text-primary mb-3 flex items-center gap-2">
         <Target /> Quantum VAP Entry Matrix
       </h4>

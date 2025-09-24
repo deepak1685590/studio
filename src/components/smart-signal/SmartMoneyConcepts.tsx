@@ -38,9 +38,11 @@ interface SmartMoneyConceptsProps {
 const SmartMoneyConcepts: React.FC<SmartMoneyConceptsProps> = ({ data, livePrice }) => {
   const { liquidity, smartMoneyConcepts, isBullish, goldenPullbackZone, goldenReverseZone, orderBlock } = data;
   const isCrypto = !data.symbol.includes('/');
+  const blockStyle = "p-4 bg-black/30 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.3)]";
+
 
   return (
-    <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
+    <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-4">
                  <QuantumEntryMatrix data={data} livePrice={livePrice} />

@@ -56,7 +56,7 @@ const QuantumOrderBlockMatrix: React.FC<QuantumOrderBlockMatrixProps> = ({ order
   const headerClass = isBullish ? "text-green-300" : "text-red-300";
 
   return (
-    <div className={cn("p-4 rounded-xl border-2 space-y-4", containerClass)}>
+    <div className={cn("p-4 rounded-xl border-2 space-y-4 border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.3)]", containerClass)}>
         <div className="flex justify-between items-start">
             <h4 className={cn("font-headline text-lg flex items-center gap-2", headerClass)}>
                 <Box /> Advanced Order Block

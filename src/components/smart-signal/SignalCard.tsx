@@ -19,6 +19,7 @@ import QuantumSuperTrendMatrix from './QuantumSuperTrendMatrix';
 import MarketStructureLevels from './MarketStructureLevels';
 import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 import LiquidityTargetAlert from './LiquidityTargetAlert';
+import ConfidenceBreakdown from './ConfidenceBreakdown';
 
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
@@ -136,6 +137,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
   const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; 
   const trendColor = data.isBullish ? 'text-green-400' : 'text-red-400';
+  const blockStyle = "p-4 bg-black/30 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.3)]";
+
 
   const renderModeSpecificContent = () => {
     if (mode === '5' && data.supermodeAnalysis) {
@@ -193,7 +196,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
         <div className="space-y-4">
-            <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
+            <div className={blockStyle}>
                 <div className="grid grid-cols-1 gap-2">
                     <div className="flex justify-between items-center p-2">
                         <span className="font-headline text-lg text-primary/80">Live Price:</span>
@@ -222,20 +225,9 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 </div>
             </div>
             
-            <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
-                <SectionHeader icon={<CheckCircle2 />} title="Trader's Checklist" />
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {checklistItems.map((item, index) => (
-                    <div key={index} className="flex items-center gap-2 text-sm p-2 bg-black/30 rounded-md">
-                      {item.passed ? <CheckCircle2 className="text-green-400 size-5 flex-shrink-0" /> : <CheckCircle2 className="text-foreground/30 size-5 flex-shrink-0" />}
-                      <span className={cn(item.passed ? "text-green-400/90" : "text-foreground/50")}>{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-            </div>
         </div>
         <div className="space-y-4">
-             <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
+             <div className={blockStyle}>
                 <SectionHeader icon={<BookOpen />} title={`Quantum Signals Detected (${data.confluenceCount})`} />
                 <div className="space-y-2 text-xs text-foreground/80 max-h-48 overflow-y-auto pr-2">
                   {data.confluenceFactors.map((factor, index) => (
@@ -246,12 +238,28 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
              {data.liquidityPrediction && <LiquidityTargetAlert prediction={data.liquidityPrediction} />}
         </div>
       </div>
+       <div className={blockStyle}>
+          <SectionHeader icon={<CheckCircle2 />} title="Trader's Checklist" />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {checklistItems.map((item, index) => (
+              <div key={index} className="flex items-center gap-2 text-sm p-2 bg-black/30 rounded-md">
+                {item.passed ? <CheckCircle2 className="text-green-400 size-5 flex-shrink-0" /> : <CheckCircle2 className="text-foreground/30 size-5 flex-shrink-0" />}
+                <span className={cn(item.passed ? "text-green-400/90" : "text-foreground/50")}>{item.label}</span>
+              </div>
+            ))}
+          </div>
+      </div>
       
       {renderModeSpecificContent()}
       
       {data.superTrendAnalysis && <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />}
 
-      <div>
+      <div className={blockStyle}>
+        <SectionHeader icon={<BrainCircuit />} title="AI Confidence Matrix" />
+        <ConfidenceBreakdown data={data} livePrice={realtimePrice} />
+      </div>
+
+      <div className={blockStyle}>
         <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
         <SmartMoneyConcepts data={data} livePrice={realtimePrice}/>
       </div>

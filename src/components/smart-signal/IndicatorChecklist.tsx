@@ -32,7 +32,7 @@ const IndicatorChecklist: React.FC<IndicatorChecklistProps> = ({ data }) => {
   };
 
   return (
-    <Card className="bg-black/50 border-2 border-primary/50 shadow-[0_0_25px_rgba(0,230,230,0.3)]">
+    <Card className="bg-black/30 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.3)]">
       <Collapsible defaultOpen={false}>
         <CardHeader className="p-4">
           <CollapsibleTrigger className="flex justify-between items-center w-full group">
