@@ -41,7 +41,6 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
       return;
     }
 
-    // Use the signal's specific entry price, not the live market price
     const entryPrice = parseFloat(signalData.entry);
     if (isNaN(entryPrice)) {
       if (!isAuto) toast({ title: "Error", description: "Signal has no valid entry price.", variant: "destructive" });
@@ -91,26 +90,28 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
     }
     
     const toastTitle = isAuto ? "Auto-Trade: Position Closed" : "Position Closed";
-    toast({ title: toastTitle, description: `Closed ${position.symbol} position. P&L: $${calculatedPnl.toFixed(2)}.` });
+    toast({ 
+        title: toastTitle, 
+        description: `Closed ${position.symbol} position. P&L: $${calculatedPnl.toFixed(2)}.`,
+        variant: calculatedPnl < 0 ? "destructive" : "default"
+    });
     
     setPosition(null);
     setPnl(0);
   };
 
-  // This effect now ONLY triggers when the signalData object itself changes.
   useEffect(() => {
     if (isAutoTrading && signalData && !signalData.sidewaysMarket) {
-      // 1. If we have a position, close it to react to the new signal.
-      if (position) {
-        closePosition(true);
-      }
-      
-      // 2. Open a new position based on the new signal's direction.
-      const newTradeType = signalData.isBullish ? 'long' : 'short';
-      openPosition(newTradeType, true);
+        if (position && position.symbol !== signalData.symbol) {
+            closePosition(true);
+        }
+        if (!position) {
+            const newTradeType = signalData.isBullish ? 'long' : 'short';
+            openPosition(newTradeType, true);
+        }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signalData, isAutoTrading]); // Dependencies are now correctly isolated.
+  }, [signalData, isAutoTrading]);
 
 
   useEffect(() => {
@@ -187,13 +188,16 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
         </div>
       ) : (
         // Current Position
-        <div className="p-3 bg-primary/10 rounded-lg space-y-2">
-            <h4 className="font-bold text-center">Active Position</h4>
-            <div className="flex justify-between text-sm">
+        <div className={cn(
+            "p-3 rounded-lg space-y-2 border-2 animate-pulse",
+            position.type === 'long' ? "border-green-400 bg-green-900/30 shadow-[0_0_15px_theme(colors.green.400)]" : "border-red-500 bg-red-900/30 shadow-[0_0_15px_theme(colors.red.500)]"
+        )}>
+            <h4 className="font-bold text-center text-white">Active Position</h4>
+            <div className="flex justify-between text-sm text-white/90">
                 <span>Symbol: <strong className="font-mono">{position.symbol}</strong></span>
-                <span>Type: <strong className={cn("font-mono", position.type === 'long' ? 'text-green-400' : 'text-red-400')}>{position.type.toUpperCase()}</strong></span>
+                <span>Type: <strong className={cn("font-mono", position.type === 'long' ? 'text-green-300' : 'text-red-300')}>{position.type.toUpperCase()}</strong></span>
             </div>
-             <div className="flex justify-between text-sm">
+             <div className="flex justify-between text-sm text-white/90">
                 <span>Entry: <strong className="font-mono">${position.entryPrice.toFixed(4)}</strong></span>
                 <span>Size: <strong className="font-mono">${position.size.toFixed(2)}</strong></span>
             </div>
@@ -221,7 +225,6 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
             <div className="text-red-400">Losses: <span className="font-mono font-bold float-right">{stats.losses}</span></div>
         </div>
       </div>
-
 
       {/* Trade History */}
       <div className="pt-2">
