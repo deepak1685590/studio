@@ -22,7 +22,6 @@ import TradingSimulator from './TradingSimulator';
 import TrendRibbon from './TrendRibbon';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
-import { generateAiInsight } from '@/ai/flows/generate-ai-insight';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -33,6 +32,15 @@ interface SmartSignalWidgetProps {
   aiInsight: GenerateAiInsightOutput | null;
   setAiInsight: (insight: GenerateAiInsightOutput | null) => void;
 }
+
+// A more robust way to check if a symbol is a crypto asset supported by the websocket.
+const isCrypto = (symbol: string): boolean => {
+    const upperSymbol = symbol.toUpperCase();
+    if (upperSymbol.includes('/')) return false; // Forex pairs
+    const nonCryptoIndices = ['NIFTY', 'BANKNIFTY', 'GIFTNIFTY'];
+    if (nonCryptoIndices.includes(upperSymbol)) return false; // Indian Indices
+    return true; // Assume crypto otherwise
+};
 
 // Define the list of symbols that are supported by the WebSocket connection.
 const cryptoAssetsForWebsocket = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC'];
@@ -159,51 +167,13 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     }
 
     try {
-      const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, !isSupportedCrypto);
+      const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, !isCrypto(currentSymbol.toUpperCase()));
       onSignalDataChange(data);
       if (!isSupportedCrypto) {
         setRealtimePrice(data.price);
         previousPriceRef.current = data.price;
       }
       
-      // If Elite Mode or higher, fetch AI insight
-      if (parseInt(mode, 10) >= 3 && !data.sidewaysMarket) {
-          const insightInput: GenerateAiInsightInput = {
-            symbol: data.symbol,
-            price: data.price,
-            isBullish: data.isBullish,
-            action: data.action,
-            entry: parseFloat(data.entry),
-            sl: parseFloat(data.sl),
-            tp1: parseFloat(data.tp1),
-            tp2: parseFloat(data.tp2),
-            confluenceCount: data.confluenceCount,
-            demandZone: `$${data.demandZone[0]} - ${data.demandZone[1]}`,
-            fvg: `$${data.fvg[0]} - ${data.fvg[1]}`,
-            volumeImbalance: data.volumeImbalance,
-            multiTimeframeAnalysis: {
-                '5m': data.multiTimeframeAnalysis['5m']?.trend || 'Neutral',
-                '15m': data.multiTimeframeAnalysis['15m']?.trend || 'Neutral',
-                '1H': data.multiTimeframeAnalysis['1H']?.trend || 'Neutral',
-                '4H': data.multiTimeframeAnalysis['4H']?.trend || 'Neutral',
-                'Daily': data.multiTimeframeAnalysis['Daily']?.trend || 'Neutral',
-            },
-            chartPatternName: data.chartPattern.name,
-            trendStrength: data.trendStrength.score,
-            momentum: data.momentum.score,
-            marketSession: "New York", 
-            volatilityRegime: "Medium", 
-          };
-          
-          try {
-            const result = await generateAiInsight(insightInput);
-            setAiInsight(result);
-          } catch(e) {
-             console.error("AI Insight fetch failed:", e);
-             toast({ title: "AI Error", description: "Could not retrieve AI analysis.", variant: "destructive" });
-          }
-      }
-
     } catch (error) {
       console.error("Error generating signal:", error);
       const mockData = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, true);
@@ -489,3 +459,4 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 
 export default SmartSignalWidget;
 
+    
