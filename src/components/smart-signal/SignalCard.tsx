@@ -222,6 +222,18 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                     <div className="flex justify-between text-base pt-2 px-2"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono font-bold">1 : {data.riskReward.toFixed(1)}</span></div>
                 </div>
             </div>
+            
+            <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
+                <SectionHeader icon={<CheckCircle2 />} title="Trader's Checklist" />
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {checklistItems.map((item, index) => (
+                    <div key={index} className="flex items-center gap-2 text-sm p-2 bg-black/30 rounded-md">
+                      {item.passed ? <CheckCircle2 className="text-green-400 size-5 flex-shrink-0" /> : <CheckCircle2 className="text-foreground/30 size-5 flex-shrink-0" />}
+                      <span className={cn(item.passed ? "text-green-400/90" : "text-foreground/50")}>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+            </div>
         </div>
         <div className="space-y-4">
              <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
@@ -230,18 +242,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                   <p><strong className={cn("font-bold", trendColor)}>{data.chartPattern.name}:</strong> {data.chartPattern.description}</p>
                 </Alert>
             </div>
-        </div>
-      </div>
-      
-      <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
-        <SectionHeader icon={<CheckCircle2 />} title="Trader's Checklist" />
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-          {checklistItems.map((item, index) => (
-            <div key={index} className="flex items-center gap-2 text-sm p-2 bg-black/30 rounded-md">
-              {item.passed ? <CheckCircle2 className="text-green-400 size-5 flex-shrink-0" /> : <CheckCircle2 className="text-foreground/30 size-5 flex-shrink-0" />}
-              <span className={cn(item.passed ? "text-green-400/90" : "text-foreground/50")}>{item.label}</span>
-            </div>
-          ))}
         </div>
       </div>
       
@@ -287,4 +287,5 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+
 
