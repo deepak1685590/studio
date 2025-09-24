@@ -71,7 +71,6 @@ const mainGenerator = ai.definePrompt({
     name: 'mainGenerator',
     input: { schema: GenerateAiInsightInputSchema },
     output: { schema: GenerateAiInsightOutputSchema },
-    model: googleAI.model('gemini-1.5-pro-latest'),
     tools: [getMarketNews],
     prompt: `You are ELITE-AI, a world-class institutional trading strategist.
     Your task is to generate a powerful trading analysis report for {{{symbol}}}.
@@ -99,7 +98,6 @@ const fallbackGenerator = ai.definePrompt({
     name: 'fallbackGenerator',
     input: { schema: GenerateAiInsightInputSchema },
     output: { schema: z.object({ summary: z.string() }) },
-    model: googleAI.model('gemini-1.5-flash-latest'),
     prompt: `You are a high-speed market analysis AI. The primary analysis model is unavailable.
     Provide a concise, single-paragraph executive summary based on the following data for {{{symbol}}}.
     - Trend: {{{isBullish}}} (True=Bullish)
@@ -124,7 +122,16 @@ const generateAiInsightFlow = ai.defineFlow(
     };
 
     try {
-      const { output } = await mainGenerator(input);
+      const { output } = await ai.generate({
+        model: googleAI.model('gemini-1.5-pro-latest'),
+        prompt: mainGenerator,
+        tools: [getMarketNews],
+        output: {
+          format: 'json',
+          schema: GenerateAiInsightOutputSchema,
+        },
+        input: input,
+      });
 
       if (!output) {
         throw new Error('Primary AI model failed to produce a valid output.');
@@ -135,7 +142,15 @@ const generateAiInsightFlow = ai.defineFlow(
        console.error("Primary AI Generation Error, attempting fallback:", error);
        
        try {
-         const { output: fallbackOutput } = await fallbackGenerator(input);
+         const { output: fallbackOutput } = await ai.generate({
+           model: googleAI.model('gemini-1.5-flash-latest'),
+           prompt: fallbackGenerator,
+           output: {
+             format: 'json',
+             schema: z.object({ summary: z.string() }),
+           },
+           input: input,
+         });
 
          if (!fallbackOutput) {
             throw new Error('Fallback AI model also failed.');
@@ -164,3 +179,5 @@ const generateAiInsightFlow = ai.defineFlow(
     }
   }
 );
+
+    
