@@ -30,6 +30,8 @@ interface SmartSignalWidgetProps {
   onSignalDataChange: (data: SignalData | null) => void;
   onLoadingChange: (loading: boolean) => void;
   signalData: SignalData | null;
+  aiInsight: GenerateAiInsightOutput | null;
+  setAiInsight: (insight: GenerateAiInsightOutput | null) => void;
 }
 
 // Define the list of symbols that are supported by the WebSocket connection.
@@ -40,7 +42,9 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     setSelectedSymbol,
     onSignalDataChange,
     onLoadingChange,
-    signalData
+    signalData,
+    aiInsight,
+    setAiInsight,
  }) => {
   const [symbol, setSymbol] = useState(initialSymbol);
   const [mode, setMode] = useState('3');
@@ -56,8 +60,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showChart, setShowChart] = useState(true);
   const [showSimulator, setShowSimulator] = useState(true);
-  const [aiInsight, setAiInsight] = useState<GenerateAiInsightOutput | null>(null);
-
 
   const { toast } = useToast();
 
@@ -212,11 +214,12 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       setLoading(false);
       onLoadingChange(false);
     }
-  }, [mode, timeframe, toast, onSignalDataChange, onLoadingChange]);
+  }, [mode, timeframe, toast, onSignalDataChange, onLoadingChange, setAiInsight]);
   
+  // This useEffect will be triggered by the `MainApp` component when the symbol changes there
   useEffect(() => {
     handleGenerateSignal(symbol);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol]);
 
   useEffect(() => {
@@ -311,7 +314,12 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   };
 
   const handleSymbolInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedSymbol(e.target.value);
+    setSymbol(e.target.value);
+  }
+  
+  const handleEngageAnalysis = () => {
+    setSelectedSymbol(symbol);
+    // The parent MainApp component will detect the symbol change and trigger the re-render and data fetch.
   }
 
   const isBullish = signalData?.isBullish;
@@ -410,7 +418,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
             </div>
         </div>
 
-        <Button onClick={() => handleGenerateSignal(symbol)} disabled={loading} className={cn("w-full font-headline uppercase border-2 transition-all duration-300 text-base py-6 scanner-glow", buttonColor)}>
+        <Button onClick={handleEngageAnalysis} disabled={loading} className={cn("w-full font-headline uppercase border-2 transition-all duration-300 text-base py-6 scanner-glow", buttonColor)}>
           {loading ? (
             <>
               <BrainCircuit className="mr-2 h-5 w-5 animate-spin" />
@@ -480,3 +488,4 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 };
 
 export default SmartSignalWidget;
+
