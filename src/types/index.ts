@@ -350,8 +350,8 @@ export interface SignalData {
   volumeAnalysis: VolumeAnalysis;
   multiTimeframeSR: MultiTimeframeSR;
   superTrendAnalysis: SuperTrendAnalysis;
-  liquidityMatrix?: LiquidityMatrixData;
-  advancedStrengthDashboard?: AdvancedStrengthDashboardData;
+  liquidityMatrix: LiquidityMatrixData;
+  advancedStrengthDashboard: AdvancedStrengthDashboardData;
   supermodeAnalysis?: SupermodeAnalysis;
   indicatorChecklist: IndicatorChecklist;
   historicalLevels?: HistoricalLevels;

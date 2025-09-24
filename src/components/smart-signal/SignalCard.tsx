@@ -257,13 +257,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                   <p><strong className={cn("font-bold", trendColor)}>{data.chartPattern.name}:</strong> {data.chartPattern.description}</p>
                 </Alert>
                 <ConfidenceBreakdown 
-                  breakdown={data.confidenceBreakdown} 
-                  confidence={data.confidence}
-                  isBullish={data.isBullish}
-                  trendStrength={data.trendStrength}
-                  momentum={data.momentum}
-                  volatility={data.advancedStrengthDashboard.volatility}
-                  volumeImbalance={data.volumeImbalance}
+                  data={data}
+                  livePrice={realtimePrice}
                 />
             </div>
         </div>

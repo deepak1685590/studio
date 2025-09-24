@@ -377,12 +377,13 @@ const generateAdvancedStrengthData = (price: number, closes: number[], volumes: 
         const high = Math.max(...closes.slice(i - 1, i + 1));
         const low = Math.min(...closes.slice(i - 1, i + 1));
         return acc + (high - low);
-    }, 0) / 14) / price * 100;
+    }, 0) / 14);
     
     let volLabel: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW';
-    if (atr > 2.5) volLabel = 'EXTREME';
-    else if (atr > 1.5) volLabel = 'HIGH';
-    else if (atr > 0.8) volLabel = 'MEDIUM';
+    const atrPercent = (atr / price) * 100;
+    if (atrPercent > 2.5) volLabel = 'EXTREME';
+    else if (atrPercent > 1.5) volLabel = 'HIGH';
+    else if (atrPercent > 0.8) volLabel = 'MEDIUM';
     else volLabel = 'LOW';
 
     // 5. Volume
