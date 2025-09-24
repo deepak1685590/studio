@@ -219,7 +219,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 </div>
             </SectionWrapper>
             
-            { showPredictiveAnalysis && <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} />}
+            { showPredictiveAnalysis && <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} /> }
             
             <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />
             
