@@ -110,7 +110,6 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
             openPosition(newTradeType, true);
         }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signalData, isAutoTrading]);
 
 
@@ -189,20 +188,21 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
       ) : (
         // Current Position
         <div className={cn(
-            "p-3 rounded-lg space-y-2 border-2 animate-pulse",
+            "p-3 rounded-lg space-y-3 border-2",
             position.type === 'long' ? "border-green-400 bg-green-900/30 shadow-[0_0_15px_theme(colors.green.400)]" : "border-red-500 bg-red-900/30 shadow-[0_0_15px_theme(colors.red.500)]"
         )}>
-            <h4 className="font-bold text-center text-white">Active Position</h4>
-            <div className="flex justify-between text-sm text-white/90">
-                <span>Symbol: <strong className="font-mono">{position.symbol}</strong></span>
-                <span>Type: <strong className={cn("font-mono", position.type === 'long' ? 'text-green-300' : 'text-red-300')}>{position.type.toUpperCase()}</strong></span>
+            <h4 className="font-headline text-center text-white text-lg">Active Position</h4>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-white/90">
+                <span>Symbol:</span><strong className="font-mono text-right">{position.symbol}</strong>
+                <span>Type:</span><strong className={cn("font-mono text-right", position.type === 'long' ? 'text-green-300' : 'text-red-300')}>{position.type.toUpperCase()}</strong>
+                <span>Entry:</span><strong className="font-mono text-right">${position.entryPrice.toFixed(4)}</strong>
+                <span>Size:</span><strong className="font-mono text-right">${position.size.toFixed(2)}</strong>
             </div>
-             <div className="flex justify-between text-sm text-white/90">
-                <span>Entry: <strong className="font-mono">${position.entryPrice.toFixed(4)}</strong></span>
-                <span>Size: <strong className="font-mono">${position.size.toFixed(2)}</strong></span>
-            </div>
-            <div className={cn("text-center text-2xl font-mono py-2", pnlColor)} style={{textShadow: `0 0 10px currentColor`}}>
-                ${pnl.toFixed(2)}
+            <div className="text-center pt-2 space-y-1">
+                <div className="text-xs text-foreground/70">Unrealized P&L</div>
+                <div className={cn("text-3xl font-mono font-bold", pnlColor)} style={{textShadow: `0 0 10px currentColor`}}>
+                    ${pnl.toFixed(2)}
+                </div>
             </div>
             <Button onClick={() => closePosition()} className="w-full bg-accent/80 hover:bg-accent font-headline" disabled={isAutoTrading}>
                 Close Position @ ${livePrice?.toFixed(4)}
@@ -256,4 +256,6 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
 };
 
 export default TradingSimulator;
+    
+
     
