@@ -1,10 +1,11 @@
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock, IndicatorChecklist, IndicatorData, IndicatorSignal, SupermodeAnalysis, HistoricalLevels } from '@/types';
+
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock, IndicatorChecklist, IndicatorData, IndicatorSignal, SupermodeAnalysis, HistoricalLevels, LinearRegressionChannel } from '@/types';
 import { getKlines as fetchKlinesFromServer } from '@/app/actions/getKlines';
 
 // --- START: Real Technical Analysis Functions ---
 
-const calculateEMA = (data: number[], period: number) => {
+const calculateEMA = (data: number[], period: number): number => {
     if (data.length < period) return data[data.length - 1] || 0;
     const k = 2 / (period + 1);
     let emaArray = [data[0]];
@@ -625,7 +626,14 @@ const generateAdvancedStrengthData = (
         volumeStatus: { status: volStatus, changePercent: volChangePct },
         volumeValue: latestVolume,
         rsiStatus: { status: rsiStatus, divergence: divergence },
-        stochRsi: { k: stochRsi.k, d: stochRsi.d, crossover: stochCrossover }
+        stochRsi: { k: stochRsi.k, d: stochRsi.d, crossover: stochCrossover },
+        confidenceBreakdown: {
+            overall: 0,
+            patternStrength: 0,
+            volumeConfirmation: 0,
+            htfAlignment: 0,
+            smartMoneyFlow: 0,
+        }
     };
 };
 
@@ -663,6 +671,38 @@ const generateOrderBlock = (swingHigh: number, swingLow: number, price: number, 
         context
     };
 };
+
+const calculateLinearRegressionChannel = (klines: any[], period = 50): LinearRegressionChannel => {
+    const closes = klines.slice(-period).map(k => parseFloat(k[4]));
+    const n = closes.length;
+    if (n < 2) return { upper: 0, middle: 0, lower: 0 };
+
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+    for (let i = 0; i < n; i++) {
+        sumX += i;
+        sumY += closes[i];
+        sumXY += i * closes[i];
+        sumX2 += i * i;
+    }
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+
+    let maxDev = 0;
+    for (let i = 0; i < n; i++) {
+        const regressionValue = intercept + slope * i;
+        const dev = Math.abs(closes[i] - regressionValue);
+        if (dev > maxDev) {
+            maxDev = dev;
+        }
+    }
+    
+    const middle = intercept + slope * (n - 1);
+    const upper = middle + maxDev;
+    const lower = middle - maxDev;
+
+    return { upper, middle, lower };
+}
 
 
 const isCrypto = (symbol: string): boolean => {
@@ -774,6 +814,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const volumeAnalysis = generateVolumeAnalysis(analysisSeed);
     const multiTimeframeSR = generateMultiTimeframeSR(price, klines, isBullish, analysisSeed);
     const liquidityMatrix = generateLiquidityMatrixData(price, swingHigh, swingLow, isBullish, analysisSeed);
+    const linearRegressionChannel = calculateLinearRegressionChannel(klines);
     
     const rsiValue = calculateRSI(closes, 14);
     let momentum: Momentum;
@@ -904,6 +945,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             liquidityPrediction: liquidityMatrix.prediction,
             advancedStrengthDashboard,
             indicatorChecklist,
+            linearRegressionChannel,
         };
     }
 
@@ -1118,5 +1160,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         advancedStrengthDashboard,
         supermodeAnalysis: mode === '5' ? (klines as any).supermodeAnalysis : undefined,
         indicatorChecklist,
+        linearRegressionChannel,
     };
 };

@@ -20,6 +20,7 @@ import MarketStructureLevels from './MarketStructureLevels';
 import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 import LiquidityTargetAlert from './LiquidityTargetAlert';
 import ConfidenceBreakdown from './ConfidenceBreakdown';
+import QuantumTrendChannel from './QuantumTrendChannel';
 
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
@@ -253,6 +254,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       {renderModeSpecificContent()}
       
       {data.superTrendAnalysis && <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />}
+
+      {data.linearRegressionChannel && <QuantumTrendChannel channel={data.linearRegressionChannel} isBullish={data.isBullish} />}
 
       <div className={blockStyle}>
         <SectionHeader icon={<BrainCircuit />} title="AI Confidence Matrix" />

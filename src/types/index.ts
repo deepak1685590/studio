@@ -240,6 +240,11 @@ export interface IndicatorChecklist {
     indicators: IndicatorData[];
 }
 
+export interface LinearRegressionChannel {
+    upper: number;
+    middle: number;
+    lower: number;
+}
 
 export interface SignalData {
   symbol: string;
@@ -301,4 +306,5 @@ export interface SignalData {
   supermodeAnalysis?: SupermodeAnalysis;
   indicatorChecklist: IndicatorChecklist;
   historicalLevels?: HistoricalLevels;
+  linearRegressionChannel: LinearRegressionChannel;
 }
