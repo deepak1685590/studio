@@ -72,6 +72,20 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     setSymbol(initialSymbol);
   }, [initialSymbol]);
 
+  const updatePrice = useCallback((newPrice: number) => {
+    setRealtimePrice(newPrice);
+    let direction: 'up' | 'down' | 'neutral' = 'neutral';
+    if (previousPriceRef.current !== null) {
+      if (newPrice > previousPriceRef.current) {
+        direction = 'up';
+      } else if (newPrice < previousPriceRef.current) {
+        direction = 'down';
+      }
+    }
+    setPriceDirection(direction);
+    previousPriceRef.current = newPrice;
+  }, []);
+
   const handleGenerateSignal = useCallback(async (currentSymbol: string) => {
     onSignalDataChange(null);
     setRealtimePrice(null);
@@ -116,25 +130,12 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
           
           if (stream.endsWith('@trade')) {
               const newPrice = parseFloat(messageData.p);
-              
-              setRealtimePrice(newPrice);
-              
-              let direction: 'up' | 'down' | 'neutral' = 'neutral';
-              if (previousPriceRef.current !== null) {
-                if (newPrice > previousPriceRef.current) {
-                  direction = 'up';
-                } else if (newPrice < previousPriceRef.current) {
-                  direction = 'down';
-                }
-              }
-              setPriceDirection(direction);
+              updatePrice(newPrice);
               
               setLiveTradeData({
                   volume: parseFloat(messageData.q),
-                  side: direction === 'up' ? 'Buy' : direction === 'down' ? 'Sell' : 'Neutral'
+                  side: priceDirection === 'up' ? 'Buy' : priceDirection === 'down' ? 'Sell' : 'Neutral'
               });
-
-              previousPriceRef.current = newPrice;
           } else if (stream.endsWith('@bookTicker')) {
               setBookTicker({
                   bidPrice: parseFloat(messageData.b),
@@ -167,21 +168,40 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     try {
       const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe);
       onSignalDataChange(data);
-      if (!isSupportedCrypto) {
-        setRealtimePrice(data.price);
-        previousPriceRef.current = data.price;
-      }
+       if (!isSupportedCrypto) {
+         updatePrice(data.price);
+       }
     } catch (error) {
       console.error("Error generating signal:", error);
       const mockData = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, true);
       onSignalDataChange(mockData);
-      setRealtimePrice(mockData.price);
+      updatePrice(mockData.price);
       toast({ title: "API Error", description: "Failed to fetch market data. Displaying simulated data.", variant: "destructive" });
     } finally {
       setLoading(false);
       onLoadingChange(false);
     }
-  }, [mode, timeframe, toast, onSignalDataChange, onLoadingChange]);
+  }, [mode, timeframe, toast, onSignalDataChange, onLoadingChange, updatePrice, priceDirection]);
+
+  // Polling for non-websocket assets
+  useEffect(() => {
+    const isSupportedCrypto = cryptoAssetsForWebsocket.includes(symbol.toUpperCase());
+    if (loading || isSupportedCrypto) {
+        return;
+    }
+
+    const intervalId = setInterval(async () => {
+        try {
+            const data = await getSignalData(symbol.toUpperCase(), mode, timeframe, false);
+            updatePrice(data.price);
+        } catch (error) {
+            console.warn(`Polling for ${symbol} failed:`, error);
+        }
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(intervalId);
+  }, [symbol, loading, mode, timeframe, updatePrice]);
+
   
   // This useEffect will be triggered by the `MainApp` component when the symbol changes there
   useEffect(() => {
@@ -455,5 +475,3 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 };
 
 export default SmartSignalWidget;
-
-    
