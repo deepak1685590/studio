@@ -1,10 +1,18 @@
-
-[
-  {
-    "username": "DG143",
-    "password": "DG143",
-    "isAdmin": true,
-    "status": "approved",
-    "joined": "2024-01-01T00:00:00.000Z"
-  }
-]
+{
+  "users": [
+    {
+      "username": "DG143",
+      "password": "DG143",
+      "isAdmin": true,
+      "status": "approved",
+      "joined": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "username": "demo_user",
+      "password": "password",
+      "isAdmin": false,
+      "status": "approved",
+      "joined": "2024-09-01T00:00:00.000Z"
+    }
+  ]
+}

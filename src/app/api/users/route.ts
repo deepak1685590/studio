@@ -7,28 +7,32 @@ import { User } from '@/types';
 const usersFilePath = path.join(process.cwd(), 'src', 'data', 'users.json');
 
 // Helper function to read users from the JSON file
-const readUsers = (): User[] => {
+const readUsersData = (): { users: User[] } => {
   try {
     if (fs.existsSync(usersFilePath)) {
       const fileContent = fs.readFileSync(usersFilePath, 'utf-8');
-      return JSON.parse(fileContent) as User[];
+      // Handle empty file case
+      if (!fileContent) {
+        return { users: [] };
+      }
+      return JSON.parse(fileContent) as { users: User[] };
     }
-    return [];
+    return { users: [] };
   } catch (error) {
     console.error('Error reading users file:', error);
-    return [];
+    return { users: [] };
   }
 };
 
 // Helper function to write users to the JSON file
-const writeUsers = (users: User[]) => {
+const writeUsersData = (data: { users: User[] }) => {
   try {
     // Ensure the directory exists
     const dir = path.dirname(usersFilePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2), 'utf-8');
+    fs.writeFileSync(usersFilePath, JSON.stringify(data, null, 2), 'utf-8');
   } catch (error) {
     console.error('Error writing users file:', error);
   }
@@ -36,7 +40,7 @@ const writeUsers = (users: User[]) => {
 
 // GET: Fetch all users
 export async function GET() {
-  const users = readUsers();
+  const { users } = readUsersData();
   return NextResponse.json(users);
 }
 
@@ -45,7 +49,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const { action, payload } = body;
   
-  let users = readUsers();
+  let { users } = readUsersData();
 
   switch (action) {
     case 'createUser': {
@@ -61,7 +65,7 @@ export async function POST(request: Request) {
         joined: new Date().toISOString()
       };
       users.push(newUser);
-      writeUsers(users);
+      writeUsersData({ users });
       return NextResponse.json({ success: true, message: `User "${username}" created successfully.`, user: newUser });
     }
     
@@ -83,7 +87,7 @@ export async function POST(request: Request) {
          delete users[userIndex].revocationReason;
          delete users[userIndex].revokedAt;
        }
-       writeUsers(users);
+       writeUsersData({ users });
        return NextResponse.json({ success: true, message: "User status updated.", user: users[userIndex] });
     }
     
@@ -99,14 +103,15 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ success: false, message: 'Username is required' }, { status: 400 });
     }
 
-    let users = readUsers();
+    let { users } = readUsersData();
     const initialLength = users.length;
+    
     users = users.filter(u => u.username !== username);
 
     if (users.length === initialLength) {
         return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
     }
 
-    writeUsers(users);
+    writeUsersData({ users });
     return NextResponse.json({ success: true, message: 'User deleted successfully' });
 }

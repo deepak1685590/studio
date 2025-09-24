@@ -5,12 +5,6 @@ import { User } from '@/types';
 
 const SESSION_KEY = 'nexus_current_user';
 
-const preapprovedUsers = [
-  { username: 'supernexus7098', password: 'xkQ2!9mP@vR3' },
-  { username: 'user_supernexus231', password: 'Lp8#nM4*sWqA' },
-  // ... (the rest of the pre-approved users can be managed in a database seeding script)
-];
-
 // This function is kept for local testing or as a fallback.
 export const getUsers = (): User[] => {
   if (typeof window === 'undefined') return [];
