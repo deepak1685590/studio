@@ -1,6 +1,7 @@
 
 
 
+
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock, IndicatorChecklist, IndicatorData, IndicatorSignal, SupermodeAnalysis, HistoricalLevels } from '@/types';
 import { getKlines as fetchKlinesFromServer } from '@/app/actions/getKlines';
 
@@ -155,6 +156,16 @@ const calculateStochRSI = (closes: number[], rsiPeriod = 14, stochPeriod = 14, k
     const dValues = calculateSMA(kValues, dPeriod);
     
     return { k: kValues.pop() || 50, d: dValues.pop() || 50 };
+};
+
+const calculateEMA = (data: number[], period: number) => {
+    if (data.length < period) return data[data.length - 1] || 0;
+    const k = 2 / (period + 1);
+    let emaArray = [data[0]];
+    for (let i = 1; i < data.length; i++) {
+        emaArray.push((data[i] * k) + (emaArray[i - 1] * (1 - k)));
+    }
+    return emaArray[emaArray.length - 1];
 };
 
 // --- END: Real Technical Analysis Functions ---
@@ -724,15 +735,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const s3 = swingLow - 2 * (swingHigh - pivot);
 
     const atr = calculateATR(klines, 14);
-    
-    const calculateEMA = (data: number[], period: number) => {
-        const k = 2 / (period + 1);
-        let emaArray = [data[0]];
-        for (let i = 1; i < data.length; i++) {
-            emaArray.push((data[i] * k) + (emaArray[i-1] * (1-k)));
-        }
-        return emaArray[emaArray.length-1];
-    };
     
     const ema20 = calculateEMA(closes.slice(-40), 20);
     const ema50 = calculateEMA(closes.slice(-100), 50);
