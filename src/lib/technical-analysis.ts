@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock, IndicatorChecklist, IndicatorData, IndicatorSignal, SupermodeAnalysis, HistoricalLevels } from '@/types';
 import { getKlines as fetchKlinesFromServer } from '@/app/actions/getKlines';
 
@@ -987,16 +982,27 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     });
 
     if (parseInt(mode) >= 2) {
-        const waveConvergence = (pseudoRandom(analysisSeed + 'wave') * 40 + 60).toFixed(1);
+        // Quantum Wave Convergence - based on alignment of short-term and long-term momentum (RSI vs EMAs)
+        const shortTermMomentum = rsiValue > 50;
+        const longTermMomentum = price > ema50;
+        const waveConvergence = (shortTermMomentum === longTermMomentum) ? 
+            (isBullish ? Math.floor(rsiValue * 0.5 + 45) : Math.floor((100 - rsiValue) * 0.5 + 45)) : 
+            Math.floor(Math.abs(rsiValue - 50) * 0.8);
         confluenceFactors.push(`Quantum Wave Convergence: ${waveConvergence}%`);
     }
     if (parseInt(mode) >= 3) {
-        const anomalyType = isBullish ? 'Expansion' : 'Contraction';
-        const anomalySeverity = (pseudoRandom(analysisSeed + 'anomaly') * 0.5 + 1.2).toFixed(2);
-        confluenceFactors.push(`Chrono-Distortion Anomaly: ${anomalyType} (${anomalySeverity}σ)`);
-        
-        const liquidityPulse = (pseudoRandom(analysisSeed + 'pulse') * 150 + 50).toFixed(0);
-        confluenceFactors.push(`Subspace Liquidity Pulse: ${liquidityPulse}M units detected`);
+        // Chrono-Distortion Anomaly - based on ATR volatility vs recent price change
+        const priceChangeStdDev = Math.abs(price - closes[closes.length - 2]) / atr;
+        const anomalyType = priceChangeStdDev > 1.5 ? (isBullish ? 'Expansion' : 'Contraction') : 'Normal';
+        if (anomalyType !== 'Normal') {
+            confluenceFactors.push(`Chrono-Distortion Anomaly: ${anomalyType} (${priceChangeStdDev.toFixed(2)}σ)`);
+        }
+
+        // Subspace Liquidity Pulse - based on volume spikes
+        if (latestVolume > avgVolume * 2) {
+            const liquidityPulse = parseFloat((latestVolume * price / 1_000_000).toFixed(0)); // In millions
+            confluenceFactors.push(`Subspace Liquidity Pulse: ${liquidityPulse}M units detected`);
+        }
     }
     
     const bullishPatterns: ChartPattern[] = [ { name: 'Bull Flag', description: 'A continuation pattern suggesting the uptrend will resume after a brief consolidation.' }, { name: 'Ascending Triangle', description: 'Indicates a potential breakout to the upside as buying pressure builds.' }, { name: 'Inverse Head & Shoulders', description: 'A strong reversal pattern indicating a shift from a downtrend to an uptrend.' }, { name: 'Bullish Engulfing', description: 'A powerful two-candle reversal pattern that can signal a bottom in a downtrend.' }, { name: 'Hammer', description: 'A single-candle bullish reversal pattern that appears during a downtrend.' }, { name: 'Morning Star', description: 'A three-candle bullish reversal pattern that signals a potential bottom.' }, { name: 'Three White Soldiers', description: 'A strong bullish reversal pattern consisting of three consecutive long green candles.' }, { name: 'Cup and Handle', description: 'A bullish continuation pattern that signals a consolidation followed by a breakout.' }, ];
