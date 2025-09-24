@@ -292,6 +292,12 @@ export interface IndicatorChecklist {
     indicators: IndicatorData[];
 }
 
+export interface HistoricalLevels {
+    pdh: number; // Previous Day High
+    pdl: number; // Previous Day Low
+    pwh: number; // Previous Week High
+    pwl: number; // Previous Week Low
+}
 
 export interface SignalData {
   symbol: string;
@@ -351,4 +357,5 @@ export interface SignalData {
   advancedStrengthDashboard?: AdvancedStrengthDashboardData;
   supermodeAnalysis?: SupermodeAnalysis;
   indicatorChecklist: IndicatorChecklist;
+  historicalLevels: HistoricalLevels;
 }

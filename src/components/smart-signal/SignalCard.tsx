@@ -2,10 +2,10 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
-import type { SignalData, GenerateAiInsightOutput } from '@/types';
+import type { SignalData, GenerateAiInsightOutput, HistoricalLevels } from '@/types';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, BarChart, BookOpen, Scaling, Magnet, Building, Timer, Target, Zap, Shield, LogIn, ListChecks } from 'lucide-react';
+import { Download, CheckCircle2, BarChart, BookOpen, Scaling, Magnet, Building, Timer, Target, Zap, Shield, LogIn, ListChecks, Landmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -100,6 +100,38 @@ const LevelRow: React.FC<{
       <span className="font-mono font-bold text-xl text-white/90">${value}</span>
     </div>
   );
+};
+
+const MarketStructureLevels: React.FC<{ levels: HistoricalLevels; livePrice: number; isCrypto: boolean; }> = ({ levels, livePrice, isCrypto }) => {
+    const format = (price: number) => price.toFixed(isCrypto ? 2 : 4);
+    const pdhBroken = livePrice > levels.pdh;
+    const pdlBroken = livePrice < levels.pdl;
+    const pwhBroken = livePrice > levels.pwh;
+    const pwlBroken = livePrice < levels.pwl;
+
+    return (
+        <SectionWrapper>
+            <SectionHeader icon={<Landmark />} title="Market Structure" />
+            <div className="grid grid-cols-2 gap-3">
+                <div className={cn("p-2 rounded-md transition-all", pdhBroken ? "bg-green-500/20 border border-green-400" : "bg-black/30")}>
+                    <div className="text-xs text-foreground/70">Previous Day High (PDH)</div>
+                    <div className="font-mono font-bold text-lg">{format(levels.pdh)}</div>
+                </div>
+                <div className={cn("p-2 rounded-md transition-all", pdlBroken ? "bg-red-500/20 border border-red-400" : "bg-black/30")}>
+                    <div className="text-xs text-foreground/70">Previous Day Low (PDL)</div>
+                    <div className="font-mono font-bold text-lg">{format(levels.pdl)}</div>
+                </div>
+                 <div className={cn("p-2 rounded-md transition-all", pwhBroken ? "bg-green-500/20 border border-green-400" : "bg-black/30")}>
+                    <div className="text-xs text-foreground/70">Previous Week High (PWH)</div>
+                    <div className="font-mono font-bold text-lg">{format(levels.pwh)}</div>
+                </div>
+                 <div className={cn("p-2 rounded-md transition-all", pwlBroken ? "bg-red-500/20 border border-red-400" : "bg-black/30")}>
+                    <div className="text-xs text-foreground/70">Previous Week Low (PWL)</div>
+                    <div className="font-mono font-bold text-lg">{format(levels.pwl)}</div>
+                </div>
+            </div>
+        </SectionWrapper>
+    )
 };
 
 
@@ -221,6 +253,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             
             { showPredictiveAnalysis && <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} /> }
             
+            <MarketStructureLevels levels={data.historicalLevels} livePrice={displayPrice} isCrypto={isCrypto} />
+
             <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />
             
             <QuantumPivotsMatrix data={data.multiTimeframeSR} livePrice={realtimePrice} />
