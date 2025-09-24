@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSignalData } from '@/lib/technical-analysis';
-import type { SignalData, BookTicker, LiquidityMatrixData } from '@/types';
+import type { SignalData, BookTicker } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
 import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Wallet, Droplets } from 'lucide-react';
@@ -156,8 +156,8 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
           const messageData = message.data;
           
           if (stream.endsWith('@trade')) {
-              // DEFINITIVE FIX: Ensure symbol comparison is correct
-              if ((currentSymbolRef.current.toLowerCase() + 'usdt') !== messageData.s.toLowerCase()) {
+              // DEFINITIVE FIX: Ensure symbol comparison is correct by comparing the app's current symbol ref
+              if (messageData.s.toLowerCase() !== (currentSymbolRef.current.toLowerCase() + 'usdt')) {
                   return; 
               }
               const newPrice = parseFloat(messageData.p);
@@ -168,6 +168,9 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
                   side: priceDirection === 'up' ? 'Buy' : priceDirection === 'down' ? 'Sell' : 'Neutral'
               });
           } else if (stream.endsWith('@bookTicker')) {
+              if (messageData.s.toLowerCase() !== (currentSymbolRef.current.toLowerCase() + 'usdt')) {
+                  return;
+              }
               setBookTicker({
                   bidPrice: parseFloat(messageData.b),
                   askPrice: parseFloat(messageData.a)
@@ -538,5 +541,3 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 };
 
 export default SmartSignalWidget;
-
-    

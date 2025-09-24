@@ -164,5 +164,3 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
 };
 
 export default MainApp;
-
-    
