@@ -5,7 +5,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import type { SignalData } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, BookOpen, Layers, Magnet, Timer, Target, Zap, Shield, LogIn, TrendingUp, TrendingDown } from 'lucide-react';
+import { Download, CheckCircle2, BookOpen, Layers, Magnet, Timer, Target, Zap, Shield, LogIn, TrendingUp, TrendingDown, BrainCircuit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -221,12 +221,16 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 <Alert className="bg-transparent border-primary/30">
                   <p><strong className={cn("font-bold", trendColor)}>{data.chartPattern.name}:</strong> {data.chartPattern.description}</p>
                 </Alert>
-                <ConfidenceBreakdown 
-                  data={data}
-                  livePrice={realtimePrice}
-                />
             </div>
         </div>
+      </div>
+
+      <div>
+        <SectionHeader icon={<BrainCircuit />} title="AI Confidence Matrix" />
+        <ConfidenceBreakdown
+            data={data}
+            livePrice={realtimePrice}
+        />
       </div>
       
       {renderModeSpecificContent()}
