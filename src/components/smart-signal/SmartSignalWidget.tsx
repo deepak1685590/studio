@@ -65,6 +65,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   const previousPriceRef = useRef<number | null>(null);
   const currentSymbolRef = useRef(symbol);
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     currentSymbolRef.current = symbol;
@@ -120,6 +121,11 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       ws.current = null;
     }
 
+    if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+    }
+
     setLoading(true);
     onLoadingChange(true);
 
@@ -146,6 +152,10 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
           const messageData = message.data;
           
           if (stream.endsWith('@trade')) {
+              // This comparison is critical. messageData.s is 'BTCUSDT'
+              if ((currentSymbolRef.current.toLowerCase() + 'usdt') !== messageData.s.toLowerCase()) {
+                  return; // Mismatch, do not update. This is the fix.
+              }
               const newPrice = parseFloat(messageData.p);
               updatePrice(newPrice);
               
@@ -204,23 +214,30 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   useEffect(() => {
     const isSupportedCrypto = cryptoAssetsForWebsocket.includes(symbol.toUpperCase());
     const needsPolling = assetsForPolling.includes(symbol.toUpperCase());
-
-    if (loading || isSupportedCrypto || !needsPolling) {
-        return;
+    
+    if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
     }
 
-    const intervalId = setInterval(async () => {
-        try {
-            const data = await getSignalData(symbol.toUpperCase(), mode, timeframe, false);
-            if(data?.price){
-              updatePrice(data.price);
+    if (!loading && !isSupportedCrypto && needsPolling) {
+        pollingIntervalRef.current = setInterval(async () => {
+            try {
+                // Fetch fresh data to get the latest close price for non-websocket assets
+                const data = await getSignalData(symbol.toUpperCase(), mode, timeframe, false);
+                if(data?.price){
+                  updatePrice(data.price);
+                }
+            } catch (error) {
+                console.warn(`Polling for ${symbol} failed:`, error);
             }
-        } catch (error) {
-            console.warn(`Polling for ${symbol} failed:`, error);
-        }
-    }, 1000); // Poll every 1 second
+        }, 1000); // Poll every 1 second
+    }
 
-    return () => clearInterval(intervalId);
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
   }, [symbol, loading, mode, timeframe, updatePrice]);
 
   
@@ -237,6 +254,9 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       }
       if(throttleTimeoutRef.current) {
         clearTimeout(throttleTimeoutRef.current);
+      }
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
       }
     };
   }, []);
