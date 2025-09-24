@@ -21,9 +21,9 @@ const GenerateAiInsightInputSchema = z.object({
   chartPatternName: z.string().describe('The name of the detected chart pattern.'),
   trendStrength: z.number().describe('A score from 0-100 indicating the strength of the current trend.'),
   momentum: z.number().describe('A score from 0-100 indicating the market momentum (e.g., from RSI).'),
-  entry: z.number().describe('The entry price for the trade.'),
-  sl: z.number().describe('The stop-loss price for the trade.'),
-  tp1: z.number().describe('The take-profit 1 price for the trade.'),
+  entry: z.string().describe('The entry price for the trade.'),
+  sl: z.string().describe('The stop-loss price for the trade.'),
+  tp1: z.string().describe('The take-profit 1 price for the trade.'),
 });
 export type GenerateAiInsightInput = z.infer<typeof GenerateAiInsightInputSchema>;
 

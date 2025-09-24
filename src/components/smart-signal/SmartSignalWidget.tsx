@@ -184,9 +184,9 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
             chartPatternName: data.chartPattern.name,
             trendStrength: data.trendStrength.score,
             momentum: data.momentum.score,
-            entry: parseFloat(data.entry),
-            sl: parseFloat(data.sl),
-            tp1: parseFloat(data.tp1),
+            entry: data.entry,
+            sl: data.sl,
+            tp1: data.tp1,
         };
         const insightResult = await generateAiInsight(insightInput);
         setAiInsight(insightResult);
