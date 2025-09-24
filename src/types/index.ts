@@ -203,33 +203,39 @@ export interface AdvancedStrengthDashboardData {
     marketSentiment: {
         score: number;
         label: string;
+        emoji: string;
     };
     momentum: {
         rsi: number;
-        trend: 'UP' | 'DOWN' | 'NEUTRAL';
+        trend: '📈' | '📉';
     };
     longPower: number;
     shortPower: number;
     overallStrength: number;
     trendAnalysis: {
         strength: number;
-        momentum: 'ACCELERATING' | 'DECELERATING' | 'STABLE';
+        direction: 1 | -1;
+        momentum: '🚀' | '⬇️';
     };
     volatility: {
-        percent: number;
-        label: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW';
+        atrPercent: number;
+        rank: number;
+        label: '🔥 EXTREME' | '🟠 HIGH' | '🟡 MEDIUM' | '🟢 LOW';
     };
     volumeStatus: {
-        status: 'SPIKE' | 'DRY' | 'HIGH' | 'NORMAL' | 'LOW';
+        status: '🚀 SPIKE' | '🏜️ DRY' | '📈 HIGH' | '📉 LOW';
         changePercent: number;
     };
     volumeValue: number;
-    rsiStatus: 'OVERBOUGHT' | 'OVERSOLD' | 'NEUTRAL';
-    divergence: 'BULLISH' | 'BEARISH' | 'NONE';
+    rsiStatus: {
+        status: "🔴 OB" | "🟢 OS" | "🟡 Strong" | "🟠 Weak" | "⚪ Neutral";
+        divergence: "🔻 Bear Div" | "🔺 Bull Div" | "";
+    };
     stochRsi: {
         k: number;
         d: number;
-        signal: 'BULL_CROSS' | 'BEAR_CROSS' | 'NONE';
+        status: "🔴 OB" | "🟢 OS" | "⚪ Neutral";
+        crossover: "🔺" | "🔻" | "";
     };
 }
 

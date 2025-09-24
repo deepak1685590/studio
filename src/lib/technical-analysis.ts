@@ -1,16 +1,16 @@
 
 
-
 import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock, IndicatorChecklist, IndicatorData, IndicatorSignal, SupermodeAnalysis, HistoricalLevels } from '@/types';
 import { getKlines as fetchKlinesFromServer } from '@/app/actions/getKlines';
 
 // --- START: Real Technical Analysis Functions ---
 
 const calculateRSI = (closes: number[], period = 14): number => {
-    if (closes.length < period) return 50; // Not enough data, return neutral
+    if (closes.length < period + 1) return 50;
     let gains = 0;
     let losses = 0;
 
+    // Calculate initial average gains and losses
     for (let i = 1; i <= period; i++) {
         const diff = closes[i] - closes[i - 1];
         if (diff >= 0) {
@@ -23,6 +23,7 @@ const calculateRSI = (closes: number[], period = 14): number => {
     let avgGain = gains / period;
     let avgLoss = losses / period;
 
+    // Smooth the averages for the rest of the data
     for (let i = period + 1; i < closes.length; i++) {
         const diff = closes[i] - closes[i - 1];
         if (diff >= 0) {
@@ -39,20 +40,31 @@ const calculateRSI = (closes: number[], period = 14): number => {
     return 100 - (100 / (1 + rs));
 };
 
-const calculateATR = (klines: any[], period = 14): number => {
-    if (klines.length < period) return 0;
-    const recentKlines = klines.slice(-period -1);
-    let trSum = 0;
 
-    for (let i = 1; i < recentKlines.length; i++) {
-        const high = parseFloat(recentKlines[i][2]);
-        const low = parseFloat(recentKlines[i][3]);
-        const prevClose = parseFloat(recentKlines[i-1][4]);
+const calculateATR = (klines: any[], period = 14): number => {
+    if (klines.length < period + 1) return 0;
+    const relevantKlines = klines.slice(-(period + 1));
+    let trs = [];
+
+    for (let i = 1; i < relevantKlines.length; i++) {
+        const high = parseFloat(relevantKlines[i][2]);
+        const low = parseFloat(relevantKlines[i][3]);
+        const prevClose = parseFloat(relevantKlines[i-1][4]);
         const tr = Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
-        trSum += tr;
+        trs.push(tr);
     }
-    return trSum / period;
+    
+    // First ATR is just the average of the first 'period' TRs
+    let atr = trs.slice(0, period).reduce((a, b) => a + b, 0) / period;
+
+    // Wilder's smoothing for subsequent ATRs
+    for (let i = period; i < trs.length; i++) {
+        atr = (atr * (period - 1) + trs[i]) / period;
+    }
+    
+    return atr;
 };
+
 
 const calculateADX = (klines: any[], period = 14): { adx: number, pdi: number, mdi: number } => {
     if (klines.length < period * 2) return { adx: 20, pdi: 20, mdi: 20 };
@@ -103,41 +115,39 @@ const calculateADX = (klines: any[], period = 14): { adx: number, pdi: number, m
     return { adx, pdi: pdi14.pop()!, mdi: mdi14.pop()! };
 };
 
-const calculateLongShortPower = (klines: any[]): { longPower: number; shortPower: number } => {
-    const recentKlines = klines.slice(-20); // Analyze last 20 candles
-    const closes = recentKlines.map(k => parseFloat(k[4]));
+const calculateStochRSI = (closes: number[], rsiPeriod = 14, stochPeriod = 14, kPeriod = 3, dPeriod = 3): { k: number, d: number } => {
+    if (closes.length < rsiPeriod + stochPeriod) return { k: 50, d: 50 };
+
+    const rsiValues = [];
+    for (let i = rsiPeriod; i < closes.length; i++) {
+        rsiValues.push(calculateRSI(closes.slice(0, i + 1), rsiPeriod));
+    }
+
+    if (rsiValues.length < stochPeriod) return { k: 50, d: 50 };
+
+    const stochRsiValues = [];
+    for (let i = stochPeriod - 1; i < rsiValues.length; i++) {
+        const periodSlice = rsiValues.slice(i - stochPeriod + 1, i + 1);
+        const lowestRsi = Math.min(...periodSlice);
+        const highestRsi = Math.max(...periodSlice);
+        const currentRsi = rsiValues[i];
+        const stochRsi = (highestRsi - lowestRsi) === 0 ? 0 : ((currentRsi - lowestRsi) / (highestRsi - lowestRsi)) * 100;
+        stochRsiValues.push(stochRsi);
+    }
     
-    const rsi = calculateRSI(closes, 14);
-    const { adx, pdi, mdi } = calculateADX(klines, 14);
-
-    // RSI Contribution (0-100)
-    const rsiLong = rsi;
-    const rsiShort = 100 - rsi;
-
-    // ADX/DMI Contribution (0-100)
-    // If ADX is high, trust the DMI direction more
-    const adxWeight = Math.min(1, adx / 40); // Weight ADX, max out at 40
-    const dmiLong = pdi * adxWeight;
-    const dmiShort = mdi * adxWeight;
-    
-    // Candlestick analysis
-    let candleScore = 0;
-    recentKlines.forEach(k => {
-        const open = parseFloat(k[1]);
-        const close = parseFloat(k[4]);
-        if (close > open) candleScore += (close - open);
-        else candleScore -= (open - close);
-    });
-    const maxRange = Math.max(...recentKlines.map(k => Math.abs(parseFloat(k[1])-parseFloat(k[4]))));
-    const normalizedCandleScore = (candleScore / (maxRange * recentKlines.length)) * 50 + 50;
-
-    const longPower = (rsiLong * 0.4) + (dmiLong * 0.4) + (normalizedCandleScore * 0.2);
-    const shortPower = (rsiShort * 0.4) + (dmiShort * 0.4) + ((100-normalizedCandleScore) * 0.2);
-
-    return {
-        longPower: Math.min(99, Math.round(longPower)),
-        shortPower: Math.min(99, Math.round(shortPower))
+    const calculateSMA = (data: number[], period: number) => {
+        const sma = [];
+        for (let i = period - 1; i < data.length; i++) {
+            const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+            sma.push(sum / period);
+        }
+        return sma;
     };
+    
+    const kValues = calculateSMA(stochRsiValues, kPeriod);
+    const dValues = calculateSMA(kValues, dPeriod);
+    
+    return { k: kValues.pop() || 50, d: dValues.pop() || 50 };
 };
 
 // --- END: Real Technical Analysis Functions ---
@@ -497,91 +507,119 @@ const generateSuperTrendAnalysis = (price: number, atr: number, isBullish: boole
 };
 
 
-const generateAdvancedStrengthData = (price: number, klines: any[], isBullish: boolean, momentumScore: number, trendStrengthScore: number, emas: { ema20: number, ema50: number }): AdvancedStrengthDashboardData => {
+const generateAdvancedStrengthData = (
+    klines: any[], 
+    rsiLength = 14, 
+    maFastLength = 12, 
+    maSlowLength = 26,
+    atrLength = 14,
+    volLength = 20
+): AdvancedStrengthDashboardData => {
     const closes = klines.map(k => parseFloat(k[4]));
     const volumes = klines.map(k => parseFloat(k[5]));
+    const price = closes[closes.length - 1];
     
-    // 1. Price and Change
+    // 1. Price
     const prevClose = closes[closes.length - 2];
     const priceChangePercent = ((price - prevClose) / prevClose) * 100;
 
-    // 2. Power
-    const { longPower, shortPower } = calculateLongShortPower(klines);
-    const overallStrength = Math.round((longPower + (100 - shortPower)) / 2);
+    // 2. Momentum
+    const rsi = calculateRSI(closes, rsiLength);
+    const momentumTrend = rsi > calculateRSI(closes.slice(0, -1), rsiLength) ? "📈" : "📉";
 
-    // 3. Trend
-    const { pdi, mdi } = calculateADX(klines, 14);
-    const trendMomentum = pdi > mdi ? 'ACCELERATING' : 'DECELERATING';
+    // 3. Long/Short Power
+    const longPower = Math.min(100, Math.max(0, (rsi - 50) * 2));
+    const shortPower = Math.min(100, Math.max(0, (50 - rsi) * 2));
+    const overallStrength = longPower > shortPower ? longPower : -shortPower;
 
-    // 4. Volatility (ATR)
-    const atrValue = calculateATR(klines, 14);
-    const atrPercent = (atrValue / price) * 100;
-    let volLabel: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW';
-    if (atrPercent > 2.5) volLabel = 'EXTREME';
-    else if (atrPercent > 1.5) volLabel = 'HIGH';
-    else if (atrPercent > 0.8) volLabel = 'MEDIUM';
-    else volLabel = 'LOW';
-
-    // 5. Volume
-    const avgVolume = volumes.slice(-20).reduce((a, b) => a + b, 0) / 20;
+    // 4. Volume
+    const volSma = volumes.slice(-volLength).reduce((a, b) => a + b, 0) / volLength;
     const latestVolume = volumes[volumes.length - 1];
-    const volumeChangePercent = ((latestVolume - avgVolume) / avgVolume) * 100;
+    const volChangePct = volSma > 0 ? ((latestVolume - volSma) / volSma) * 100 : 0;
+    const volSpike = latestVolume > volSma * 2;
+    const volDrying = latestVolume < volSma * 0.5;
+    let volStatus: '🚀 SPIKE' | '🏜️ DRY' | '📈 HIGH' | '📉 LOW';
+    if (volSpike) volStatus = '🚀 SPIKE';
+    else if (volDrying) volStatus = '🏜️ DRY';
+    else if (latestVolume > volSma) volStatus = '📈 HIGH';
+    else volStatus = '📉 LOW';
+
+    // 5. Volatility
+    const atr = calculateATR(klines, atrLength);
+    const atrPercent = (atr / price) * 100;
+    // Simple percentrank simulation
+    const atrHistory = [];
+    for(let i=atrLength+1; i < klines.length; i++) {
+        atrHistory.push(calculateATR(klines.slice(0, i), atrLength));
+    }
+    const volatilityRank = atrHistory.length > 0 ? (atrHistory.filter(a => a < atr).length / atrHistory.length) * 100 : 50;
+    let volLabel: '🔥 EXTREME' | '🟠 HIGH' | '🟡 MEDIUM' | '🟢 LOW' = '🟢 LOW';
+    if (volatilityRank > 80) volLabel = "🔥 EXTREME";
+    else if (volatilityRank > 60) volLabel = "🟠 HIGH";
+    else if (volatilityRank > 40) volLabel = "🟡 MEDIUM";
     
-    let volStatus: 'SPIKE' | 'DRY' | 'HIGH' | 'NORMAL' | 'LOW';
-    if (volumeChangePercent > 100) volStatus = 'SPIKE';
-    else if (volumeChangePercent > 50) volStatus = 'HIGH';
-    else if (volumeChangePercent < -50) volStatus = 'DRY';
-    else if (volumeChangePercent < -25) volStatus = 'LOW';
-    else volStatus = 'NORMAL';
+    // 6. Trend Analysis
+    const calculateEMA = (data: number[], period: number) => {
+        const k = 2 / (period + 1);
+        let emaArray = [data[0]];
+        for (let i = 1; i < data.length; i++) {
+            emaArray.push((data[i] * k) + (emaArray[i-1] * (1-k)));
+        }
+        return emaArray;
+    };
+    const fastMaValues = calculateEMA(closes, maFastLength);
+    const slowMaValues = calculateEMA(closes, maSlowLength);
+    const fastMa = fastMaValues[fastMaValues.length - 1];
+    const slowMa = slowMaValues[slowMaValues.length - 1];
+    const trendStrength = Math.abs(fastMa - slowMa) / price * 1000;
+    const trendDirection = fastMa > slowMa ? 1 : -1;
+    const trendAcceleration = (fastMa - fastMaValues[fastMaValues.length - 2]) - (slowMa - slowMaValues[slowMaValues.length - 2]);
+    const trendMomentum = trendAcceleration > 0 ? "🚀" : "⬇️";
 
-    // 6. Sentiment Score
-    const bullishScore = (price > emas.ema50 ? 1 : 0) + (momentumScore > 52 ? 1 : 0) + (trendStrengthScore > 25 ? 1 : 0) + (volumeChangePercent > 10 ? 1 : 0);
-    const bearishScore = (price < emas.ema50 ? 1 : 0) + (momentumScore < 48 ? 1 : 0) + (trendStrengthScore > 25 ? 1 : 0) + (volumeChangePercent > 10 ? 1 : 0);
-    const netSentiment = bullishScore - bearishScore;
-    let sentimentLabel = 'NEUTRAL ⚖️';
-    if (netSentiment >= 3) sentimentLabel = 'STRONG BULL 🚀';
-    else if (netSentiment > 0) sentimentLabel = 'BULLISH 📈';
-    else if (netSentiment <= -3) sentimentLabel = 'STRONG BEAR 💥';
-    else if (netSentiment < 0) sentimentLabel = 'BEARISH 📉';
+    // 7. Sentiment Score
+    const sma20 = closes.slice(-20).reduce((a,b) => a+b, 0) / 20;
+    const bullishSignals = (rsi > 50 ? 1 : 0) + (latestVolume > volSma ? 1 : 0) + (trendDirection > 0 ? 1 : 0) + (price > sma20 ? 1 : 0);
+    const bearishSignals = (rsi < 50 ? 1 : 0) + (latestVolume < volSma ? 1 : 0) + (trendDirection < 0 ? 1 : 0) + (price < sma20 ? 1 : 0);
+    const sentimentScore = bullishSignals - bearishSignals;
+    const sentimentEmoji = sentimentScore >= 2 ? "🚀" : sentimentScore >= 1 ? "📈" : sentimentScore <= -2 ? "💥" : sentimentScore <= -1 ? "📉" : "⚖️";
 
-    // 7. Market Phase
-    let marketPhase: AdvancedStrengthDashboardData['marketPhase'] = 'NEUTRAL';
-    if (volLabel === 'HIGH' && longPower > 70 && volStatus === 'SPIKE') marketPhase = 'BREAKOUT';
-    else if (volLabel === 'HIGH' && shortPower > 70 && volStatus === 'SPIKE') marketPhase = 'BREAKDOWN';
-    else if (volLabel === 'LOW' && trendStrengthScore < 20) marketPhase = 'CONSOLIDATION';
-    else if (isBullish && trendStrengthScore > 25) marketPhase = 'BULLISH TREND';
-    else if (!isBullish && trendStrengthScore > 25) marketPhase = 'BEARISH TREND';
+    // 8. Market Phase
+    let phase: AdvancedStrengthDashboardData['marketPhase'] = 'NEUTRAL';
+    if (rsi > 70 && latestVolume > volSma && volatilityRank > 60) phase = "BREAKOUT";
+    else if (rsi < 30 && latestVolume > volSma && volatilityRank > 60) phase = "BREAKDOWN";
+    else if (volatilityRank < 20 && trendStrength < 5) phase = "CONSOLIDATION";
+    else if (rsi > 50 && trendDirection > 0) phase = "BULLISH TREND";
+    else if (rsi < 50 && trendDirection < 0) phase = "BEARISH TREND";
 
-    // 8. RSI Status & Stoch RSI
-    const rsiStatus = momentumScore > 70 ? 'OVERBOUGHT' : momentumScore < 30 ? 'OVERSOLD' : 'NEUTRAL';
-    const stochRsiK = pseudoRandom(klines[0][0].toString() + 'stoch_k') * 100; // Mock for now
-    const stochRsiD = pseudoRandom(klines[0][0].toString() + 'stoch_d') * 100; // Mock for now
-    let stochSignal: AdvancedStrengthDashboardData['stochRsi']['signal'] = 'NONE';
-    if (stochRsiK > stochRsiD && pseudoRandom(klines[0][0].toString() + 'stoch_cross') > 0.8) stochSignal = 'BULL_CROSS';
-    if (stochRsiK < stochRsiD && pseudoRandom(klines[0][0].toString() + 'stoch_cross') < 0.2) stochSignal = 'BEAR_CROSS';
-    
-    // 9. Divergence
-    let divergence: AdvancedStrengthDashboardData['divergence'] = 'NONE';
-    const divergenceSeed = pseudoRandom(klines[0][0].toString() + 'divergence');
-    if (isBullish && rsiStatus === 'OVERSOLD' && divergenceSeed > 0.85) divergence = 'BULLISH';
-    if (!isBullish && rsiStatus === 'OVERBOUGHT' && divergenceSeed < 0.15) divergence = 'BEARISH';
+    // 9. RSI Status
+    const rsiStatus = rsi >= 70 ? "🔴 OB" : rsi <= 30 ? "🟢 OS" : rsi >= 60 ? "🟡 Strong" : rsi <= 40 ? "🟠 Weak" : "⚪ Neutral";
+    const rsiDivergence = closes[closes.length - 1] > closes[closes.length - 6] && rsi < calculateRSI(closes.slice(0, -5), rsiLength) ? "🔻 Bear Div" :
+                        closes[closes.length - 1] < closes[closes.length - 6] && rsi > calculateRSI(closes.slice(0, -5), rsiLength) ? "🔺 Bull Div" : "";
+
+    // 10. Stoch RSI
+    const stochRsi = calculateStochRSI(closes);
+    const stochStatus = stochRsi.k >= 80 ? "🔴 OB" : stochRsi.k <= 20 ? "🟢 OS" : "⚪ Neutral";
+    // Simplified crossover detection
+    const prevStochRsi = calculateStochRSI(closes.slice(0, -1));
+    const stochCrossover = stochRsi.k > stochRsi.d && prevStochRsi.k <= prevStochRsi.d ? "🔺" :
+                           stochRsi.k < stochRsi.d && prevStochRsi.k >= prevStochRsi.d ? "🔻" : "";
+
 
     return {
-        marketPhase,
+        marketPhase: phase,
         price: price.toFixed(isCrypto(klines[0][0].toString()) ? 2 : 4),
         priceChangePercent,
-        marketSentiment: { score: netSentiment, label: sentimentLabel },
-        momentum: { rsi: momentumScore, trend: momentumScore > 52 ? 'UP' : momentumScore < 48 ? 'DOWN' : 'NEUTRAL' },
+        marketSentiment: { score: sentimentScore, label: '', emoji: sentimentEmoji },
+        momentum: { rsi, trend: momentumTrend },
         longPower,
         shortPower,
         overallStrength,
-        trendAnalysis: { strength: trendStrengthScore, momentum: trendMomentum },
-        volatility: { percent: atrValue, label: volLabel },
-        volumeStatus: { status: volStatus, changePercent: volumeChangePercent },
+        trendAnalysis: { strength: trendStrength, direction: trendDirection, momentum: trendMomentum },
+        volatility: { atrPercent, rank: volatilityRank, label: volLabel },
+        volumeStatus: { status: volStatus, changePercent: volChangePct },
         volumeValue: latestVolume,
-        rsiStatus,
-        divergence,
-        stochRsi: { k: stochRsiK, d: stochRsiD, signal: stochSignal }
+        rsiStatus: { status: rsiStatus, divergence: rsiDivergence },
+        stochRsi: { k: stochRsi.k, d: stochRsi.d, status: stochStatus, crossover: stochCrossover }
     };
 };
 
@@ -759,7 +797,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
 
     const superTrendAnalysis = generateSuperTrendAnalysis(price, atr, isBullish, trendStrength, momentum, analysisSeed);
     
-    const advancedStrengthDashboard = generateAdvancedStrengthData(price, klines, isBullish, rsiValue, adxValue, { ema20, ema50 });
+    const advancedStrengthDashboard = generateAdvancedStrengthData(klines);
 
     const confluenceFactors = [
         `MA Trend: ${isBullish ? 'Bullish' : 'Bearish'} (Price vs 50/200 EMA)`,
