@@ -18,6 +18,7 @@ import KeyLevels from './KeyLevels';
 import SupermodeDashboard from './SupermodeDashboard';
 import IndicatorChecklist from './IndicatorChecklist';
 import SmartMoneyConcepts from './SmartMoneyConcepts';
+import QuantumSuperTrendMatrix from './QuantumSuperTrendMatrix';
 
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
@@ -264,6 +265,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       
       {renderModeSpecificContent()}
       
+      {data.superTrendAnalysis && <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />}
+
       <div>
         <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
         <SmartMoneyConcepts data={data} livePrice={realtimePrice}/>
