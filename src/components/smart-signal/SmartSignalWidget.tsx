@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSignalData } from '@/lib/technical-analysis';
-import type { SignalData, BookTicker } from '@/types';
+import type { SignalData, BookTicker, LiquidityMatrixData } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
-import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Wallet } from 'lucide-react';
+import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Wallet, Droplets } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Timeframe, LiveTradeData } from '@/types';
 import jsPDF from 'jspdf';
@@ -19,10 +19,10 @@ import TradingViewWidget from './TradingViewWidget';
 import VolumeAnalysisTable from './VolumeAnalysisTable';
 import { Skeleton } from '../ui/skeleton';
 import ChartAnalysisModal from './ChartAnalysisModal';
-import TradingSimulator from './TradingSimulator';
 import TrendRibbon from './TrendRibbon';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
+import SubspaceLiquidityMatrix from '../tools/SubspaceLiquidityMatrix';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -30,6 +30,7 @@ interface SmartSignalWidgetProps {
   onSignalDataChange: (data: SignalData | null) => void;
   onLoadingChange: (loading: boolean) => void;
   signalData: SignalData | null;
+  onLivePriceChange: (price: number | null) => void;
 }
 
 // Define the list of symbols that are supported by the WebSocket connection.
@@ -43,6 +44,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     onSignalDataChange,
     onLoadingChange,
     signalData,
+    onLivePriceChange
  }) => {
   const [symbol, setSymbol] = useState(initialSymbol);
   const [mode, setMode] = useState('3');
@@ -57,7 +59,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showChart, setShowChart] = useState(true);
-  const [showSimulator, setShowSimulator] = useState(true);
+  const [showLiquidityMatrix, setShowLiquidityMatrix] = useState(true);
 
   const { toast } = useToast();
 
@@ -95,6 +97,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 
   const updatePrice = useCallback((newPrice: number) => {
     setRealtimePrice(newPrice);
+    onLivePriceChange(newPrice);
     let direction: 'up' | 'down' | 'neutral' = 'neutral';
     if (previousPriceRef.current !== null) {
       if (newPrice > previousPriceRef.current) {
@@ -106,11 +109,12 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     setPriceDirection(direction);
     previousPriceRef.current = newPrice;
     re_calculateSignal(newPrice);
-  }, [re_calculateSignal]);
+  }, [re_calculateSignal, onLivePriceChange]);
 
   const handleGenerateSignal = useCallback(async (currentSymbol: string) => {
     onSignalDataChange(null);
     setRealtimePrice(null);
+    onLivePriceChange(null);
     setLiveTradeData(null);
     setBookTicker(null);
     setPriceDirection('neutral');
@@ -152,9 +156,8 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
           const messageData = message.data;
           
           if (stream.endsWith('@trade')) {
-              // This comparison is critical. messageData.s is 'BTCUSDT'
               if ((currentSymbolRef.current.toLowerCase() + 'usdt') !== messageData.s.toLowerCase()) {
-                  return; // Mismatch, do not update. This is the fix.
+                  return; 
               }
               const newPrice = parseFloat(messageData.p);
               updatePrice(newPrice);
@@ -406,11 +409,11 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
                         Chart
                     </Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                    <Switch id="show-simulator" checked={showSimulator} onCheckedChange={setShowSimulator} />
-                    <Label htmlFor="show-simulator" className="flex items-center gap-1 font-bold text-primary/80">
-                        <Wallet size={16} />
-                        Simulator
+                 <div className="flex items-center space-x-2">
+                    <Switch id="show-liquidity-matrix" checked={showLiquidityMatrix} onCheckedChange={setShowLiquidityMatrix} />
+                    <Label htmlFor="show-liquidity-matrix" className="flex items-center gap-1 font-bold text-primary/80">
+                        <Droplets size={16} />
+                        Liquidity
                     </Label>
                 </div>
             </div>
@@ -490,7 +493,13 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
                 </Button>
             </div>
             
-            {showSimulator && signalData && <TradingSimulator signalData={signalData} livePrice={realtimePrice} />}
+             {showLiquidityMatrix && signalData && (
+                 <SubspaceLiquidityMatrix
+                    key={`liq-${signalData.symbol}`}
+                    initialSymbol={signalData.symbol}
+                    setSelectedSymbol={setSelectedSymbol}
+                />
+            )}
             {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} bookTicker={bookTicker} />}
           </div>
         )}

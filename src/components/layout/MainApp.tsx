@@ -10,15 +10,17 @@ import Chatbot from '@/components/chatbot/Chatbot';
 import ProfileBar from './ProfileBar';
 import LiveNewsWidget from '../news/LiveNewsWidget';
 import { Button } from '../ui/button';
-import { AreaChart, BrainCircuit, Gauge, Droplets, Sparkles } from 'lucide-react';
+import { AreaChart, BrainCircuit, Gauge, Droplets, Sparkles, Wallet } from 'lucide-react';
 import LiveClock from './LiveClock';
 import MarketSessions from '../info/MarketSessions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdvancedStrengthDashboard from '../tools/AdvancedStrengthDashboard';
 import SubspaceLiquidityMatrix from '../tools/SubspaceLiquidityMatrix';
-import type { SignalData, GenerateAiInsightOutput } from '@/types';
+import type { SignalData } from '@/types';
 import EliteAiInsight from '../smart-signal/EliteAiInsight';
-import type { GenerateAiInsightInput } from '@/types';
+import OracleInsight from '../smart-signal/OracleInsight';
+import type { GenerateAiInsightInput, OracleInsightInput } from '@/types';
+import TradingSimulator from '../smart-signal/TradingSimulator';
 
 interface MainAppProps {
   initialSymbol?: string;
@@ -30,6 +32,8 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
   const [selectedSymbol, setSelectedSymbol] = useState(initialSymbol);
   const [signalData, setSignalData] = useState<SignalData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [livePrice, setLivePrice] = useState<number | null>(null);
+
 
   useEffect(() => {
     // If the initialSymbol from props changes, update the state
@@ -65,6 +69,14 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
     volatilityRegime: "Medium", 
   } : null;
 
+  const oracleInsightData: OracleInsightInput | null = !isLoading && signalData ? {
+    symbol: signalData.symbol,
+    price: signalData.price,
+    isBullish: signalData.isBullish,
+    volatility: signalData.trendStrength.score,
+  } : null;
+
+
   return (
     <div className="p-4 pb-16">
       <ProfileBar />
@@ -75,7 +87,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="quantum-engine" className="font-headline"><BrainCircuit size={16} className="mr-2"/><span className="hidden sm:inline">Quantum Engine</span><span className="sm:hidden">Quantum</span></TabsTrigger>
               <TabsTrigger value="strength-dashboard" className="font-headline"><Gauge size={16} className="mr-2"/><span className="hidden sm:inline">Strength Dashboard</span><span className="sm:hidden">Strength</span></TabsTrigger>
-              <TabsTrigger value="liquidity-matrix" className="font-headline"><Droplets size={16} className="mr-2"/><span className="hidden sm:inline">Liquidity Matrix</span><span className="sm:hidden">Liquidity</span></TabsTrigger>
+              <TabsTrigger value="trading-simulator" className="font-headline"><Wallet size={16} className="mr-2"/><span className="hidden sm:inline">Trading Simulator</span><span className="sm:hidden">Simulator</span></TabsTrigger>
               <TabsTrigger value="elite-ai" className="font-headline"><Sparkles size={16} className="mr-2"/><span className="hidden sm:inline">Elite AI</span><span className="sm:hidden">AI</span></TabsTrigger>
             </TabsList>
             <Button variant="ghost" size="sm" onClick={() => router.push('/scanner')} className="flex-shrink-0 w-full sm:w-auto">
@@ -93,6 +105,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
               onSignalDataChange={setSignalData}
               onLoadingChange={setIsLoading}
               signalData={signalData}
+              onLivePriceChange={setLivePrice}
             />
           </TabsContent>
           
@@ -103,15 +116,26 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
                setSelectedSymbol={setSelectedSymbol}
             />
           </TabsContent>
-
-           <TabsContent value="liquidity-matrix">
-            <SubspaceLiquidityMatrix
-               key={`liq-${selectedSymbol}`}
-               initialSymbol={selectedSymbol}
-               setSelectedSymbol={setSelectedSymbol}
-            />
+          
+          <TabsContent value="trading-simulator">
+            {signalData && (
+                <TradingSimulator
+                    signalData={signalData}
+                    livePrice={livePrice}
+                />
+            )}
+            {!signalData && !isLoading && (
+                 <div className="text-center p-8 bg-black/30 rounded-lg border border-primary/20">
+                    <p className="font-headline text-primary">Please generate a signal in the Quantum Engine first to use the simulator.</p>
+                </div>
+            )}
+             {isLoading && (
+                 <div className="text-center p-8 bg-black/30 rounded-lg border border-primary/20">
+                    <p className="font-headline text-primary animate-pulse">Loading Simulator...</p>
+                </div>
+            )}
           </TabsContent>
-            
+
           <TabsContent value="elite-ai">
             <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4 max-w-4xl mx-auto">
                 {isLoading && <p className="text-center">Generating signal before AI analysis can be engaged...</p>}

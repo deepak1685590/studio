@@ -2,7 +2,7 @@
 
 export type { GenerateAiInsightInput, GenerateAiInsightOutput } from "@/ai/flows/generate-ai-insight";
 export type { OracleInsightInput } from "@/ai/flows/oracle-insight";
-
+export type { LiquidityMatrixData } from '@/types/liquidity';
 
 export interface User {
   username: string;
@@ -275,7 +275,7 @@ export interface SupermodeAnalysis {
     }
 }
 
-export type IndicatorSignal = 'Strong Buy' | 'Buy' | 'Sell' | 'Neutral' | 'Overbought' | 'Oversold';
+export type IndicatorSignal = 'Strong Buy' | 'Buy' | 'Sell' | 'Neutral' | 'Overbought' | 'Oversold' | 'Strong Sell';
 export interface IndicatorData {
     name: string;
     value: string;
