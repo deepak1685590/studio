@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
-import type { SignalData, HistoricalLevels, GenerateAiInsightOutput } from '@/types';
+import type { SignalData, HistoricalLevels } from '@/types';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
 import { Download, CheckCircle2, BarChart, BookOpen, Scaling, Magnet, Building, Timer, Target, Zap, Shield, LogIn, TrendingUp, TrendingDown, Layers } from 'lucide-react';
@@ -20,7 +20,6 @@ import IndicatorChecklist from './IndicatorChecklist';
 import LiquidityTargetAlert from './LiquidityTargetAlert';
 import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 import SmartMoneyConcepts from './SmartMoneyConcepts';
-import QuantumSummary from './QuantumSummary';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -69,7 +68,6 @@ interface SignalCardProps {
     realtimePrice: number | null;
     priceDirection: 'up' | 'down' | 'neutral';
     mode: string;
-    aiInsight: GenerateAiInsightOutput | null;
 }
 
 const EntryProximityAlert: React.FC<{ livePrice: number; entryPrice: number; isBullish: boolean; }> = ({ livePrice, entryPrice, isBullish }) => {
@@ -130,7 +128,7 @@ const LevelRow: React.FC<{
   );
 };
 
-const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode, aiInsight }) => {
+const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownloadPdf, realtimePrice, priceDirection, mode }) => {
   
   const displayPrice = realtimePrice !== null ? realtimePrice : data.price;
   const isCrypto = !data.symbol.includes('/');
@@ -182,7 +180,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     return null;
   }
   
-  const showAiSummary = (mode === '3' || mode === '4' || mode === '5');
 
   return (
     <div id="signal-card-content" className={cn(
@@ -219,8 +216,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </header>
       
-      {showAiSummary && <div className="pt-4"><QuantumSummary insight={aiInsight} /></div>}
-
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
       
       {isNearEntry && !hitTargets.entry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
@@ -315,3 +310,5 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+
+    

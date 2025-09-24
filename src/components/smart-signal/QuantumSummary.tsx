@@ -1,71 +1,164 @@
+'use server';
 
-"use client";
+/**
+ * @fileOverview AI-powered insight generator for SmartSignal Pro analysis.
+ *
+ * - generateAiInsight - A function that generates AI insights for trading opportunities.
+ * - GenerateAiInsightInput - The input type for the generateAiInsight function.
+ * - GenerateAiInsightOutput - The return type for the generateAiInsight function.
+ */
 
-import React from 'react';
-import type { GenerateAiInsightOutput } from '@/types';
-import { BrainCircuit, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/googleai';
+import {getMarketNews as fetchMarketNews} from '@/services/market-news-service';
+import {z} from 'genkit';
 
-interface QuantumSummaryProps {
-  insight: GenerateAiInsightOutput | null;
+const GenerateAiInsightInputSchema = z.object({
+  symbol: z.string().describe('The symbol of the asset (e.g., BTC, ETH).'),
+  price: z.number().describe('The current price of the asset.'),
+  isBullish: z.boolean().describe('Whether the trend is bullish or bearish.'),
+  chartPatternName: z.string().describe('The name of the detected chart pattern.'),
+  trendStrength: z.number().describe('A score from 0-100 indicating the strength of the current trend.'),
+  momentum: z.number().describe('A score from 0-100 indicating the market momentum (e.g., from RSI).'),
+  entry: z.string().describe('The entry price for the trade.'),
+  sl: z.string().describe('The stop-loss price for the trade.'),
+  tp1: z.string().describe('The take-profit 1 price for the trade.'),
+});
+export type GenerateAiInsightInput = z.infer<typeof GenerateAiInsightInputSchema>;
+
+const GenerateAiInsightOutputSchema = z.object({
+  executiveSummary: z.object({
+    primaryBias: z.string().describe("The primary market bias (e.g., 'Bullish Continuation', 'Bearish Reversal')."),
+    setupStrength: z.string().describe("The perceived strength of this trading setup (e.g., 'High-Conviction', 'Moderate')."),
+    opportunityGrade: z.enum(['Institutional', 'Professional', 'Retail']).describe("A letter grade for the quality of the opportunity."),
+    timeHorizon: z.string().describe("The recommended time horizon for this trade (e.g., 'Scalp', 'Intraday', 'Swing')."),
+  }),
+  tradeSetup: z.object({
+    entryPrice: z.string().describe("The AI's optimized primary entry price."),
+    stopLoss: z.string().describe("The AI's recommended stop-loss level."),
+    takeProfit1: z.string().describe("The AI's primary take-profit target."),
+    takeProfit2: z.string().describe("The AI's secondary take-profit target."),
+    tradeRationale: z.string().describe("A brief rationale for the chosen entry and target levels."),
+  }).describe("The AI-generated trade plan with precise levels."),
+  predictiveAnalysis: z.object({
+    primaryScenario: z.string().describe("A detailed description of the most likely price action scenario over the specified timeframe."),
+    successProbability: z.string().describe("The AI's confidence in the primary scenario, as a percentage (e.g., '75%')."),
+    alternativeScenario: z.string().describe("A brief description of a plausible alternative scenario if the primary prediction is invalidated."),
+  }),
+});
+export type GenerateAiInsightOutput = z.infer<typeof GenerateAiInsightOutputSchema>;
+
+export async function generateAiInsight(input: GenerateAiInsightInput): Promise<GenerateAiInsightOutput> {
+  return await generateAiInsightFlow(input);
 }
 
-const QuantumSummary: React.FC<QuantumSummaryProps> = ({ insight }) => {
-  if (!insight) {
-    return (
-      <div className="p-4 flex items-center justify-center gap-2 text-primary/70 bg-black/30 rounded-lg">
-        <Loader2 className="animate-spin" />
-        <span className="font-headline">Awaiting Quantum AI Summary...</span>
-      </div>
-    );
+const getMarketNews = ai.defineTool(
+  {
+    name: 'getMarketNews',
+    description: 'Fetches the latest market news headlines for a given asset symbol.',
+    inputSchema: z.object({
+      symbol: z.string().describe('The asset symbol to fetch news for (e.g., BTC, ETH).'),
+    }),
+    outputSchema: z.array(z.string()).describe('A list of recent news headlines.'),
+  },
+  async input => {
+    return fetchMarketNews(input.symbol);
   }
+);
 
-  const { executiveSummary } = insight;
+const generateAiInsightFlow = ai.defineFlow(
+  {
+    name: 'generateAiInsightFlow',
+    inputSchema: GenerateAiInsightInputSchema,
+    outputSchema: GenerateAiInsightOutputSchema,
+  },
+  async (input) => {
+    const errorPayload: GenerateAiInsightOutput = {
+        executiveSummary: { primaryBias: "Error", setupStrength: "N/A", opportunityGrade: "Retail", timeHorizon: "The AI model encountered an unrecoverable error." },
+        tradeSetup: { entryPrice: "N/A", stopLoss: "N/A", takeProfit1: "N/A", takeProfit2: "N/A", tradeRationale: "N/A" },
+        predictiveAnalysis: { primaryScenario: "N/A", successProbability: "N/A", alternativeScenario: "N/A" },
+    };
 
-  if (executiveSummary.primaryBias === "Error") {
-    return (
-      <div className="text-center text-destructive-foreground bg-destructive/30 p-3 rounded-lg border border-destructive">
-        <strong className="font-headline">AI Summary Failed:</strong>
-        <p className="text-sm mt-1">{executiveSummary.timeHorizon}</p>
-      </div>
-    );
+    try {
+      const { output } = await ai.generate({
+        model: googleAI.model('gemini-1.5-pro-latest'),
+        tools: [getMarketNews],
+        output: {
+          format: 'json',
+          schema: GenerateAiInsightOutputSchema,
+        },
+        prompt: `You are ELITE-AI, a world-class institutional trading strategist.
+        Your task is to generate a powerful trading analysis report for {{{symbol}}}.
+        
+        First, use the getMarketNews tool to fetch the latest headlines for {{{symbol}}}.
+        Then, synthesize ALL the provided data into the structured JSON format.
+        
+        Derive your own optimized trade setup based on the provided data.
+        Fill out EVERY field in the JSON schema with insightful, actionable analysis. Be professional and direct.
+
+        ## Analysis Parameters
+        - Asset: {{{symbol}}}
+        - Current Price: {{{price}}}
+        - Primary Trend: {{{isBullish}}} (true=Bullish)
+        - Key Pattern: {{{chartPatternName}}}
+        - Trend Strength: {{{trendStrength}}}/100
+        - Momentum Score: {{{momentum}}}/100
+        - Provided Entry: {{{entry}}}
+        - Provided SL: {{{sl}}}
+        - Provided TP1: {{{tp1}}}
+        `,
+        input: input,
+      });
+
+      if (!output) {
+        throw new Error('Primary AI model failed to produce a valid output.');
+      }
+      return output;
+
+    } catch (error) {
+       console.error("Primary AI Generation Error, attempting fallback:", error);
+       
+       try {
+         const { output: fallbackOutput } = await ai.generate({
+           model: googleAI.model('gemini-1.5-flash-latest'),
+           output: {
+             format: 'json',
+             schema: z.object({ summary: z.string() }),
+           },
+           prompt: `You are a high-speed market analysis AI. The primary analysis model is unavailable.
+           Provide a concise, single-paragraph executive summary based on the following data for {{{symbol}}}.
+           - Trend: {{{isBullish}}} (True=Bullish)
+           - Key Pattern: {{{chartPatternName}}}
+           - Entry: {{{entry}}}, SL: {{{sl}}}, TP1: {{{tp1}}}
+           - Confidence Factors: Trend Strength ({{{trendStrength}}}/100), Momentum ({{{momentum}}}/100)
+           Synthesize this into a professional, high-level summary.`,
+           input: input,
+         });
+
+         if (!fallbackOutput) {
+            throw new Error('Fallback AI model also failed.');
+         }
+         
+         const fallbackPayload = { ...errorPayload };
+         fallbackPayload.executiveSummary = {
+             primaryBias: "Summary (Fallback Model)",
+             setupStrength: "N/A",
+             opportunityGrade: "Retail",
+             timeHorizon: fallbackOutput.summary
+         };
+         return fallbackPayload;
+
+       } catch (fallbackError) {
+         console.error("Fallback AI Generation Error:", fallbackError);
+         
+         const errorMessage = fallbackError instanceof Error ? fallbackError.message : "An unknown internal error occurred.";
+         if (errorMessage.includes("429") || errorMessage.includes("QuotaFailure") || errorMessage.includes("quota")) {
+            errorPayload.executiveSummary.timeHorizon = "The daily API quota has been exceeded. This feature will be available again tomorrow. Please check your billing details for more information.";
+         } else {
+            errorPayload.executiveSummary.timeHorizon = `Primary model failed and fallback also failed: ${errorMessage}`;
+         }
+         return errorPayload;
+       }
+    }
   }
-  
-  if (executiveSummary.primaryBias === "Summary (Fallback Model)") {
-    return (
-         <div className="p-3 bg-gradient-to-r from-accent/10 to-primary/10 rounded-lg border border-accent/50 shadow-[0_0_10px_hsl(var(--accent)_/_0.4)]">
-          <h4 className="font-headline text-md text-accent flex items-center gap-2 mb-1">
-              Executive Summary (Fallback)
-          </h4>
-          <p className="text-xs text-foreground/80">{executiveSummary.timeHorizon}</p>
-        </div>
-    )
-  }
-
-  const gradeColor = {
-    'Institutional': 'text-cyan-400 border-cyan-400',
-    'Professional': 'text-primary border-primary',
-    'Retail': 'text-yellow-400 border-yellow-400',
-  }[executiveSummary.opportunityGrade];
-
-  return (
-    <Card className="bg-gradient-to-br from-primary/10 via-black/10 to-accent/10 border-primary/30">
-        <CardHeader className="p-3">
-            <CardTitle className="font-headline text-primary/90 text-md flex items-center justify-between">
-                <div className="flex items-center gap-2"><BrainCircuit size={16} /> Quantum AI Summary</div>
-                <div className={cn("text-xs font-bold border rounded-full px-2 py-0.5", gradeColor)}>
-                    {executiveSummary.opportunityGrade} Grade
-                </div>
-            </CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs p-3 pt-0">
-            <div><strong className="text-primary/70">Primary Bias:</strong> {executiveSummary.primaryBias}</div>
-            <div><strong className="text-primary/70">Setup Strength:</strong> {executiveSummary.setupStrength}</div>
-            <div className="col-span-2"><strong className="text-primary/70">Time Horizon:</strong> {executiveSummary.timeHorizon}</div>
-        </CardContent>
-    </Card>
-  );
-};
-
-export default QuantumSummary;
+);

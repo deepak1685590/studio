@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSignalData } from '@/lib/technical-analysis';
-import type { SignalData, BookTicker, GenerateAiInsightOutput, GenerateAiInsightInput } from '@/types';
+import type { SignalData, BookTicker } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
 import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Wallet } from 'lucide-react';
@@ -23,7 +23,6 @@ import TradingSimulator from './TradingSimulator';
 import TrendRibbon from './TrendRibbon';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
-import { generateAiInsight } from '@/ai/flows/generate-ai-insight';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -57,7 +56,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showChart, setShowChart] = useState(true);
   const [showSimulator, setShowSimulator] = useState(true);
-  const [aiInsight, setAiInsight] = useState<GenerateAiInsightOutput | null>(null);
 
   const { toast } = useToast();
 
@@ -79,7 +77,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     setRealtimePrice(null);
     setLiveTradeData(null);
     setBookTicker(null);
-    setAiInsight(null);
     setPriceDirection('neutral');
     previousPriceRef.current = null;
     
@@ -174,24 +171,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
         setRealtimePrice(data.price);
         previousPriceRef.current = data.price;
       }
-      
-      // If mode is AI-powered, fetch the insight
-      if ((mode === '3' || mode === '4' || mode === '5') && !data.sidewaysMarket) {
-        const insightInput: GenerateAiInsightInput = {
-            symbol: data.symbol,
-            price: data.price,
-            isBullish: data.isBullish,
-            chartPatternName: data.chartPattern.name,
-            trendStrength: data.trendStrength.score,
-            momentum: data.momentum.score,
-            entry: data.entry,
-            sl: data.sl,
-            tp1: data.tp1,
-        };
-        const insightResult = await generateAiInsight(insightInput);
-        setAiInsight(insightResult);
-      }
-
     } catch (error) {
       console.error("Error generating signal:", error);
       const mockData = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, true);
@@ -460,7 +439,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
              </div>
           )}
           
-          {signalData && <SignalCard data={signalData} onDownloadPng={handleDownloadPng} onDownloadPdf={handleDownloadPdf} realtimePrice={realtimePrice} priceDirection={priceDirection} mode={mode} aiInsight={aiInsight} />}
+          {signalData && <SignalCard data={signalData} onDownloadPng={handleDownloadPng} onDownloadPdf={handleDownloadPdf} realtimePrice={realtimePrice} priceDirection={priceDirection} mode={mode} />}
         </div>
       </div>
       {isModalOpen && chartImage && signalData && (
@@ -476,3 +455,5 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 };
 
 export default SmartSignalWidget;
+
+    

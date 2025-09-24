@@ -18,12 +18,27 @@ const GenerateAiInsightInputSchema = z.object({
   symbol: z.string().describe('The symbol of the asset (e.g., BTC, ETH).'),
   price: z.number().describe('The current price of the asset.'),
   isBullish: z.boolean().describe('Whether the trend is bullish or bearish.'),
+  action: z.string().describe('The recommended action (e.g., Buy on Pullback, Sell on Rally).'),
+  entry: z.number().describe('The entry price for the trade.'),
+  sl: z.number().describe('The stop-loss price for the trade.'),
+  tp1: z.number().describe('The take-profit 1 price for the trade.'),
+  tp2: z.number().describe('The take-profit 2 price for the trade.'),
+  confluenceCount: z.number().describe('The number of confluence factors supporting the trade.'),
+  demandZone: z.string().describe('The demand zone for the asset.'),
+  fvg: z.string().describe('The fair value gap for the asset.'),
+  volumeImbalance: z.string().describe('The volume imbalance in the market.'),
+  multiTimeframeAnalysis: z.object({
+    '5m': z.string(),
+    '15m': z.string(),
+    '1H': z.string(),
+    '4H': z.string(),
+    'Daily': z.string(),
+  }).describe('The multi-timeframe analysis showing the trend on different timeframes.'),
   chartPatternName: z.string().describe('The name of the detected chart pattern.'),
   trendStrength: z.number().describe('A score from 0-100 indicating the strength of the current trend.'),
   momentum: z.number().describe('A score from 0-100 indicating the market momentum (e.g., from RSI).'),
-  entry: z.string().describe('The entry price for the trade.'),
-  sl: z.string().describe('The stop-loss price for the trade.'),
-  tp1: z.string().describe('The take-profit 1 price for the trade.'),
+  marketSession: z.string().describe('The current market session (e.g., London, New York).'),
+  volatilityRegime: z.enum(['High', 'Medium', 'Low']).describe('The current market volatility regime.'),
 });
 export type GenerateAiInsightInput = z.infer<typeof GenerateAiInsightInputSchema>;
 
@@ -36,6 +51,7 @@ const GenerateAiInsightOutputSchema = z.object({
   }),
   tradeSetup: z.object({
     entryPrice: z.string().describe("The AI's optimized primary entry price."),
+    secondaryEntryPrice: z.string().optional().describe("An optional secondary entry price based on multi-layer confirmation, if a suitable one exists."),
     stopLoss: z.string().describe("The AI's recommended stop-loss level."),
     takeProfit1: z.string().describe("The AI's primary take-profit target."),
     takeProfit2: z.string().describe("The AI's secondary take-profit target."),
@@ -43,8 +59,8 @@ const GenerateAiInsightOutputSchema = z.object({
   }).describe("The AI-generated trade plan with precise levels."),
   predictiveAnalysis: z.object({
     primaryScenario: z.string().describe("A detailed description of the most likely price action scenario over the specified timeframe."),
-    successProbability: z.string().describe("The AI's confidence in the primary scenario, as a percentage (e.g., '75%')."),
-    alternativeScenario: z.string().describe("A brief description of a plausible alternative scenario if the primary prediction is invalidated."),
+    successProbability: z.string().describe("The AI's confidence in the primary scenario, as a percentage."),
+    alternativeScenario: z.string().describe("A brief description of a plausible alternative scenario if the primary prediction is invalidated.")
   }),
 });
 export type GenerateAiInsightOutput = z.infer<typeof GenerateAiInsightOutputSchema>;
@@ -163,3 +179,5 @@ const generateAiInsightFlow = ai.defineFlow(
     }
   }
 );
+
+    
