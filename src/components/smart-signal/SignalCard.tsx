@@ -3,10 +3,10 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
-import type { SignalData, GenerateAiInsightOutput } from '@/types';
+import type { SignalData, GenerateAiInsightOutput, HistoricalLevels } from '@/types';
 import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, BarChart, BookOpen, Scaling, Magnet, Building, Timer, Target, Zap, Shield, LogIn } from 'lucide-react';
+import { Download, CheckCircle2, BarChart, BookOpen, Scaling, Magnet, Building, Timer, Target, Zap, Shield, LogIn, TrendingUp, TrendingDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -18,10 +18,51 @@ import KeyLevels from './KeyLevels';
 import QuantumEntryMatrix from './QuantumEntryMatrix';
 import QuantumOrderBlockMatrix from './QuantumOrderBlockMatrix';
 import SmartMoneyConcepts from './SmartMoneyConcepts';
+import PredictiveAnalysis from './PredictiveAnalysis';
+import QuantumSummary from './QuantumSummary';
+import SupermodeDashboard from './SupermodeDashboard';
+import IndicatorChecklist from './IndicatorChecklist';
+import LiquidityTargetAlert from './LiquidityTargetAlert';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
 );
+
+const MarketStructureLevels: React.FC<{ levels: HistoricalLevels; livePrice: number; isCrypto: boolean }> = ({ levels, livePrice, isCrypto }) => {
+    const format = (price: number) => price.toFixed(isCrypto ? 2 : 5);
+    
+    const levelData = [
+        { label: 'PWH', value: levels.pwh, isHigh: true },
+        { label: 'PDH', value: levels.pdh, isHigh: true },
+        { label: 'TDH', value: levels.tdh, isHigh: true },
+        { label: 'TDL', value: levels.tdl, isHigh: false },
+        { label: 'PDL', value: levels.pdl, isHigh: false },
+        { label: 'PWL', value: levels.pwl, isHigh: false },
+    ];
+
+    return (
+        <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
+            <SectionHeader icon={<Building />} title="Market Structure" />
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-center">
+                {levelData.map(({ label, value, isHigh }) => {
+                    const isBroken = isHigh ? livePrice > value : livePrice < value;
+                    return (
+                        <div key={label} className={cn(
+                            "p-2 rounded-md border transition-all duration-300",
+                            isBroken && isHigh && "bg-green-500/20 border-green-400/50 shadow-[0_0_10px_theme(colors.green.400)]",
+                            isBroken && !isHigh && "bg-red-500/20 border-red-400/50 shadow-[0_0_10px_theme(colors.red.400)]",
+                            !isBroken && "bg-black/20 border-primary/20"
+                        )}>
+                            <div className="font-headline text-sm text-primary/80">{label}</div>
+                            <div className={cn("font-mono font-bold", isBroken ? "text-white" : "text-foreground/70")}>{format(value)}</div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 
 interface SignalCardProps {
     data: SignalData;
@@ -136,6 +177,19 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
   const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; 
   const trendColor = data.isBullish ? 'text-green-400' : 'text-red-400';
 
+  const renderModeSpecificContent = () => {
+    if (mode === '5' && data.supermodeAnalysis) {
+      return <SupermodeDashboard analysis={data.supermodeAnalysis} />;
+    }
+    if (mode === '4' && data.indicatorChecklist) {
+      return <IndicatorChecklist data={data.indicatorChecklist} />;
+    }
+    if (aiInsight?.predictiveAnalysis) {
+      return <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} />;
+    }
+    return null;
+  }
+
   return (
     <div id="signal-card-content" className={cn(
         "mt-5 p-5 bg-black/70 border-2 rounded-xl text-sm leading-relaxed shadow-lg space-y-4",
@@ -148,7 +202,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <div className="flex justify-between items-center">
           <div className='flex items-center gap-3'>
             <div className={cn("flex items-center justify-center w-12 h-12 rounded-full", data.isBullish ? 'bg-green-500/20' : 'bg-red-500/20')}>
-              {data.isBullish ? <Scaling className="w-8 h-8 text-green-400" /> : <Scaling className="w-8 h-8 text-red-400" />}
+              {data.isBullish ? <TrendingUp className="w-8 h-8 text-green-400" /> : <TrendingDown className="w-8 h-8 text-red-400" />}
             </div>
             <div>
               <h3 className="font-headline text-2xl text-foreground">{data.symbol}</h3>
@@ -167,6 +221,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
           </div>
         </div>
       </header>
+      
+      <QuantumSummary insight={aiInsight} />
 
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
       
@@ -225,10 +281,16 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </div>
       
+      {data.historicalLevels && <MarketStructureLevels levels={data.historicalLevels} livePrice={displayPrice} isCrypto={isCrypto} />}
+      
       <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
-        <SectionHeader icon={<Building />} title="Smart Money Concepts" />
+        <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
         <SmartMoneyConcepts data={data} />
       </div>
+
+      {renderModeSpecificContent()}
+      
+      {data.liquidityMatrix?.prediction && <LiquidityTargetAlert prediction={data.liquidityMatrix.prediction} />}
 
       <div>
         <SectionHeader icon={<BarChart />} title="Multi-Timeframe Analysis" />
