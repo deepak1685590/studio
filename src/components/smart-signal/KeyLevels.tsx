@@ -28,7 +28,7 @@ const LevelGroup: React.FC<{ title: string; children: React.ReactNode; className
 );
 
 
-const KeyLevels: React.FC<{ data: SignalData }> = ({ data }) => {
+const KeyLevels: React.FC<{ data: SignalData, livePrice: number | null }> = ({ data, livePrice }) => {
   const { swingHigh, swingLow, poc, pivot, s1, r1, vah, val, isBullish, supplyZone, demandZone } = data;
   const isCrypto = !data.symbol.includes('/');
 

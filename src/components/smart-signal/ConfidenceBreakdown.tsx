@@ -60,6 +60,8 @@ const DivergenceAlert: React.FC<{ type: 'BULLISH' | 'BEARISH' }> = ({ type }) =>
 
 const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ data, livePrice }) => {
   const { advancedStrengthDashboard: adv } = data;
+  const displayPrice = livePrice || parseFloat(adv.price);
+  const priceChangePercent = livePrice ? ((livePrice - parseFloat(adv.price)) / parseFloat(adv.price)) * 100 : adv.priceChangePercent;
 
   if (!adv) {
     return (
@@ -72,14 +74,15 @@ const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ data, livePri
     )
   }
   
-  const priceColor = adv.priceChangePercent >= 0 ? 'text-green-400' : 'text-red-400';
-  const trendIcon = adv.priceChangePercent >= 0 ? <TrendingUp className="inline-block" /> : <TrendingDown className="inline-block" />;
+  const priceColor = priceChangePercent >= 0 ? 'text-green-400' : 'text-red-400';
+  const trendIcon = priceChangePercent >= 0 ? <TrendingUp className="inline-block" /> : <TrendingDown className="inline-block" />;
   const sentimentColor = adv.marketSentiment.score > 0 ? 'text-green-400' : adv.marketSentiment.score < 0 ? 'text-red-400' : 'text-yellow-400';
   const rsiColor = adv.rsiStatus.status === 'OVERBOUGHT' ? 'text-red-400' : adv.rsiStatus.status === 'OVERSOLD' ? 'text-green-400' : 'text-primary/80';
   const stochColor = adv.stochRsi.k > adv.stochRsi.d ? 'text-cyan-400' : 'text-orange-400';
   const adxColor = adv.trendAnalysis.momentum === 'ACCELERATING' ? 'text-green-400' : 'text-primary/80';
   const volColor = adv.volatility.label === 'HIGH' || adv.volatility.label === 'EXTREME' ? 'text-orange-400' : 'text-primary/80';
   const volChangeColor = adv.volumeStatus.status === 'SPIKE' ? 'text-amber-400' : 'text-primary/80';
+  const isCrypto = !data.symbol.includes('/');
 
   return (
     <div className="mt-4 p-4 bg-black/30 rounded-lg border border-primary/20">
@@ -92,7 +95,7 @@ const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ data, livePri
         <div className="md:col-span-2 space-y-2">
             <DashboardRow 
                 label="Price" 
-                value={<>{trendIcon} {adv.price} ({adv.priceChangePercent.toFixed(2)}%)</>} 
+                value={<>{trendIcon} {displayPrice.toFixed(isCrypto ? 2 : 4)} ({priceChangePercent.toFixed(2)}%)</>} 
                 icon={<Activity size={16}/>}
                 valueClassName={priceColor}
             />
@@ -103,7 +106,7 @@ const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ data, livePri
                 valueClassName={sentimentColor}
             />
             
-            {adv.rsiStatus.divergence && adv.rsiStatus.divergence.includes('Div') && <DivergenceAlert type={adv.rsiStatus.divergence.includes('Bull') ? 'BULLISH' : 'BEARISH'} />}
+            {adv.rsiStatus.divergence && adv.rsiStatus.divergence !== 'NONE' && <DivergenceAlert type={adv.rsiStatus.divergence} />}
             
              <DashboardRow 
                 label="RSI (14)" 

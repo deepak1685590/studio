@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSignalData } from '@/lib/technical-analysis';
-import type { SignalData, BookTicker, GenerateAiInsightOutput } from '@/types';
+import type { SignalData, BookTicker } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
 import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Wallet } from 'lucide-react';
@@ -23,8 +23,6 @@ import TradingSimulator from './TradingSimulator';
 import TrendRibbon from './TrendRibbon';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
-import { generateAiInsight } from '@/ai/flows/generate-ai-insight';
-import QuantumSummary from './QuantumSummary';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -60,14 +58,13 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showChart, setShowChart] = useState(true);
   const [showSimulator, setShowSimulator] = useState(true);
-  const [aiInsight, setAiInsight] = useState<GenerateAiInsightOutput | null>(null);
-  const [isAiInsightLoading, setIsAiInsightLoading] = useState(false);
 
   const { toast } = useToast();
 
   const ws = useRef<WebSocket | null>(null);
   const previousPriceRef = useRef<number | null>(null);
   const currentSymbolRef = useRef(symbol);
+  const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     currentSymbolRef.current = symbol;
@@ -77,6 +74,23 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     // Sync internal state if the initialSymbol prop changes (e.g., from scanner)
     setSymbol(initialSymbol);
   }, [initialSymbol]);
+  
+  const re_calculateSignal = useCallback(async (newPrice: number) => {
+    if (!signalData) return;
+     // Throttle re-calculations to avoid performance issues
+    if (throttleTimeoutRef.current) return;
+
+    throttleTimeoutRef.current = setTimeout(async () => {
+      try {
+        const updatedData = await getSignalData(signalData.symbol, signalData.mode, signalData.timeframe, false, newPrice);
+        onSignalDataChange(updatedData);
+      } catch (e) {
+        console.warn("Live re-calculation failed:", e);
+      }
+      throttleTimeoutRef.current = null;
+    }, 2000); // Re-calculate every 2 seconds
+
+  }, [signalData, onSignalDataChange]);
 
   const updatePrice = useCallback((newPrice: number) => {
     setRealtimePrice(newPrice);
@@ -90,7 +104,8 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     }
     setPriceDirection(direction);
     previousPriceRef.current = newPrice;
-  }, []);
+    re_calculateSignal(newPrice);
+  }, [re_calculateSignal]);
 
   const handleGenerateSignal = useCallback(async (currentSymbol: string) => {
     onSignalDataChange(null);
@@ -99,7 +114,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     setBookTicker(null);
     setPriceDirection('neutral');
     previousPriceRef.current = null;
-    setAiInsight(null);
     
     if (ws.current) {
       ws.current.close();
@@ -178,43 +192,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
        if (!isSupportedCrypto) {
          updatePrice(data.price);
        }
-       // Automatically trigger AI insight for relevant modes
-       if (['3', '4', '5'].includes(mode) && !data.sidewaysMarket) {
-         setIsAiInsightLoading(true);
-         const insightInput = {
-           symbol: data.symbol,
-           price: data.price,
-           isBullish: data.isBullish,
-           action: data.action,
-           entry: parseFloat(data.entry),
-           sl: parseFloat(data.sl),
-           tp1: parseFloat(data.tp1),
-           tp2: parseFloat(data.tp2),
-           confluenceCount: data.confluenceCount,
-           demandZone: `$${data.demandZone[0]} - ${data.demandZone[1]}`,
-           fvg: `$${data.fvg[0]} - ${data.fvg[1]}`,
-           volumeImbalance: data.volumeImbalance,
-           multiTimeframeAnalysis: {
-             '5m': data.multiTimeframeAnalysis['5m']?.trend || 'Neutral',
-             '15m': data.multiTimeframeAnalysis['15m']?.trend || 'Neutral',
-             '1H': data.multiTimeframeAnalysis['1H']?.trend || 'Neutral',
-             '4H': data.multiTimeframeAnalysis['4H']?.trend || 'Neutral',
-             'Daily': data.multiTimeframeAnalysis['Daily']?.trend || 'Neutral',
-           },
-           chartPatternName: data.chartPattern.name,
-           trendStrength: data.trendStrength.score,
-           momentum: data.momentum.score,
-           marketSession: "New York", 
-           volatilityRegime: "Medium" as "High" | "Medium" | "Low", 
-         };
-         generateAiInsight(insightInput).then(result => {
-           setAiInsight(result);
-           setIsAiInsightLoading(false);
-         }).catch(error => {
-            console.error("AI Insight fetch error:", error);
-            setIsAiInsightLoading(false);
-         });
-       }
     } catch (error) {
       console.error("Error generating signal:", error);
       const mockData = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, true);
@@ -261,6 +238,9 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     return () => {
       if (ws.current) {
         ws.current.close();
+      }
+      if(throttleTimeoutRef.current) {
+        clearTimeout(throttleTimeoutRef.current);
       }
     };
   }, []);
@@ -508,17 +488,14 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
           )}
           
           {signalData && (
-              <>
-                {aiInsight && <QuantumSummary insight={aiInsight} isLoading={isAiInsightLoading} />}
-                <SignalCard 
-                    data={signalData} 
-                    onDownloadPng={handleDownloadPng} 
-                    onDownloadPdf={handleDownloadPdf} 
-                    realtimePrice={realtimePrice} 
-                    priceDirection={priceDirection} 
-                    mode={mode} 
-                />
-              </>
+              <SignalCard 
+                  data={signalData} 
+                  onDownloadPng={handleDownloadPng} 
+                  onDownloadPdf={handleDownloadPdf} 
+                  realtimePrice={realtimePrice} 
+                  priceDirection={priceDirection} 
+                  mode={mode} 
+              />
           )}
         </div>
       </div>

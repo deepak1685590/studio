@@ -37,7 +37,7 @@ interface SmartMoneyConceptsProps {
 
 const SmartMoneyConcepts: React.FC<SmartMoneyConceptsProps> = ({ data, livePrice }) => {
   const { liquidity, smartMoneyConcepts, isBullish, tradersChecklist, goldenPullbackZone, goldenReverseZone, orderBlock } = data;
-  const isCrypto = !data.price.toString().includes('.');
+  const isCrypto = !data.symbol.includes('/');
 
   const checklistItems = [
     { label: `R/R > 1.5 (${data.riskReward.toFixed(1)})`, passed: tradersChecklist.riskRewardPass },
