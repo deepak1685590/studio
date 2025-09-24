@@ -35,7 +35,7 @@ const IndicatorChecklist: React.FC<IndicatorChecklistProps> = ({ data }) => {
     <Card className="bg-black/50 border-2 border-primary/50 shadow-[0_0_25px_rgba(0,230,230,0.3)]">
       <Collapsible defaultOpen={false}>
         <CardHeader className="p-4">
-          <CollapsibleTrigger className="flex justify-between items-center w-full">
+          <CollapsibleTrigger className="flex justify-between items-center w-full group">
             <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
               <Activity /> Advanced Indicator Matrix
             </CardTitle>

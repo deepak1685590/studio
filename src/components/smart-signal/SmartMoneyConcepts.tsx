@@ -45,7 +45,7 @@ const SmartMoneyConcepts: React.FC<SmartMoneyConceptsProps> = ({ data }) => {
   ];
 
   return (
-    <div className="space-y-3">
+    <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
                 <SMC_Item 

@@ -21,6 +21,7 @@ import SupermodeDashboard from './SupermodeDashboard';
 import IndicatorChecklist from './IndicatorChecklist';
 import LiquidityTargetAlert from './LiquidityTargetAlert';
 import QuantumPivotsMatrix from './QuantumPivotsMatrix';
+import SmartMoneyConcepts from './SmartMoneyConcepts';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
   <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
@@ -182,9 +183,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     if (mode === '4' && data.indicatorChecklist) {
       return <IndicatorChecklist data={data.indicatorChecklist} />;
     }
-    if (aiInsight?.predictiveAnalysis) {
-      return <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} />;
-    }
     return null;
   }
 
@@ -220,7 +218,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </header>
       
-      <QuantumSummary insight={aiInsight} />
+      {aiInsight && <QuantumSummary insight={aiInsight} />}
 
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
       
@@ -263,9 +261,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 <Alert className="bg-transparent border-primary/30">
                   <p><strong className={cn("font-bold", trendColor)}>{data.chartPattern.name}:</strong> {data.chartPattern.description}</p>
                 </Alert>
-                 <div className="pt-2">
-                    <p className="text-sm"><strong>Liquidity: </strong>{data.liquidity.description}</p>
-                 </div>
                 <ConfidenceBreakdown 
                   breakdown={data.confidenceBreakdown} 
                   confidence={data.confidence}
@@ -275,11 +270,16 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </div>
       
-      {data.historicalLevels && <MarketStructureLevels levels={data.historicalLevels} livePrice={displayPrice} isCrypto={isCrypto} />}
+      {aiInsight?.predictiveAnalysis && <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} />}
       
       {renderModeSpecificContent()}
       
       {data.liquidityMatrix?.prediction && <LiquidityTargetAlert prediction={data.liquidityMatrix.prediction} />}
+
+      <div>
+        <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
+        <SmartMoneyConcepts data={data} />
+      </div>
 
       <div>
         <SectionHeader icon={<Layers />} title="Quantum Pivots Matrix (Multi-Timeframe)" />
@@ -292,6 +292,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       </div>
 
       <KeyLevels data={data} />
+      
+      {data.historicalLevels && <MarketStructureLevels levels={data.historicalLevels} livePrice={displayPrice} isCrypto={isCrypto} />}
 
       <div className="flex justify-between items-center mt-6">
         <small className="text-foreground/50">Generated: {new Date().toLocaleString()}</small>
