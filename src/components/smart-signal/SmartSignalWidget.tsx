@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSignalData } from '@/lib/technical-analysis';
-import type { SignalData, BookTicker, GenerateAiInsightOutput } from '@/types';
+import type { SignalData, BookTicker, GenerateAiInsightOutput, GenerateAiInsightInput } from '@/types';
 import SignalCard from './SignalCard';
 import html2canvas from 'html2canvas';
 import { Rocket, BrainCircuit, Upload, Eye, EyeOff, Wallet } from 'lucide-react';
@@ -22,6 +22,7 @@ import TradingSimulator from './TradingSimulator';
 import TrendRibbon from './TrendRibbon';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
+import { generateAiInsight } from '@/ai/flows/generate-ai-insight';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -29,18 +30,7 @@ interface SmartSignalWidgetProps {
   onSignalDataChange: (data: SignalData | null) => void;
   onLoadingChange: (loading: boolean) => void;
   signalData: SignalData | null;
-  aiInsight: GenerateAiInsightOutput | null;
-  setAiInsight: (insight: GenerateAiInsightOutput | null) => void;
 }
-
-// A more robust way to check if a symbol is a crypto asset supported by the websocket.
-const isCrypto = (symbol: string): boolean => {
-    const upperSymbol = symbol.toUpperCase();
-    if (upperSymbol.includes('/')) return false; // Forex pairs
-    const nonCryptoIndices = ['NIFTY', 'BANKNIFTY', 'GIFTNIFTY'];
-    if (nonCryptoIndices.includes(upperSymbol)) return false; // Indian Indices
-    return true; // Assume crypto otherwise
-};
 
 // Define the list of symbols that are supported by the WebSocket connection.
 const cryptoAssetsForWebsocket = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC'];
@@ -51,8 +41,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     onSignalDataChange,
     onLoadingChange,
     signalData,
-    aiInsight,
-    setAiInsight,
  }) => {
   const [symbol, setSymbol] = useState(initialSymbol);
   const [mode, setMode] = useState('3');
@@ -68,6 +56,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showChart, setShowChart] = useState(true);
   const [showSimulator, setShowSimulator] = useState(true);
+  const [aiInsight, setAiInsight] = useState<GenerateAiInsightOutput | null>(null);
 
   const { toast } = useToast();
 
@@ -129,7 +118,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
           
           if (stream.endsWith('@trade')) {
               const newPrice = parseFloat(messageData.p);
-              const newQuantity = parseFloat(messageData.q);
               
               setRealtimePrice(newPrice);
               
@@ -144,7 +132,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
               setPriceDirection(direction);
               
               setLiveTradeData({
-                  volume: newQuantity,
+                  volume: parseFloat(messageData.q),
                   side: direction === 'up' ? 'Buy' : direction === 'down' ? 'Sell' : 'Neutral'
               });
 
@@ -179,13 +167,45 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     }
 
     try {
-      const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, !isCrypto(currentSymbol.toUpperCase()));
+      const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe);
       onSignalDataChange(data);
       if (!isSupportedCrypto) {
         setRealtimePrice(data.price);
         previousPriceRef.current = data.price;
       }
       
+      // If mode is AI-powered, fetch the insight
+      if ((mode === '3' || mode === '4' || mode === '5') && !data.sidewaysMarket) {
+        const insightInput: GenerateAiInsightInput = {
+            symbol: data.symbol,
+            price: data.price,
+            isBullish: data.isBullish,
+            action: data.action,
+            entry: parseFloat(data.entry),
+            sl: parseFloat(data.sl),
+            tp1: parseFloat(data.tp1),
+            tp2: parseFloat(data.tp2),
+            confluenceCount: data.confluenceCount,
+            demandZone: `$${data.demandZone[0]} - ${data.demandZone[1]}`,
+            fvg: `$${data.fvg[0]} - ${data.fvg[1]}`,
+            volumeImbalance: data.volumeImbalance,
+            multiTimeframeAnalysis: {
+                '5m': data.multiTimeframeAnalysis['5m']?.trend || 'Neutral',
+                '15m': data.multiTimeframeAnalysis['15m']?.trend || 'Neutral',
+                '1H': data.multiTimeframeAnalysis['1H']?.trend || 'Neutral',
+                '4H': data.multiTimeframeAnalysis['4H']?.trend || 'Neutral',
+                'Daily': data.multiTimeframeAnalysis['Daily']?.trend || 'Neutral',
+            },
+            chartPatternName: data.chartPattern.name,
+            trendStrength: data.trendStrength.score,
+            momentum: data.momentum.score,
+            marketSession: "New York", 
+            volatilityRegime: "Medium", 
+        };
+        const insightResult = await generateAiInsight(insightInput);
+        setAiInsight(insightResult);
+      }
+
     } catch (error) {
       console.error("Error generating signal:", error);
       const mockData = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, true);
@@ -196,7 +216,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       setLoading(false);
       onLoadingChange(false);
     }
-  }, [mode, timeframe, toast, onSignalDataChange, onLoadingChange, setAiInsight]);
+  }, [mode, timeframe, toast, onSignalDataChange, onLoadingChange]);
   
   // This useEffect will be triggered by the `MainApp` component when the symbol changes there
   useEffect(() => {
@@ -470,5 +490,3 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 };
 
 export default SmartSignalWidget;
-
-    

@@ -18,7 +18,7 @@ import AdvancedStrengthDashboard from '../tools/AdvancedStrengthDashboard';
 import SubspaceLiquidityMatrix from '../tools/SubspaceLiquidityMatrix';
 import type { SignalData, GenerateAiInsightOutput } from '@/types';
 import EliteAiInsight from '../smart-signal/EliteAiInsight';
-import type { GenerateAiInsightInput, OracleInsightInput } from '@/types';
+import type { GenerateAiInsightInput } from '@/types';
 
 interface MainAppProps {
   initialSymbol?: string;
@@ -29,7 +29,6 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
   const router = useRouter();
   const [selectedSymbol, setSelectedSymbol] = useState(initialSymbol);
   const [signalData, setSignalData] = useState<SignalData | null>(null);
-  const [aiInsight, setAiInsight] = useState<GenerateAiInsightOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -94,8 +93,6 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
               onSignalDataChange={setSignalData}
               onLoadingChange={setIsLoading}
               signalData={signalData}
-              aiInsight={aiInsight}
-              setAiInsight={setAiInsight}
             />
           </TabsContent>
           
