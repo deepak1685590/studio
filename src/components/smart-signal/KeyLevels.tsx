@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { SignalData } from '@/types';
-import { TrendingUp, TrendingDown, MoveVertical, GitCommitHorizontal, GitCommit, Layers, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, MoveVertical, GitCommitHorizontal, GitCommit, Layers, Target, BoxSelect } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
@@ -29,7 +29,8 @@ const LevelGroup: React.FC<{ title: string; children: React.ReactNode; className
 
 
 const KeyLevels: React.FC<{ data: SignalData }> = ({ data }) => {
-  const { swingHigh, swingLow, poc, pivot, s1, r1, vah, val, isBullish } = data;
+  const { swingHigh, swingLow, poc, pivot, s1, r1, vah, val, isBullish, supplyZone, demandZone } = data;
+  const isCrypto = !data.symbol.includes('/');
 
   return (
     <div>
@@ -42,6 +43,12 @@ const KeyLevels: React.FC<{ data: SignalData }> = ({ data }) => {
                 value={`$${swingHigh}`} 
                 icon={<TrendingUp size={16} />} 
                 className="text-red-400 border-red-500/20" 
+            />
+            <LevelRow 
+                label="Supply Zone" 
+                value={`$${parseFloat(supplyZone[1]).toFixed(isCrypto ? 2 : 4)} - ${parseFloat(supplyZone[0]).toFixed(isCrypto ? 2 : 4)}`}
+                icon={<BoxSelect size={16} />} 
+                className="text-red-400/95 border-red-500/18" 
             />
              <LevelRow 
                 label="Value Area High" 
@@ -73,11 +80,17 @@ const KeyLevels: React.FC<{ data: SignalData }> = ({ data }) => {
         </LevelGroup>
         
         <LevelGroup title="Support Levels" className="text-green-400">
-            <LevelRow 
+             <LevelRow 
                 label="Value Area Low" 
                 value={`$${val}`} 
                 icon={<GitCommitHorizontal size={16} />} 
                 className="text-green-400/90 border-green-500/15" 
+            />
+             <LevelRow 
+                label="Demand Zone" 
+                value={`$${parseFloat(demandZone[1]).toFixed(isCrypto ? 2 : 4)} - ${parseFloat(demandZone[0]).toFixed(isCrypto ? 2 : 4)}`}
+                icon={<BoxSelect size={16} />} 
+                className="text-green-400/95 border-green-500/18" 
             />
             <LevelRow 
                 label="Support 1 (S1)" 
