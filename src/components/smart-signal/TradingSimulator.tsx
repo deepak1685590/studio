@@ -41,19 +41,25 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
       return;
     }
 
-    const currentPrice = livePrice || signalData.price;
-    const quantity = size / currentPrice;
+    // Use the signal's specific entry price, not the live market price
+    const entryPrice = parseFloat(signalData.entry);
+    if (isNaN(entryPrice)) {
+      if (!isAuto) toast({ title: "Error", description: "Signal has no valid entry price.", variant: "destructive" });
+      return;
+    }
+
+    const quantity = size / entryPrice;
 
     setPosition({
       symbol: signalData.symbol,
-      entryPrice: currentPrice,
+      entryPrice: entryPrice,
       size: size,
       quantity: quantity,
       type,
     });
     
     const toastTitle = isAuto ? "Auto-Trade: Position Opened" : "Position Opened";
-    toast({ title: toastTitle, description: `Opened ${type} ${signalData.symbol} position of $${size}.` });
+    toast({ title: toastTitle, description: `Opened ${type} ${signalData.symbol} position of $${size} at $${entryPrice.toFixed(4)}.` });
   };
 
   const closePosition = (isAuto: boolean = false) => {
@@ -94,16 +100,14 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
   // This effect now ONLY triggers when the signalData object itself changes.
   useEffect(() => {
     if (isAutoTrading && signalData && !signalData.sidewaysMarket) {
-      // 1. If we have a position and the new signal is for a different symbol, close the old one.
-      if (position && position.symbol !== signalData.symbol) {
-        closePosition(true); // Close old position
+      // 1. If we have a position, close it to react to the new signal.
+      if (position) {
+        closePosition(true);
       }
       
-      // 2. If we DO NOT have a position for the CURRENT symbol, open one.
-      if (!position || position.symbol !== signalData.symbol) {
-         const newTradeType = signalData.isBullish ? 'long' : 'short';
-         openPosition(newTradeType, true); // Open new position
-      }
+      // 2. Open a new position based on the new signal's direction.
+      const newTradeType = signalData.isBullish ? 'long' : 'short';
+      openPosition(newTradeType, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signalData, isAutoTrading]); // Dependencies are now correctly isolated.
@@ -249,5 +253,4 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
 };
 
 export default TradingSimulator;
-
     
