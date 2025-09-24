@@ -2,14 +2,19 @@
 "use client";
 
 import React from 'react';
-import { ConfidenceBreakdown as ConfidenceBreakdownType } from '@/types';
-import { BrainCircuit } from 'lucide-react';
+import type { ConfidenceBreakdown as ConfidenceBreakdownType, TrendStrength, Momentum, SignalData } from '@/types';
+import { BrainCircuit, TrendingUp, Gauge, Zap, BarChart4 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Progress } from '../ui/progress';
 
 interface ConfidenceBreakdownProps {
   breakdown: ConfidenceBreakdownType;
   confidence: string;
   isBullish: boolean;
+  trendStrength: TrendStrength;
+  momentum: Momentum;
+  volatility: SignalData['advancedStrengthDashboard']['volatility'];
+  volumeImbalance: string;
 }
 
 const QuantumConfidenceMeter = ({ score, label, isBullish }: { score: number, label: string, isBullish: boolean }) => {
@@ -70,24 +75,26 @@ const QuantumConfidenceMeter = ({ score, label, isBullish }: { score: number, la
 };
 
 
-const ConfidenceFactor: React.FC<{ label: string; score: number }> = ({ label, score }) => {
-  let scoreColor = "text-yellow-400";
-  if (score > 80) scoreColor = "text-green-400";
-  else if (score < 60) scoreColor = "text-red-400";
-  
-  return (
-    <div className="flex justify-between items-center bg-black/30 p-2 rounded-md border border-primary/10">
-      <span className="text-sm text-foreground/80">{label}</span>
-      <span className={cn("font-mono font-bold text-lg", scoreColor)}>{score}%</span>
+const FactorReadout: React.FC<{ icon: React.ReactNode; label: string; value: string; valueColor?: string; children?: React.ReactNode }> = ({ icon, label, value, valueColor = "text-primary", children }) => (
+    <div className="flex flex-col gap-1 bg-black/30 p-2 rounded-md border border-primary/10">
+        <div className="flex justify-between items-center text-xs text-foreground/70">
+            <div className="flex items-center gap-1">{icon} {label}</div>
+            <div className={cn("font-mono font-bold text-base", valueColor)}>{value}</div>
+        </div>
+        {children}
     </div>
-  );
-};
+);
 
 
-const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ breakdown, confidence, isBullish }) => {
+const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ breakdown, confidence, isBullish, trendStrength, momentum, volatility, volumeImbalance }) => {
   const glowColor = isBullish 
     ? (breakdown.overall > 75 ? 'shadow-green-400/50' : 'shadow-yellow-400/50')
     : (breakdown.overall > 75 ? 'shadow-red-400/50' : 'shadow-orange-400/50');
+    
+  const trendColor = trendStrength.score > 50 ? 'text-green-400' : trendStrength.score < 25 ? 'text-red-400' : 'text-yellow-400';
+  const momentumColor = momentum.score > 55 ? 'text-green-400' : momentum.score < 45 ? 'text-red-400' : 'text-yellow-400';
+  const volatilityColor = volatility.label === 'HIGH' || volatility.label === 'EXTREME' ? 'text-orange-400' : 'text-primary/80';
+  const volumeIsBuy = volumeImbalance.includes('Buyers');
 
   return (
     <div className={cn("mt-4 p-4 bg-black/30 rounded-lg border border-primary/20 transition-shadow duration-500", glowColor)}>
@@ -99,10 +106,14 @@ const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ breakdown, co
              <QuantumConfidenceMeter score={breakdown.overall} label={confidence} isBullish={isBullish} />
         </div>
         <div className="space-y-3">
-            <ConfidenceFactor label="Pattern Strength" score={breakdown.patternStrength} />
-            <ConfidenceFactor label="Volume Confirmation" score={breakdown.volumeConfirmation} />
-            <ConfidenceFactor label="HTF Alignment" score={breakdown.htfAlignment} />
-            <ConfidenceFactor label="Smart Money Flow" score={breakdown.smartMoneyFlow} />
+            <FactorReadout icon={<TrendingUp size={14} />} label="Trend Strength" value={`${trendStrength.score}%`} valueColor={trendColor}>
+                <Progress value={trendStrength.score} className={cn("h-1 [&>div]:bg-current", trendColor)} />
+            </FactorReadout>
+            <FactorReadout icon={<Gauge size={14} />} label="Momentum (RSI)" value={`${momentum.score}`} valueColor={momentumColor}>
+                 <Progress value={momentum.score} className={cn("h-1 [&>div]:bg-current", momentumColor)} />
+            </FactorReadout>
+            <FactorReadout icon={<Zap size={14} />} label="Volatility (ATR)" value={volatility.label} valueColor={volatilityColor} />
+            <FactorReadout icon={<BarChart4 size={14} />} label="Volume Bias" value={volumeIsBuy ? 'BUY' : 'SELL'} valueColor={volumeIsBuy ? 'text-green-400' : 'text-red-400'} />
         </div>
       </div>
     </div>

@@ -225,10 +225,12 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 <div className="grid grid-cols-1 gap-2">
                     <div className="flex justify-between items-center p-2">
                         <span className="font-headline text-lg text-primary/80">Live Price:</span>
-                        <span className={cn("font-mono text-3xl font-bold flex items-center gap-2 transition-colors duration-300",
+                        <span className={cn("font-mono text-3xl font-bold flex items-center gap-2 transition-colors duration-300 animate-flicker",
                             priceDirection === 'up' && 'text-green-400',
                             priceDirection === 'down' && 'text-red-400',
-                        )}>
+                        )}
+                        style={{textShadow: `0 0 8px currentColor`}}
+                        >
                               <span className={cn(
                                 "w-4 h-4 rounded-full transition-all",
                                 priceDirection === 'up' && 'bg-green-500 shadow-[0_0_8px_theme(colors.green.500)] animate-pulse',
@@ -257,7 +259,11 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 <ConfidenceBreakdown 
                   breakdown={data.confidenceBreakdown} 
                   confidence={data.confidence}
-                  isBullish={data.isBullish} 
+                  isBullish={data.isBullish}
+                  trendStrength={data.trendStrength}
+                  momentum={data.momentum}
+                  volatility={data.advancedStrengthDashboard.volatility}
+                  volumeImbalance={data.volumeImbalance}
                 />
             </div>
         </div>
