@@ -12,15 +12,15 @@ interface ConfidenceBreakdownProps {
   livePrice: number | null;
 }
 
-const DashboardRow: React.FC<{ label: string; value: React.ReactNode; icon?: React.ReactNode; valueClassName?: string; }> = 
+const DataPod: React.FC<{ label: string; value: React.ReactNode; icon?: React.ReactNode; valueClassName?: string; }> =
 ({ label, value, icon, valueClassName }) => {
     return (
       <div className="flex items-center justify-between p-2 bg-black/30 rounded-md border border-primary/10">
-        <div className="flex items-center gap-2 text-sm text-foreground/80">
+        <div className="flex items-center gap-2 text-xs text-foreground/80">
           {icon}
           <span>{label}</span>
         </div>
-        <div className={cn("font-mono text-base font-bold text-primary w-48 text-right", valueClassName)}>{value}</div>
+        <div className={cn("font-mono text-sm font-bold text-primary text-right", valueClassName)}>{value}</div>
       </div>
     );
 };
@@ -35,7 +35,7 @@ const MarketPhaseHeader: React.FC<{ phase: SignalData['advancedStrengthDashboard
         'NEUTRAL': { icon: <Activity />, color: 'text-primary', shadow: 'shadow-[0_0_15px_hsl(var(--primary))]' },
     };
     const config = phaseConfig[phase] || phaseConfig['NEUTRAL'];
-    
+
     return (
         <div className={cn("p-3 mb-2 rounded-lg border text-center transition-all duration-500", config.shadow)}>
             <div className={cn("font-headline text-md flex items-center justify-center gap-2", config.color)}>
@@ -62,6 +62,7 @@ const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ data, livePri
   const { advancedStrengthDashboard: adv } = data;
   const displayPrice = livePrice || parseFloat(adv.price);
   const priceChangePercent = livePrice ? ((livePrice - parseFloat(adv.price)) / parseFloat(adv.price)) * 100 : adv.priceChangePercent;
+  const isCrypto = !data.symbol.includes('/');
 
   if (!adv) {
     return (
@@ -73,88 +74,101 @@ const ConfidenceBreakdown: React.FC<ConfidenceBreakdownProps> = ({ data, livePri
       </div>
     )
   }
-  
+
   const priceColor = priceChangePercent >= 0 ? 'text-green-400' : 'text-red-400';
-  const trendIcon = priceChangePercent >= 0 ? <TrendingUp className="inline-block" /> : <TrendingDown className="inline-block" />;
+  const trendIcon = priceChangePercent >= 0 ? <TrendingUp size={14} className="inline-block" /> : <TrendingDown size={14} className="inline-block" />;
   const sentimentColor = adv.marketSentiment.score > 0 ? 'text-green-400' : adv.marketSentiment.score < 0 ? 'text-red-400' : 'text-yellow-400';
   const rsiColor = adv.rsiStatus.status === 'OVERBOUGHT' ? 'text-red-400' : adv.rsiStatus.status === 'OVERSOLD' ? 'text-green-400' : 'text-primary/80';
   const stochColor = adv.stochRsi.k > adv.stochRsi.d ? 'text-cyan-400' : 'text-orange-400';
   const adxColor = adv.trendAnalysis.momentum === 'ACCELERATING' ? 'text-green-400' : 'text-primary/80';
   const volColor = adv.volatility.label === 'HIGH' || adv.volatility.label === 'EXTREME' ? 'text-orange-400' : 'text-primary/80';
   const volChangeColor = adv.volumeStatus.status === 'SPIKE' ? 'text-amber-400' : 'text-primary/80';
-  const isCrypto = !data.symbol.includes('/');
+
 
   return (
     <div className="mt-4 p-4 bg-black/30 rounded-lg border border-primary/20">
-      <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">
-        <BrainCircuit /> AI Confidence Matrix
-      </h4>
-      <MarketPhaseHeader phase={adv.marketPhase} />
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 space-y-2">
-            <DashboardRow 
-                label="Price" 
-                value={<>{trendIcon} {displayPrice.toFixed(isCrypto ? 2 : 4)} ({priceChangePercent.toFixed(2)}%)</>} 
-                icon={<Activity size={16}/>}
-                valueClassName={priceColor}
-            />
-            <DashboardRow 
-                label="Sentiment" 
-                value={`${adv.marketSentiment.emoji} ${adv.marketSentiment.score}/4`}
-                icon={<BrainCircuit size={16}/>}
-                valueClassName={sentimentColor}
-            />
-            
-            {adv.rsiStatus.divergence && adv.rsiStatus.divergence !== 'NONE' && <DivergenceAlert type={adv.rsiStatus.divergence} />}
-            
-             <DashboardRow 
-                label="RSI (14)" 
-                value={`${adv.momentum.rsi.toFixed(0)} - ${adv.rsiStatus.status}`}
-                icon={<Gauge size={16}/>}
-                valueClassName={rsiColor}
-            />
-             <DashboardRow 
-                label="Stoch RSI (K/D)" 
-                value={`${adv.stochRsi.k.toFixed(0)} / ${adv.stochRsi.d.toFixed(0)} ${adv.stochRsi.crossover}`}
-                icon={<GitCommitHorizontal size={16}/>}
-                valueClassName={stochColor}
-            />
-            <DashboardRow 
-                label="Long Power" 
-                value={`${adv.longPower.toFixed(0)}%`} 
-                icon={<TrendingUp size={16} className="text-green-400"/>}
-                valueClassName="text-green-400"
-            />
-            <DashboardRow 
-                label="Short Power" 
-                value={`${adv.shortPower.toFixed(0)}%`} 
-                icon={<TrendingDown size={16} className="text-red-400"/>}
-                valueClassName="text-red-400"
-            />
-            <DashboardRow 
-                label="Trend (ADX)" 
-                value={`${adv.trendAnalysis.strength.toFixed(0)} - ${adv.trendAnalysis.momentum}`}
-                icon={<TrendingUp size={16}/>}
-                valueClassName={adxColor}
-            />
-            <DashboardRow 
-                label="Volatility (ATR)" 
-                value={`${adv.volatility.label} (${adv.volatility.percent.toFixed(2)}%)`}
-                icon={<Flame size={16} className="text-orange-400"/>}
-                valueClassName={volColor}
-            />
-            <DashboardRow 
-                label="Volume" 
-                value={`${adv.volumeStatus.status} (${adv.volumeStatus.changePercent > 0 ? '+' : ''}${adv.volumeStatus.changePercent.toFixed(0)}%)`}
-                icon={<Volume size={16}/>}
-                valueClassName={volChangeColor}
-            />
+        <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">
+            <BrainCircuit /> AI Confidence Matrix
+        </h4>
+        <MarketPhaseHeader phase={adv.marketPhase} />
+        {adv.rsiStatus.divergence && adv.rsiStatus.divergence !== 'NONE' && <DivergenceAlert type={adv.rsiStatus.divergence} />}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center mt-3">
+            {/* Left Pods */}
+            <div className="space-y-2">
+                <h5 className="font-headline text-center text-primary/80">Momentum & Power</h5>
+                <DataPod
+                    label="Price"
+                    icon={<Activity size={16}/>}
+                    value={<>{trendIcon} {displayPrice.toFixed(isCrypto ? 2 : 4)}</>}
+                    valueClassName={priceColor}
+                />
+                <DataPod
+                    label="Sentiment"
+                    icon={<BrainCircuit size={16}/>}
+                    value={`${adv.marketSentiment.emoji} ${adv.marketSentiment.score}/4`}
+                    valueClassName={sentimentColor}
+                />
+                 <DataPod
+                    label="RSI (14)"
+                    icon={<Gauge size={16}/>}
+                    value={`${adv.momentum.rsi.toFixed(0)} - ${adv.rsiStatus.status}`}
+                    valueClassName={rsiColor}
+                />
+                <DataPod
+                    label="Long Power"
+                    icon={<TrendingUp size={16} className="text-green-400"/>}
+                    value={`${adv.longPower.toFixed(0)}%`}
+                    valueClassName="text-green-400"
+                />
+                 <DataPod
+                    label="Short Power"
+                    icon={<TrendingDown size={16} className="text-red-400"/>}
+                    value={`${adv.shortPower.toFixed(0)}%`}
+                    valueClassName="text-red-400"
+                />
+            </div>
+
+            {/* Center Meter */}
+            <div className="h-full">
+                 <VerticalStrengthMeter strength={adv.overallStrength} />
+            </div>
+
+            {/* Right Pods */}
+            <div className="space-y-2">
+                <h5 className="font-headline text-center text-primary/80">Trend & Volatility</h5>
+                <DataPod
+                    label="Stoch RSI (K/D)"
+                    icon={<GitCommitHorizontal size={16}/>}
+                    value={`${adv.stochRsi.k.toFixed(0)}/${adv.stochRsi.d.toFixed(0)} ${adv.stochRsi.crossover}`}
+                    valueClassName={stochColor}
+                />
+                 <DataPod
+                    label="Trend (ADX)"
+                    icon={<TrendingUp size={16}/>}
+                    value={`${adv.trendAnalysis.strength.toFixed(0)} - ${adv.trendAnalysis.momentum}`}
+                    valueClassName={adxColor}
+                />
+                <DataPod
+                    label="Volatility (ATR)"
+                    icon={<Flame size={16} className="text-orange-400"/>}
+                    value={`${adv.volatility.label} (${adv.volatility.percent.toFixed(2)}%)`}
+                    valueClassName={volColor}
+                />
+                 <DataPod
+                    label="Volume"
+                    icon={<Volume size={16}/>}
+                    value={`${adv.volumeStatus.status}`}
+                    valueClassName={volChangeColor}
+                />
+                 <DataPod
+                    label="Vol Change"
+                    icon={<Volume size={16}/>}
+                    value={`${adv.volumeStatus.changePercent > 0 ? '+' : ''}${adv.volumeStatus.changePercent.toFixed(0)}%`}
+                    valueClassName={volChangeColor}
+                />
+            </div>
         </div>
-        <div className="flex items-center justify-center">
-            <VerticalStrengthMeter strength={adv.overallStrength} />
-        </div>
-      </div>
     </div>
   );
 };

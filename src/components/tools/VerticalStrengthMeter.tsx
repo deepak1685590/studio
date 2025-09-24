@@ -6,54 +6,55 @@ import { cn } from '@/lib/utils';
 import { ChevronsUp, ChevronsDown, Minus } from 'lucide-react';
 
 interface VerticalStrengthMeterProps {
-  strength: number; // A value from 0 to 100
+  strength: number; // A value from -100 to 100
 }
 
 const VerticalStrengthMeter: React.FC<VerticalStrengthMeterProps> = ({ strength }) => {
-  const arrowPosition = `${100 - strength}%`;
-
-  const getArrowStyle = () => {
-    if (strength > 60) return { icon: <ChevronsUp />, color: 'text-green-400', shadow: 'shadow-[0_0_15px_theme(colors.green.400)]' };
-    if (strength < 40) return { icon: <ChevronsDown />, color: 'text-red-400', shadow: 'shadow-[0_0_15px_theme(colors.red.400)]' };
-    return { icon: <Minus />, color: 'text-yellow-400', shadow: 'shadow-[0_0_15px_theme(colors.yellow.400)]' };
+  const isBullish = strength > 0;
+  const absStrength = Math.abs(strength);
+  
+  const getMeterStyle = () => {
+    if (strength > 20) return { icon: <ChevronsUp />, color: 'text-green-400', shadow: 'shadow-green-400/50', gradient: 'from-green-900/50 to-green-500/50' };
+    if (strength < -20) return { icon: <ChevronsDown />, color: 'text-red-400', shadow: 'shadow-red-400/50', gradient: 'from-red-900/50 to-red-500/50' };
+    return { icon: <Minus />, color: 'text-yellow-400', shadow: 'shadow-yellow-400/50', gradient: 'from-yellow-900/50 to-yellow-500/50' };
   };
 
-  const { icon, color, shadow } = getArrowStyle();
-  const glowColor = `hsl(${strength * 1.2}, 100%, 50%)`; // Interpolate from red (0) to green (120)
+  const { icon, color, shadow, gradient } = getMeterStyle();
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4 h-full w-full max-w-[150px] mx-auto bg-black/30 rounded-lg border border-primary/20">
-      <h4 className="font-headline text-lg text-primary/80">Overall Strength</h4>
-      <div className="relative w-8 h-64 bg-gradient-to-t from-red-500/50 via-yellow-500/50 to-green-500/50 rounded-full overflow-hidden border-2 border-primary/30">
+    <div className="flex flex-col items-center justify-between gap-2 p-3 h-full w-full max-w-[150px] mx-auto bg-black/40 rounded-xl border-2 border-primary/20">
+      <h4 className="font-headline text-sm text-primary/80">OVERALL STRENGTH</h4>
+      
+      <div className="relative w-10 flex-1 bg-black/50 rounded-full overflow-hidden border border-primary/30">
+        {/* Center Line */}
+        <div className="absolute top-1/2 left-0 w-full h-px bg-primary/30"></div>
+
+        {/* Strength Bar */}
         <div 
-          className="absolute left-0 bottom-0 w-full rounded-full transition-all duration-500 ease-out" 
+          className={cn(
+            "absolute left-0 w-full rounded-full transition-all duration-500 ease-out",
+            gradient
+          )}
           style={{ 
-            height: `${strength}%`,
-            background: `linear-gradient(to top, hsl(0, 80%, 30%), ${glowColor})`,
-            boxShadow: `0 0 15px ${glowColor}`
+            height: `${absStrength / 2}%`,
+            ...(isBullish ? { bottom: '50%' } : { top: '50%' }),
+            boxShadow: `0 0 15px currentColor`
           }}
         />
+        
+        {/* Glow effect */}
+        <div className={cn("absolute inset-x-0 h-1/2 blur-2xl opacity-50", isBullish ? "bottom-0 bg-green-500" : "top-0 bg-red-500")}></div>
 
-        {/* Animated Arrow */}
-        <div
-          className={cn(
-            "absolute left-1/2 -translate-x-1/2 w-12 h-8 flex items-center justify-center transition-all duration-500 ease-out",
-            color
-          )}
-          style={{ top: `calc(${arrowPosition} - 16px)` }}
-        >
-          <div className={cn("absolute w-full h-full rounded-full blur-lg opacity-70", color.replace('text-', 'bg-'))}></div>
-          <div className="z-10">{icon}</div>
-        </div>
       </div>
+
       <div className="text-center">
         <div 
-            className={cn("font-headline text-5xl transition-colors duration-500", color)} 
-            style={{ textShadow: `0 0 10px ${glowColor}` }}
+            className={cn("font-headline text-5xl transition-colors duration-500", color, shadow)} 
+            style={{ textShadow: `0 0 10px currentColor` }}
         >
-          {strength}
+          {absStrength.toFixed(0)}
         </div>
-        <div className="text-xs text-foreground/70">STRENGTH INDEX</div>
+        <div className={cn("text-xs font-bold", color)}>{isBullish ? 'BULLISH' : strength === 0 ? 'NEUTRAL' : 'BEARISH'}</div>
       </div>
     </div>
   );
