@@ -145,10 +145,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
           const stream = message.stream;
           const messageData = message.data;
           
-          if (currentSymbolRef.current.toLowerCase() + 'usdt' !== messageData.s.toLowerCase()) {
-              return;
-          }
-          
           if (stream.endsWith('@trade')) {
               const newPrice = parseFloat(messageData.p);
               updatePrice(newPrice);
