@@ -180,7 +180,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     if (mode === '5' && data.supermodeAnalysis) {
       return <SupermodeDashboard analysis={data.supermodeAnalysis} />;
     }
-    // The IndicatorChecklist is now rendered unconditionally below.
     return null;
   }
 
@@ -276,7 +275,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
       <div>
         <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
-        <SmartMoneyConcepts data={data} />
+        <SmartMoneyConcepts data={data} livePrice={realtimePrice}/>
       </div>
 
       {data.indicatorChecklist && <IndicatorChecklist data={data.indicatorChecklist} />}
