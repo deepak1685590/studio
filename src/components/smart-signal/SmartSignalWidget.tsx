@@ -24,6 +24,7 @@ import TrendRibbon from './TrendRibbon';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { generateAiInsight } from '@/ai/flows/generate-ai-insight';
+import QuantumSummary from './QuantumSummary';
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -506,7 +507,19 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
              </div>
           )}
           
-          {signalData && <SignalCard data={signalData} onDownloadPng={handleDownloadPng} onDownloadPdf={handleDownloadPdf} realtimePrice={realtimePrice} priceDirection={priceDirection} mode={mode} />}
+          {signalData && (
+              <>
+                {aiInsight && <QuantumSummary insight={aiInsight} isLoading={isAiInsightLoading} />}
+                <SignalCard 
+                    data={signalData} 
+                    onDownloadPng={handleDownloadPng} 
+                    onDownloadPdf={handleDownloadPdf} 
+                    realtimePrice={realtimePrice} 
+                    priceDirection={priceDirection} 
+                    mode={mode} 
+                />
+              </>
+          )}
         </div>
       </div>
       {isModalOpen && chartImage && signalData && (
