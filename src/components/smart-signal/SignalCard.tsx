@@ -227,7 +227,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
             <QuantumEntryMatrix data={data} livePrice={realtimePrice} />
 
-            {data.orderBlock && data.orderBlock.status !== 'BROKEN' && <QuantumOrderBlockMatrix orderBlock={data.orderBlock} entryPrice={entryPriceNum} />}
+            {data.orderBlock && <QuantumOrderBlockMatrix orderBlock={data.orderBlock} entryPrice={entryPriceNum} />}
 
             <KeyLevels data={data} />
 
