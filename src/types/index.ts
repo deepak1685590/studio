@@ -215,27 +215,25 @@ export interface AdvancedStrengthDashboardData {
     trendAnalysis: {
         strength: number;
         direction: 1 | -1;
-        momentum: '🚀' | '⬇️';
+        momentum: 'ACCELERATING' | 'DECELERATING' | 'STABLE';
     };
     volatility: {
-        atrPercent: number;
-        rank: number;
-        label: '🔥 EXTREME' | '🟠 HIGH' | '🟡 MEDIUM' | '🟢 LOW';
+        percent: number;
+        label: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW';
     };
     volumeStatus: {
-        status: '🚀 SPIKE' | '🏜️ DRY' | '📈 HIGH' | '📉 LOW';
+        status: 'SPIKE' | 'DRY' | 'HIGH' | 'NORMAL' | 'LOW';
         changePercent: number;
     };
     volumeValue: number;
     rsiStatus: {
-        status: "🔴 OB" | "🟢 OS" | "🟡 Strong" | "🟠 Weak" | "⚪ Neutral";
-        divergence: "🔻 Bear Div" | "🔺 Bull Div" | "";
+        status: 'OVERBOUGHT' | 'OVERSOLD' | 'NEUTRAL' | 'Strong' | 'Weak';
+        divergence: 'BULLISH' | 'BEARISH' | 'NONE';
     };
     stochRsi: {
         k: number;
         d: number;
-        status: "🔴 OB" | "🟢 OS" | "⚪ Neutral";
-        crossover: "🔺" | "🔻" | "";
+        crossover: 'BULL_CROSS' | 'BEAR_CROSS' | 'NONE';
     };
 }
 

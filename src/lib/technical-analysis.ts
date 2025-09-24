@@ -43,7 +43,9 @@ const calculateRSI = (closes: number[], period = 14): number => {
 
 const calculateATR = (klines: any[], period = 14): number => {
     if (klines.length < period + 1) return 0;
-    const relevantKlines = klines.slice(-(period + 1));
+    
+    // Ensure we have enough data points, slice from the end
+    const relevantKlines = klines.slice(- (period + 2)); // Need period+1 intervals
     let trs = [];
 
     for (let i = 1; i < relevantKlines.length; i++) {
@@ -54,11 +56,11 @@ const calculateATR = (klines: any[], period = 14): number => {
         trs.push(tr);
     }
     
-    // First ATR is just the average of the first 'period' TRs
-    let atr = trs.slice(0, period).reduce((a, b) => a + b, 0) / period;
+    if (trs.length === 0) return 0;
 
-    // Wilder's smoothing for subsequent ATRs
-    for (let i = period; i < trs.length; i++) {
+    // Wilder's smoothing
+    let atr = trs[0];
+    for (let i = 1; i < trs.length; i++) {
         atr = (atr * (period - 1) + trs[i]) / period;
     }
     
@@ -104,15 +106,19 @@ const calculateADX = (klines: any[], period = 14): { adx: number, pdi: number, m
     let dx = new Array(klines.length).fill(0);
 
     for (let i = period - 1; i < klines.length; i++) {
+        if(smoothedTR[i] === 0) continue;
         pdi14[i] = 100 * (smoothedPDI[i] / smoothedTR[i]);
         mdi14[i] = 100 * (smoothedMDI[i] / smoothedTR[i]);
-        const dx_val = Math.abs(pdi14[i] - mdi14[i]) / (pdi14[i] + mdi14[i]) * 100;
+        const sumDI = pdi14[i] + mdi14[i];
+        const dx_val = sumDI === 0 ? 0 : Math.abs(pdi14[i] - mdi14[i]) / sumDI * 100;
         dx[i] = isNaN(dx_val) ? 0 : dx_val;
     }
     
-    const adx = smooth(dx.slice(period-1), period).pop()! / period;
+    // Slice to align with dx values which start later
+    const adxValues = smooth(dx.slice(period-1), period);
+    const lastAdx = adxValues.length > 0 ? adxValues[adxValues.length - 1] / period : 20;
 
-    return { adx, pdi: pdi14.pop()!, mdi: mdi14.pop()! };
+    return { adx: lastAdx, pdi: pdi14.pop()!, mdi: mdi14.pop()! };
 };
 
 const calculateStochRSI = (closes: number[], rsiPeriod = 14, stochPeriod = 14, kPeriod = 3, dPeriod = 3): { k: number, d: number } => {
@@ -525,12 +531,13 @@ const generateAdvancedStrengthData = (
 
     // 2. Momentum
     const rsi = calculateRSI(closes, rsiLength);
-    const momentumTrend = rsi > calculateRSI(closes.slice(0, -1), rsiLength) ? "📈" : "📉";
+    const momentumSma = calculateRSI(closes, 5); // Using RSI as a proxy for SMA of RSI
+    const momentumTrend = rsi > momentumSma ? "📈" : "📉";
 
     // 3. Long/Short Power
     const longPower = Math.min(100, Math.max(0, (rsi - 50) * 2));
     const shortPower = Math.min(100, Math.max(0, (50 - rsi) * 2));
-    const overallStrength = longPower > shortPower ? longPower : -shortPower;
+    const overallStrength = Math.round(longPower > shortPower ? longPower : -shortPower);
 
     // 4. Volume
     const volSma = volumes.slice(-volLength).reduce((a, b) => a + b, 0) / volLength;
@@ -538,25 +545,20 @@ const generateAdvancedStrengthData = (
     const volChangePct = volSma > 0 ? ((latestVolume - volSma) / volSma) * 100 : 0;
     const volSpike = latestVolume > volSma * 2;
     const volDrying = latestVolume < volSma * 0.5;
-    let volStatus: '🚀 SPIKE' | '🏜️ DRY' | '📈 HIGH' | '📉 LOW';
-    if (volSpike) volStatus = '🚀 SPIKE';
-    else if (volDrying) volStatus = '🏜️ DRY';
-    else if (latestVolume > volSma) volStatus = '📈 HIGH';
-    else volStatus = '📉 LOW';
+    let volStatus: 'SPIKE' | 'DRY' | 'HIGH' | 'NORMAL' | 'LOW';
+    if (volSpike) volStatus = 'SPIKE';
+    else if (volDrying) volStatus = 'DRY';
+    else if (latestVolume > volSma) volStatus = 'HIGH';
+    else if (latestVolume < volSma) volStatus = 'LOW';
+    else volStatus = 'NORMAL';
 
     // 5. Volatility
     const atr = calculateATR(klines, atrLength);
     const atrPercent = (atr / price) * 100;
-    // Simple percentrank simulation
-    const atrHistory = [];
-    for(let i=atrLength+1; i < klines.length; i++) {
-        atrHistory.push(calculateATR(klines.slice(0, i), atrLength));
-    }
-    const volatilityRank = atrHistory.length > 0 ? (atrHistory.filter(a => a < atr).length / atrHistory.length) * 100 : 50;
-    let volLabel: '🔥 EXTREME' | '🟠 HIGH' | '🟡 MEDIUM' | '🟢 LOW' = '🟢 LOW';
-    if (volatilityRank > 80) volLabel = "🔥 EXTREME";
-    else if (volatilityRank > 60) volLabel = "🟠 HIGH";
-    else if (volatilityRank > 40) volLabel = "🟡 MEDIUM";
+    let volLabel: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW' = 'LOW';
+    if (atrPercent > 3) volLabel = "EXTREME";
+    else if (atrPercent > 1.5) volLabel = "HIGH";
+    else if (atrPercent > 0.7) volLabel = "MEDIUM";
     
     // 6. Trend Analysis
     const calculateEMA = (data: number[], period: number) => {
@@ -574,7 +576,7 @@ const generateAdvancedStrengthData = (
     const trendStrength = Math.abs(fastMa - slowMa) / price * 1000;
     const trendDirection = fastMa > slowMa ? 1 : -1;
     const trendAcceleration = (fastMa - fastMaValues[fastMaValues.length - 2]) - (slowMa - slowMaValues[slowMaValues.length - 2]);
-    const trendMomentum = trendAcceleration > 0 ? "🚀" : "⬇️";
+    const trendMomentum = trendAcceleration > 0 ? "ACCELERATING" : "DECELERATING";
 
     // 7. Sentiment Score
     const sma20 = closes.slice(-20).reduce((a,b) => a+b, 0) / 20;
@@ -585,24 +587,31 @@ const generateAdvancedStrengthData = (
 
     // 8. Market Phase
     let phase: AdvancedStrengthDashboardData['marketPhase'] = 'NEUTRAL';
-    if (rsi > 70 && latestVolume > volSma && volatilityRank > 60) phase = "BREAKOUT";
-    else if (rsi < 30 && latestVolume > volSma && volatilityRank > 60) phase = "BREAKDOWN";
-    else if (volatilityRank < 20 && trendStrength < 5) phase = "CONSOLIDATION";
-    else if (rsi > 50 && trendDirection > 0) phase = "BULLISH TREND";
-    else if (rsi < 50 && trendDirection < 0) phase = "BEARISH TREND";
+    const adx = calculateADX(klines).adx;
+    if (rsi > 70 && volSpike && atrPercent > 1.5) phase = "BREAKOUT";
+    else if (rsi < 30 && volSpike && atrPercent > 1.5) phase = "BREAKDOWN";
+    else if (atrPercent < 0.7 && adx < 20) phase = "CONSOLIDATION";
+    else if (rsi > 50 && trendDirection > 0 && adx > 25) phase = "BULLISH TREND";
+    else if (rsi < 50 && trendDirection < 0 && adx > 25) phase = "BEARISH TREND";
 
-    // 9. RSI Status
-    const rsiStatus = rsi >= 70 ? "🔴 OB" : rsi <= 30 ? "🟢 OS" : rsi >= 60 ? "🟡 Strong" : rsi <= 40 ? "🟠 Weak" : "⚪ Neutral";
-    const rsiDivergence = closes[closes.length - 1] > closes[closes.length - 6] && rsi < calculateRSI(closes.slice(0, -5), rsiLength) ? "🔻 Bear Div" :
-                        closes[closes.length - 1] < closes[closes.length - 6] && rsi > calculateRSI(closes.slice(0, -5), rsiLength) ? "🔺 Bull Div" : "";
+    // 9. RSI Status & Divergence
+    let rsiStatus: AdvancedStrengthDashboardData['rsiStatus']['status'] = 'NEUTRAL';
+    if (rsi >= 70) rsiStatus = 'OVERBOUGHT'; else if (rsi <= 30) rsiStatus = 'OVERSOLD'; else if (rsi >= 60) rsiStatus = 'Strong'; else if (rsi <= 40) rsiStatus = 'Weak';
+    
+    let divergence: AdvancedStrengthDashboardData['rsiStatus']['divergence'] = 'NONE';
+    if(closes.length > 6) {
+      const prevRsi = calculateRSI(closes.slice(0, -5), rsiLength);
+      if (closes[closes.length - 1] > closes[closes.length - 6] && rsi < prevRsi) divergence = 'BEARISH';
+      if (closes[closes.length - 1] < closes[closes.length - 6] && rsi > prevRsi) divergence = 'BULLISH';
+    }
+
 
     // 10. Stoch RSI
     const stochRsi = calculateStochRSI(closes);
-    const stochStatus = stochRsi.k >= 80 ? "🔴 OB" : stochRsi.k <= 20 ? "🟢 OS" : "⚪ Neutral";
-    // Simplified crossover detection
     const prevStochRsi = calculateStochRSI(closes.slice(0, -1));
-    const stochCrossover = stochRsi.k > stochRsi.d && prevStochRsi.k <= prevStochRsi.d ? "🔺" :
-                           stochRsi.k < stochRsi.d && prevStochRsi.k >= prevStochRsi.d ? "🔻" : "";
+    let stochCrossover: AdvancedStrengthDashboardData['stochRsi']['crossover'] = 'NONE';
+    if (stochRsi.k > stochRsi.d && prevStochRsi.k <= prevStochRsi.d) stochCrossover = 'BULL_CROSS';
+    if (stochRsi.k < stochRsi.d && prevStochRsi.k >= prevStochRsi.d) stochCrossover = 'BEAR_CROSS';
 
 
     return {
@@ -614,12 +623,12 @@ const generateAdvancedStrengthData = (
         longPower,
         shortPower,
         overallStrength,
-        trendAnalysis: { strength: trendStrength, direction: trendDirection, momentum: trendMomentum },
-        volatility: { atrPercent, rank: volatilityRank, label: volLabel },
+        trendAnalysis: { strength: adx, direction: trendDirection, momentum: trendMomentum },
+        volatility: { percent: atrPercent, label: volLabel },
         volumeStatus: { status: volStatus, changePercent: volChangePct },
         volumeValue: latestVolume,
-        rsiStatus: { status: rsiStatus, divergence: rsiDivergence },
-        stochRsi: { k: stochRsi.k, d: stochRsi.d, status: stochStatus, crossover: stochCrossover }
+        rsiStatus: { status: rsiStatus, divergence: divergence },
+        stochRsi: { k: stochRsi.k, d: stochRsi.d, crossover: stochCrossover }
     };
 };
 
