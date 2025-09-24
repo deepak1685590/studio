@@ -154,30 +154,6 @@ const generateIndicatorChecklist = (isBullish: boolean, momentum: Momentum, seed
     addIndicator('Demark Pivot S1', '', 'Neutral', 'Demark-based Support 1');
     addIndicator('Demark Pivot R1', '', 'Neutral', 'Demark-based Resistance 1');
 
-    // --- Volume Indicators ---
-    addIndicator('On-Balance Volume (OBV)', '', isBullish ? 'Buy' : 'Sell', 'Relates volume flow to price change.');
-    addIndicator('Accumulation/Distribution (A/D)', '', isBullish ? 'Buy' : 'Sell', 'Measures cumulative money flow.');
-    addIndicator('Chaikin Money Flow (CMF)', '', isBullish ? 'Buy' : 'Sell', 'Measures money flow over 20 periods.');
-    addIndicator('Money Flow Index (MFI)', '', isBullish ? 'Buy' : 'Sell', 'Volume-weighted RSI.');
-    addIndicator('Volume Oscillator', '', 'Neutral', 'Difference between two volume MAs.');
-    addIndicator('Ease of Movement', '', 'Neutral', 'Relates price change to volume.');
-    
-    // --- Volatility Indicators ---
-    addIndicator('Bollinger Bands Width', '', 'Neutral', 'Measures market volatility.');
-    addIndicator('Keltner Channels', '', 'Neutral', 'Volatility-based envelopes.');
-    addIndicator('Parabolic SAR', '', isBullish ? 'Buy' : 'Sell', 'Stop and reversal system.');
-    addIndicator('Donchian Channels', '', 'Neutral', 'Shows high/low over a period.');
-    addIndicator('Average True Range (ATR)', '', 'Neutral', 'Measures market volatility.');
-    addIndicator('Standard Deviation', '', 'Neutral', 'Statistical measure of volatility.');
-    
-    // --- Other ---
-    addIndicator('TRIX (15)', '', isBullish ? 'Buy' : 'Sell', 'Triple Exponential Average.');
-    addIndicator('Rate of Change (ROC)', '', isBullish ? 'Buy' : 'Sell', 'Price change over a period.');
-    addIndicator('Coppock Curve', '', 'Neutral', 'Long-term momentum indicator.');
-    addIndicator('Know Sure Thing (KST)', '', isBullish ? 'Buy' : 'Sell', 'Momentum oscillator.');
-    addIndicator('Elder Force Index', '', isBullish ? 'Buy' : 'Sell', 'Measures buying/selling pressure.');
-    addIndicator('Vortex Indicator', '', 'Neutral', 'Identifies trend direction.');
-
     return { summary, indicators };
 };
 

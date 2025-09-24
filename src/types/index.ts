@@ -356,5 +356,3 @@ export interface SignalData {
   indicatorChecklist: IndicatorChecklist;
   historicalLevels?: HistoricalLevels;
 }
-
-    
