@@ -16,9 +16,9 @@ import MarketSessions from '../info/MarketSessions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdvancedStrengthDashboard from '../tools/AdvancedStrengthDashboard';
 import SubspaceLiquidityMatrix from '../tools/SubspaceLiquidityMatrix';
-import type { SignalData } from '@/types';
+import type { SignalData, GenerateAiInsightOutput } from '@/types';
 import EliteAiInsight from '../smart-signal/EliteAiInsight';
-import type { GenerateAiInsightInput } from '@/types';
+import type { GenerateAiInsightInput, OracleInsightInput } from '@/types';
 
 interface MainAppProps {
   initialSymbol?: string;
@@ -29,6 +29,7 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
   const router = useRouter();
   const [selectedSymbol, setSelectedSymbol] = useState(initialSymbol);
   const [signalData, setSignalData] = useState<SignalData | null>(null);
+  const [aiInsight, setAiInsight] = useState<GenerateAiInsightOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -93,6 +94,8 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
               onSignalDataChange={setSignalData}
               onLoadingChange={setIsLoading}
               signalData={signalData}
+              aiInsight={aiInsight}
+              setAiInsight={setAiInsight}
             />
           </TabsContent>
           
