@@ -233,12 +233,15 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 
     const intervalId = setInterval(async () => {
         try {
+            // Only fetch price, not the whole signal data, to be more efficient
             const data = await getSignalData(symbol.toUpperCase(), mode, timeframe, false);
-            updatePrice(data.price);
+            if(data?.price){
+              updatePrice(data.price);
+            }
         } catch (error) {
             console.warn(`Polling for ${symbol} failed:`, error);
         }
-    }, 3000); // Poll every 3 seconds
+    }, 5000); // Poll every 5 seconds
 
     return () => clearInterval(intervalId);
   }, [symbol, loading, mode, timeframe, updatePrice]);
