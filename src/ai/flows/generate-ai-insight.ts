@@ -67,47 +67,6 @@ const getMarketNews = ai.defineTool(
   }
 );
 
-const mainGenerator = ai.definePrompt({
-    name: 'mainGenerator',
-    input: { schema: GenerateAiInsightInputSchema },
-    output: { schema: GenerateAiInsightOutputSchema },
-    tools: [getMarketNews],
-    prompt: `You are ELITE-AI, a world-class institutional trading strategist.
-    Your task is to generate a powerful trading analysis report for {{{symbol}}}.
-    
-    First, use the getMarketNews tool to fetch the latest headlines for {{{symbol}}}.
-    Then, synthesize ALL the provided data into the structured JSON format.
-    
-    Derive your own optimized trade setup based on the provided data.
-    Fill out EVERY field in the JSON schema with insightful, actionable analysis. Be professional and direct.
-
-    ## Analysis Parameters
-    - Asset: {{{symbol}}}
-    - Current Price: {{{price}}}
-    - Primary Trend: {{{isBullish}}} (true=Bullish)
-    - Key Pattern: {{{chartPatternName}}}
-    - Trend Strength: {{{trendStrength}}}/100
-    - Momentum Score: {{{momentum}}}/100
-    - Provided Entry: {{{entry}}}
-    - Provided SL: {{{sl}}}
-    - Provided TP1: {{{tp1}}}
-    `,
-});
-
-const fallbackGenerator = ai.definePrompt({
-    name: 'fallbackGenerator',
-    input: { schema: GenerateAiInsightInputSchema },
-    output: { schema: z.object({ summary: z.string() }) },
-    prompt: `You are a high-speed market analysis AI. The primary analysis model is unavailable.
-    Provide a concise, single-paragraph executive summary based on the following data for {{{symbol}}}.
-    - Trend: {{{isBullish}}} (True=Bullish)
-    - Key Pattern: {{{chartPatternName}}}
-    - Entry: {{{entry}}}, SL: {{{sl}}}, TP1: {{{tp1}}}
-    - Confidence Factors: Trend Strength ({{{trendStrength}}}/100), Momentum ({{{momentum}}}/100)
-    Synthesize this into a professional, high-level summary.`,
-});
-
-
 const generateAiInsightFlow = ai.defineFlow(
   {
     name: 'generateAiInsightFlow',
@@ -124,12 +83,31 @@ const generateAiInsightFlow = ai.defineFlow(
     try {
       const { output } = await ai.generate({
         model: googleAI.model('gemini-1.5-pro-latest'),
-        prompt: mainGenerator,
         tools: [getMarketNews],
         output: {
           format: 'json',
           schema: GenerateAiInsightOutputSchema,
         },
+        prompt: `You are ELITE-AI, a world-class institutional trading strategist.
+        Your task is to generate a powerful trading analysis report for {{{symbol}}}.
+        
+        First, use the getMarketNews tool to fetch the latest headlines for {{{symbol}}}.
+        Then, synthesize ALL the provided data into the structured JSON format.
+        
+        Derive your own optimized trade setup based on the provided data.
+        Fill out EVERY field in the JSON schema with insightful, actionable analysis. Be professional and direct.
+
+        ## Analysis Parameters
+        - Asset: {{{symbol}}}
+        - Current Price: {{{price}}}
+        - Primary Trend: {{{isBullish}}} (true=Bullish)
+        - Key Pattern: {{{chartPatternName}}}
+        - Trend Strength: {{{trendStrength}}}/100
+        - Momentum Score: {{{momentum}}}/100
+        - Provided Entry: {{{entry}}}
+        - Provided SL: {{{sl}}}
+        - Provided TP1: {{{tp1}}}
+        `,
         input: input,
       });
 
@@ -144,11 +122,17 @@ const generateAiInsightFlow = ai.defineFlow(
        try {
          const { output: fallbackOutput } = await ai.generate({
            model: googleAI.model('gemini-1.5-flash-latest'),
-           prompt: fallbackGenerator,
            output: {
              format: 'json',
              schema: z.object({ summary: z.string() }),
            },
+           prompt: `You are a high-speed market analysis AI. The primary analysis model is unavailable.
+           Provide a concise, single-paragraph executive summary based on the following data for {{{symbol}}}.
+           - Trend: {{{isBullish}}} (True=Bullish)
+           - Key Pattern: {{{chartPatternName}}}
+           - Entry: {{{entry}}}, SL: {{{sl}}}, TP1: {{{tp1}}}
+           - Confidence Factors: Trend Strength ({{{trendStrength}}}/100), Momentum ({{{momentum}}}/100)
+           Synthesize this into a professional, high-level summary.`,
            input: input,
          });
 
@@ -179,5 +163,3 @@ const generateAiInsightFlow = ai.defineFlow(
     }
   }
 );
-
-    
