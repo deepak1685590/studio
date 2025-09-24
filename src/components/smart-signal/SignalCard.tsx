@@ -144,6 +144,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
     }
     return null;
   }
+  
+  const checklistItems = [
+    { label: `R/R > 1.5 (${data.riskReward.toFixed(1)})`, passed: data.tradersChecklist.riskRewardPass },
+    { label: "HTF Alignment", passed: data.tradersChecklist.mtfAlignmentPass },
+    { label: "Volume Confirmation", passed: data.tradersChecklist.volumeConfirmationPass },
+    { label: "Momentum Alignment", passed: data.tradersChecklist.momentumAlignmentPass },
+    { label: "Smart Money Entry", passed: data.tradersChecklist.smartMoneyEntryPass },
+  ];
 
   return (
     <div id="signal-card-content" className={cn(
@@ -224,7 +232,19 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             </div>
         </div>
       </div>
-
+      
+      <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
+        <SectionHeader icon={<CheckCircle2 />} title="Trader's Checklist" />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {checklistItems.map((item, index) => (
+            <div key={index} className="flex items-center gap-2 text-sm p-2 bg-black/30 rounded-md">
+              {item.passed ? <CheckCircle2 className="text-green-400 size-5 flex-shrink-0" /> : <CheckCircle2 className="text-foreground/30 size-5 flex-shrink-0" />}
+              <span className={cn(item.passed ? "text-green-400/90" : "text-foreground/50")}>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      
       <div>
         <SectionHeader icon={<BrainCircuit />} title="AI Confidence Matrix" />
         <ConfidenceBreakdown
@@ -267,3 +287,4 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
+

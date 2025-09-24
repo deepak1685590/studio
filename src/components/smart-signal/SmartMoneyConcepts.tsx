@@ -36,31 +36,14 @@ interface SmartMoneyConceptsProps {
 }
 
 const SmartMoneyConcepts: React.FC<SmartMoneyConceptsProps> = ({ data, livePrice }) => {
-  const { liquidity, smartMoneyConcepts, isBullish, tradersChecklist, goldenPullbackZone, goldenReverseZone, orderBlock } = data;
+  const { liquidity, smartMoneyConcepts, isBullish, goldenPullbackZone, goldenReverseZone, orderBlock } = data;
   const isCrypto = !data.symbol.includes('/');
-
-  const checklistItems = [
-    { label: `R/R > 1.5 (${data.riskReward.toFixed(1)})`, passed: tradersChecklist.riskRewardPass },
-    { label: "HTF Alignment", passed: tradersChecklist.mtfAlignmentPass },
-    { label: "Volume Confirmation", passed: tradersChecklist.volumeConfirmationPass },
-    { label: "Momentum Alignment", passed: tradersChecklist.momentumAlignmentPass },
-    { label: "Smart Money Entry", passed: tradersChecklist.smartMoneyEntryPass },
-  ];
 
   return (
     <div className="p-4 bg-black/30 rounded-lg border border-primary/30 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-4">
                  <QuantumEntryMatrix data={data} livePrice={livePrice} />
-                 
-                 <div className="p-2 rounded-lg bg-black/40 border border-primary/20 space-y-1.5">
-                    {checklistItems.map((item, index) => (
-                         <div key={index} className="flex items-center gap-2 text-xs">
-                            {item.passed ? <CheckCircle2 className="text-green-400 size-4 flex-shrink-0" /> : <CheckCircle2 className="text-foreground/30 size-4 flex-shrink-0" />}
-                            <span className={cn(item.passed ? "text-green-400/90" : "text-foreground/50")}>{item.label}</span>
-                        </div>
-                    ))}
-                 </div>
             </div>
             <div className="space-y-4">
                  {orderBlock && <QuantumOrderBlockMatrix orderBlock={orderBlock} entryPrice={parseFloat(data.entry)} />}
