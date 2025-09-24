@@ -4,9 +4,8 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import type { SignalData } from '@/types';
-import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, BarChart, BookOpen, Layers, Magnet, Building, Timer, Target, Zap, Shield, LogIn, TrendingUp, TrendingDown } from 'lucide-react';
+import { Download, CheckCircle2, BookOpen, Layers, Magnet, Timer, Target, Zap, Shield, LogIn, TrendingUp, TrendingDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
@@ -20,6 +19,7 @@ import IndicatorChecklist from './IndicatorChecklist';
 import SmartMoneyConcepts from './SmartMoneyConcepts';
 import QuantumSuperTrendMatrix from './QuantumSuperTrendMatrix';
 import MarketStructureLevels from './MarketStructureLevels';
+import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
@@ -240,7 +240,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 
       <IndicatorChecklist data={data.indicatorChecklist} />
 
-      <KeyLevels data={data} livePrice={realtimePrice} />
+      {data.multiTimeframeSR && <QuantumPivotsMatrix data={data.multiTimeframeSR} livePrice={realtimePrice} />}
       
       {data.historicalLevels && <MarketStructureLevels levels={data.historicalLevels} livePrice={displayPrice} isCrypto={isCrypto} />}
 
