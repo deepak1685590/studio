@@ -1,5 +1,7 @@
 
 
+import { ConfidenceBreakdown } from ".";
+
 export interface AdvancedStrengthDashboardData {
     marketPhase: 'BREAKOUT' | 'BREAKDOWN' | 'CONSOLIDATION' | 'BULLISH TREND' | 'BEARISH TREND' | 'NEUTRAL';
     price: string;
@@ -37,4 +39,5 @@ export interface AdvancedStrengthDashboardData {
         d: number;
         crossover: 'BULL_CROSS' | 'BEAR_CROSS' | 'NONE';
     };
+    confidenceBreakdown: ConfidenceBreakdown;
 }
