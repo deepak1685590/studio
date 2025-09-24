@@ -218,7 +218,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
         } catch (error) {
             console.warn(`Polling for ${symbol} failed:`, error);
         }
-    }, 5000); // Poll every 5 seconds
+    }, 1000); // Poll every 1 second
 
     return () => clearInterval(intervalId);
   }, [symbol, loading, mode, timeframe, updatePrice]);
