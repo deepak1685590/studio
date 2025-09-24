@@ -14,7 +14,7 @@ interface LiquidityTargetAlertProps {
 const LiquidityTargetAlert: React.FC<LiquidityTargetAlertProps> = ({ prediction }) => {
   const { targetPrice, confidence, reason } = prediction;
   
-  const isBullishTarget = reason.toLowerCase().includes('bullish') || reason.toLowerCase().includes('up');
+  const isBullishTarget = reason.toLowerCase().includes('bullish') || reason.toLowerCase().includes('up') || reason.toLowerCase().includes('sweep of buy-side');
   const colorClass = isBullishTarget ? "text-green-400" : "text-red-400";
   
   return (

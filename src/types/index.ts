@@ -1,7 +1,8 @@
 
+
 export type { GenerateAiInsightInput, GenerateAiInsightOutput } from "@/ai/flows/generate-ai-insight";
 export type { OracleInsightInput } from "@/ai/flows/oracle-insight";
-export type { LiquidityMatrixData } from '@/types/liquidity';
+export type { LiquidityMatrixData, LiquidityPrediction } from '@/types/liquidity';
 export type { AdvancedStrengthDashboardData } from '@/types/dashboard';
 
 export interface User {
@@ -295,6 +296,7 @@ export interface SignalData {
   multiTimeframeSR: MultiTimeframeSR;
   superTrendAnalysis: SuperTrendAnalysis;
   liquidityMatrix: LiquidityMatrixData;
+  liquidityPrediction: LiquidityPrediction;
   advancedStrengthDashboard: AdvancedStrengthDashboardData;
   supermodeAnalysis?: SupermodeAnalysis;
   indicatorChecklist: IndicatorChecklist;

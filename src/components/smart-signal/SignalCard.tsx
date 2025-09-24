@@ -20,6 +20,7 @@ import SmartMoneyConcepts from './SmartMoneyConcepts';
 import QuantumSuperTrendMatrix from './QuantumSuperTrendMatrix';
 import MarketStructureLevels from './MarketStructureLevels';
 import QuantumPivotsMatrix from './QuantumPivotsMatrix';
+import LiquidityTargetAlert from './LiquidityTargetAlert';
 
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
@@ -237,11 +238,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
         <div className="space-y-4">
              <div className="p-4 bg-black/30 rounded-lg border border-primary/30">
-                <SectionHeader icon={<BookOpen />} title="Signal Thesis" />
-                <Alert className="bg-transparent border-primary/30">
-                  <p><strong className={cn("font-bold", trendColor)}>{data.chartPattern.name}:</strong> {data.chartPattern.description}</p>
-                </Alert>
+                <SectionHeader icon={<BookOpen />} title={`Quantum Signals Detected (${data.confluenceCount})`} />
+                <div className="space-y-2 text-xs text-foreground/80 max-h-48 overflow-y-auto pr-2">
+                  {data.confluenceFactors.map((factor, index) => (
+                    <p key={index} className="border-b border-primary/10 pb-1">{factor}</p>
+                  ))}
+                </div>
             </div>
+             {data.liquidityPrediction && <LiquidityTargetAlert prediction={data.liquidityPrediction} />}
         </div>
       </div>
       
@@ -287,5 +291,3 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
 };
 
 export default SignalCard;
-
-
