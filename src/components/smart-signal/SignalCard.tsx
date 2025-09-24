@@ -15,8 +15,6 @@ import WhaleAlert from './WhaleAlert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import SidewaysMarketAlert from './SidewaysMarketAlert';
 import KeyLevels from './KeyLevels';
-import PredictiveAnalysis from './PredictiveAnalysis';
-import QuantumSummary from './QuantumSummary';
 import SupermodeDashboard from './SupermodeDashboard';
 import IndicatorChecklist from './IndicatorChecklist';
 import LiquidityTargetAlert from './LiquidityTargetAlert';
@@ -215,8 +213,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         </div>
       </header>
       
-      {aiInsight && <QuantumSummary insight={aiInsight} />}
-
       {data.whaleAlert && <WhaleAlert alert={data.whaleAlert} />}
       
       {isNearEntry && !hitTargets.entry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
@@ -266,8 +262,6 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
             </div>
         </div>
       </div>
-      
-      {aiInsight?.predictiveAnalysis && <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} />}
       
       {renderModeSpecificContent()}
       
