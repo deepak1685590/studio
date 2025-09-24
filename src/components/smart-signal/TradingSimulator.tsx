@@ -6,7 +6,7 @@ import { SignalData, Position, Trade } from '@/types';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { TrendingUp, TrendingDown, Wallet, History, BarChart2, Bot, RefreshCcw } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, History, BarChart2, Bot, RefreshCcw, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -110,7 +110,7 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
             openPosition(newTradeType, true);
         }
     }
-  }, [signalData, isAutoTrading]);
+  }, [signalData, isAutoTrading, position]);
 
 
   useEffect(() => {
@@ -195,8 +195,9 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-white/90">
                 <span>Symbol:</span><strong className="font-mono text-right">{position.symbol}</strong>
                 <span>Type:</span><strong className={cn("font-mono text-right", position.type === 'long' ? 'text-green-300' : 'text-red-300')}>{position.type.toUpperCase()}</strong>
-                <span>Entry:</span><strong className="font-mono text-right">${position.entryPrice.toFixed(4)}</strong>
                 <span>Size:</span><strong className="font-mono text-right">${position.size.toFixed(2)}</strong>
+                <span>Entry Price:</span><strong className="font-mono text-right">${position.entryPrice.toFixed(4)}</strong>
+                <span>Live Price:</span><strong className="font-mono text-right flex items-center justify-end gap-1"><Activity size={12} className="text-primary animate-pulse"/>${livePrice?.toFixed(4) || '...'}</strong>
             </div>
             <div className="text-center pt-2 space-y-1">
                 <div className="text-xs text-foreground/70">Unrealized P&L</div>
@@ -205,7 +206,7 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
                 </div>
             </div>
             <Button onClick={() => closePosition()} className="w-full bg-accent/80 hover:bg-accent font-headline" disabled={isAutoTrading}>
-                Close Position @ ${livePrice?.toFixed(4)}
+                Close Position @ ${livePrice?.toFixed(4) || 'Market'}
             </Button>
         </div>
       )}
@@ -256,6 +257,3 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
 };
 
 export default TradingSimulator;
-    
-
-    
