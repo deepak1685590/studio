@@ -6,24 +6,47 @@ import { SignalData, Position, Trade } from '@/types';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { TrendingUp, TrendingDown, Wallet, History, BarChart2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, History, BarChart2, Bot, RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
+import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
 
 interface TradingSimulatorProps {
   signalData: SignalData;
   livePrice: number | null;
 }
 
+const INITIAL_BALANCE = 1_000_000;
+
 const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePrice }) => {
   const { toast } = useToast();
-  const [balance, setBalance] = useLocalStorage('trading-sim-balance', 100000);
+  const [balance, setBalance] = useLocalStorage('trading-sim-balance', INITIAL_BALANCE);
   const [position, setPosition] = useLocalStorage<Position | null>('trading-sim-position', null);
   const [tradeHistory, setTradeHistory] = useLocalStorage<Trade[]>('trading-sim-history', []);
   const [stats, setStats] = useLocalStorage('trading-sim-stats', { wins: 0, losses: 0 });
   const [pnl, setPnl] = useState(0);
-  const [tradeSize, setTradeSize] = useState('1000');
+  const [tradeSize, setTradeSize] = useState('10000');
+  const [isAutoTrading, setIsAutoTrading] = useLocalStorage('trading-sim-autotrade', false);
+
+  // Auto-trading logic
+  useEffect(() => {
+    if (isAutoTrading && signalData && livePrice) {
+      // Auto-close existing position when a new signal arrives
+      if (position && position.symbol !== signalData.symbol) {
+        closePosition(true); // `true` indicates an auto-close
+      }
+
+      // Auto-open new position
+      if (!position) {
+        const newTradeType = signalData.isBullish ? 'long' : 'short';
+        openPosition(newTradeType, true); // `true` indicates an auto-open
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signalData, isAutoTrading]);
+
 
   useEffect(() => {
     if (position && livePrice) {
@@ -36,20 +59,17 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
     }
   }, [position, livePrice]);
 
-  const openPosition = (type: 'long' | 'short') => {
+  const openPosition = (type: 'long' | 'short', isAuto: boolean = false) => {
     if (position) {
-      toast({ title: "Error", description: "You already have an open position.", variant: "destructive" });
+      if (!isAuto) toast({ title: "Error", description: "You already have an open position.", variant: "destructive" });
       return;
     }
     const size = parseFloat(tradeSize);
     if (isNaN(size) || size <= 0) {
-      toast({ title: "Error", description: "Please enter a valid trade size.", variant: "destructive" });
+      if (!isAuto) toast({ title: "Error", description: "Please enter a valid trade size.", variant: "destructive" });
       return;
     }
-    if (size > balance) {
-        toast({ title: "Error", description: "Insufficient funds for this trade size.", variant: "destructive" });
-        return;
-    }
+
     const currentPrice = livePrice || signalData.price;
     const quantity = size / currentPrice;
 
@@ -60,10 +80,12 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
       quantity: quantity,
       type,
     });
-    toast({ title: "Position Opened", description: `Opened ${type} ${signalData.symbol} position of $${size}.` });
+    
+    const toastTitle = isAuto ? "Auto-Trade: Position Opened" : "Position Opened";
+    toast({ title: toastTitle, description: `Opened ${type} ${signalData.symbol} position of $${size}.` });
   };
 
-  const closePosition = () => {
+  const closePosition = (isAuto: boolean = false) => {
     if (!position || !livePrice) return;
 
     const newBalance = balance + pnl;
@@ -78,7 +100,7 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
       size: position.size,
       pnl: pnl,
     };
-    setTradeHistory([newTrade, ...tradeHistory]);
+    setTradeHistory(prev => [newTrade, ...prev].slice(0, 50)); // Keep last 50 trades
     
     // Update stats
     if (pnl > 0) {
@@ -87,9 +109,16 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
       setStats(prev => ({ ...prev, losses: prev.losses + 1 }));
     }
     
-    toast({ title: "Position Closed", description: `Closed ${position.symbol} position. P&L: $${pnl.toFixed(2)}.` });
+    const toastTitle = isAuto ? "Auto-Trade: Position Closed" : "Position Closed";
+    toast({ title: toastTitle, description: `Closed ${position.symbol} position. P&L: $${pnl.toFixed(2)}.` });
+    
     setPosition(null);
     setPnl(0);
+  };
+  
+  const resetBalance = () => {
+    setBalance(INITIAL_BALANCE);
+    toast({ title: "Balance Reset", description: `Your balance has been reset to $${INITIAL_BALANCE.toLocaleString()}.` });
   };
   
   const equity = balance + pnl;
@@ -99,7 +128,15 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
 
   return (
     <div className="bg-black/30 rounded-lg border border-primary/20 p-4 space-y-4">
-      <h3 className="font-headline text-xl text-primary flex items-center gap-2"><Wallet /> Trading Simulator</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="font-headline text-xl text-primary flex items-center gap-2"><Wallet /> Trading Simulator</h3>
+        <div className="flex items-center space-x-2">
+          <Switch id="autotrade-switch" checked={isAutoTrading} onCheckedChange={setIsAutoTrading}/>
+          <Label htmlFor="autotrade-switch" className="flex items-center gap-1 font-bold text-primary/80">
+            <Bot size={16} /> Auto-Trade
+          </Label>
+        </div>
+      </div>
       
       {/* Account Summary */}
       <div className="grid grid-cols-3 gap-2 text-center">
@@ -128,13 +165,14 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
                     onChange={(e) => setTradeSize(e.target.value)}
                     placeholder="Trade Size (USD)"
                     className="pl-6 bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]"
+                    disabled={isAutoTrading}
                 />
             </div>
             <div className="grid grid-cols-2 gap-2">
-                <Button onClick={() => openPosition('long')} className="w-full bg-green-500/20 hover:bg-green-500/40 text-green-300 border border-green-500 font-headline">
+                <Button onClick={() => openPosition('long')} className="w-full bg-green-500/20 hover:bg-green-500/40 text-green-300 border border-green-500 font-headline" disabled={isAutoTrading}>
                     <TrendingUp className="mr-2"/> Long/Buy
                 </Button>
-                <Button onClick={() => openPosition('short')} className="w-full bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500 font-headline">
+                <Button onClick={() => openPosition('short')} className="w-full bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500 font-headline" disabled={isAutoTrading}>
                     <TrendingDown className="mr-2"/> Short/Sell
                 </Button>
             </div>
@@ -154,7 +192,7 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
             <div className={cn("text-center text-2xl font-mono py-2", pnlColor)} style={{textShadow: `0 0 10px currentColor`}}>
                 ${pnl.toFixed(2)}
             </div>
-            <Button onClick={closePosition} className="w-full bg-accent/80 hover:bg-accent font-headline">
+            <Button onClick={() => closePosition()} className="w-full bg-accent/80 hover:bg-accent font-headline" disabled={isAutoTrading}>
                 Close Position @ ${livePrice?.toFixed(4)}
             </Button>
         </div>
@@ -162,7 +200,12 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
 
       {/* Performance Metrics */}
       <div className="pt-2">
-        <h4 className="font-headline text-lg text-primary/80 mb-2 flex items-center gap-2"><BarChart2 size={18} /> Performance Metrics</h4>
+        <div className="flex justify-between items-center mb-2">
+            <h4 className="font-headline text-lg text-primary/80 flex items-center gap-2"><BarChart2 size={18} /> Performance Metrics</h4>
+            <Button variant="outline" size="sm" onClick={resetBalance} className="gap-1 text-xs border-primary/50">
+                <RefreshCcw size={12}/> Reset Balance
+            </Button>
+        </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm p-3 bg-black/40 rounded-md border border-primary/20">
             <div>Total Trades: <span className="font-mono font-bold float-right">{totalTrades}</span></div>
             <div>Win Rate: <span className="font-mono font-bold float-right text-primary">{winRate.toFixed(1)}%</span></div>
@@ -202,3 +245,5 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({ signalData, livePri
 };
 
 export default TradingSimulator;
+
+    
