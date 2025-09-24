@@ -35,6 +35,8 @@ interface SmartSignalWidgetProps {
 
 // Define the list of symbols that are supported by the WebSocket connection.
 const cryptoAssetsForWebsocket = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'DOGE', 'ADA', 'AVAX', 'DOT', 'MATIC'];
+const assetsForPolling = ['NIFTY', 'BANKNIFTY', 'GIFTNIFTY', 'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'USD/CHF', 'NZD/USD'];
+
 
 const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({ 
     initialSymbol = 'BTC', 
@@ -227,13 +229,14 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   // Polling for non-websocket assets
   useEffect(() => {
     const isSupportedCrypto = cryptoAssetsForWebsocket.includes(symbol.toUpperCase());
-    if (loading || isSupportedCrypto) {
+    const needsPolling = assetsForPolling.includes(symbol.toUpperCase());
+
+    if (loading || isSupportedCrypto || !needsPolling) {
         return;
     }
 
     const intervalId = setInterval(async () => {
         try {
-            // Only fetch price, not the whole signal data, to be more efficient
             const data = await getSignalData(symbol.toUpperCase(), mode, timeframe, false);
             if(data?.price){
               updatePrice(data.price);
@@ -503,7 +506,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
              </div>
           )}
           
-          {signalData && <SignalCard data={signalData} onDownloadPng={handleDownloadPng} onDownloadPdf={handleDownloadPdf} realtimePrice={realtimePrice} priceDirection={priceDirection} mode={mode} aiInsight={aiInsight} isAiInsightLoading={isAiInsightLoading} />}
+          {signalData && <SignalCard data={signalData} onDownloadPng={handleDownloadPng} onDownloadPdf={handleDownloadPdf} realtimePrice={realtimePrice} priceDirection={priceDirection} mode={mode} />}
         </div>
       </div>
       {isModalOpen && chartImage && signalData && (
