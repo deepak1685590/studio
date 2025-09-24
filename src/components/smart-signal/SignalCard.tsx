@@ -148,6 +148,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
   const isNearEntry = realtimePrice !== null && Math.abs(realtimePrice - entryPriceNum) / entryPriceNum < 0.001; 
   const trendColor = data.isBullish ? 'text-green-400' : 'text-red-400';
   const showSummary = (mode === '3' || mode === '4' || mode === '5') && aiInsight?.executiveSummary.primaryBias !== 'Error' && aiInsight?.executiveSummary.timeHorizon !== "The daily API quota has been exceeded. This feature will be available again tomorrow. Please check your billing details for more information.";
+  const showPredictiveAnalysis = (mode === '3' || mode === '4' || mode === '5') && aiInsight && aiInsight.predictiveAnalysis && aiInsight.predictiveAnalysis.primaryScenario !== "N/A";
 
   return (
     <div id="signal-card-content" className={cn(
@@ -218,7 +219,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                 </div>
             </SectionWrapper>
             
-            { (mode === '3' || mode === '4') && aiInsight && <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} />}
+            { showPredictiveAnalysis && <PredictiveAnalysis analysis={aiInsight.predictiveAnalysis} />}
             
             <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />
             

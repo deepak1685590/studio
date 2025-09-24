@@ -276,7 +276,7 @@ export interface SupermodeAnalysis {
     }
 }
 
-export type IndicatorSignal = 'Buy' | 'Sell' | 'Neutral' | 'Overbought' | 'Oversold';
+export type IndicatorSignal = 'Strong Buy' | 'Buy' | 'Sell' | 'Neutral' | 'Overbought' | 'Oversold';
 export interface IndicatorData {
     name: string;
     value: string;
