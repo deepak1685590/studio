@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -235,7 +234,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
             } catch (error) {
                 console.warn(`Polling for ${symbol} failed:`, error);
             }
-        }, 1000); // Poll every 1 second
+        }, 500); // Poll every 500ms for faster updates
     }
 
     return () => {
@@ -363,17 +362,28 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   const buttonColor = isBullish === true ? 'border-green-400/80 bg-green-500/20 hover:bg-green-400 hover:text-background' : isBullish === false ? 'border-red-500/80 bg-red-500/20 hover:bg-red-500 hover:text-white' : 'border-primary bg-primary/20 hover:bg-primary hover:text-background';
   const inputColor = isBullish === true ? 'border-green-400/50 focus:shadow-[0_0_15px_rgba(74,222,128,0.5)]' : isBullish === false ? 'border-red-500/50 focus:shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]';
 
+  const SignalCardSkeleton = () => (
+    <div className="p-5 bg-black/70 border-2 rounded-xl border-primary/50 shadow-lg space-y-4">
+      <Skeleton className="h-16 w-full" />
+      <Skeleton className="h-10 w-3/4" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-48 w-full" />
+      </div>
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-32 w-full" />
+    </div>
+  );
+  
   const LoadingSkeleton = () => (
-    <div className="p-6 space-y-4">
-      <div className="h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2 flex flex-col items-center justify-center">
+    <div className="space-y-6">
+      <div className="h-[300px] md:h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
         <Skeleton className="w-full h-full" />
       </div>
-       <div className="bg-black/30 rounded-lg border border-primary/20 p-2">
-        <div className="space-y-2">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-        </div>
+      <div className="bg-black/30 rounded-lg border border-primary/20 p-4 space-y-3">
+        <Skeleton className="h-8 w-1/2 mx-auto" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
       </div>
     </div>
   );
@@ -472,47 +482,44 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       {signalData && !loading && <TrendRibbon isBullish={signalData.isBullish} symbol={signalData.symbol} />}
 
       <div className="widget-body p-4 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {loading ? <LoadingSkeleton /> : (
-          <div className="space-y-6">
-            {showChart && (
-                <div className="h-[300px] md:h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
-                    <TradingViewWidget symbol={signalData?.symbol || initialSymbol} timeframe={timeframe} />
-                </div>
-            )}
-            
-            <div className="bg-black/30 rounded-lg border border-accent/50 p-4 space-y-3">
-                 <h4 className="font-headline text-lg text-accent text-center">AI Chart Vision</h4>
-                 <p className="text-xs text-center text-foreground/70">Upload a chart screenshot for an instant AI-powered technical analysis.</p>
-                <Input
-                    type="file"
-                    accept="image/png, image/jpeg, image/gif"
-                    onChange={handleFileChange}
-                    className="bg-input text-foreground border-accent/50 file:text-accent file:font-bold"
-                />
-                <Button onClick={handleAnalyzeChart} disabled={isAnalyzing || !uploadedFile} className="w-full bg-accent/20 border-accent border hover:bg-accent hover:text-accent-foreground font-headline scanner-glow">
-                    <Upload className="mr-2" />
-                    {isAnalyzing ? 'Analyzing...' : 'Analyze Chart Image'}
-                </Button>
-            </div>
-            
-             {showLiquidityMatrix && signalData && (
-                 <SubspaceLiquidityMatrix
-                    key={`liq-${signalData.symbol}`}
-                    initialSymbol={signalData.symbol}
-                    setSelectedSymbol={setSelectedSymbol}
-                />
-            )}
-            {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} bookTicker={bookTicker} />}
-          </div>
-        )}
+        <div className="space-y-6">
+          {loading ? <LoadingSkeleton /> : (
+            <>
+              {showChart && (
+                  <div className="h-[300px] md:h-[400px] bg-black/30 rounded-lg border border-primary/20 p-2">
+                      <TradingViewWidget symbol={signalData?.symbol || initialSymbol} timeframe={timeframe} />
+                  </div>
+              )}
+              
+              <div className="bg-black/30 rounded-lg border border-accent/50 p-4 space-y-3">
+                   <h4 className="font-headline text-lg text-accent text-center">AI Chart Vision</h4>
+                   <p className="text-xs text-center text-foreground/70">Upload a chart screenshot for an instant AI-powered technical analysis.</p>
+                  <Input
+                      type="file"
+                      accept="image/png, image/jpeg, image/gif"
+                      onChange={handleFileChange}
+                      className="bg-input text-foreground border-accent/50 file:text-accent file:font-bold"
+                  />
+                  <Button onClick={handleAnalyzeChart} disabled={isAnalyzing || !uploadedFile} className="w-full bg-accent/20 border-accent border hover:bg-accent hover:text-accent-foreground font-headline scanner-glow">
+                      <Upload className="mr-2" />
+                      {isAnalyzing ? 'Analyzing...' : 'Analyze Chart Image'}
+                  </Button>
+              </div>
+              
+               {showLiquidityMatrix && signalData && (
+                   <SubspaceLiquidityMatrix
+                      key={`liq-${signalData.symbol}`}
+                      initialSymbol={signalData.symbol}
+                      setSelectedSymbol={setSelectedSymbol}
+                  />
+              )}
+              {signalData && signalData.volumeAnalysis && <VolumeAnalysisTable data={signalData.volumeAnalysis} liveData={liveTradeData} bookTicker={bookTicker} />}
+            </>
+          )}
+        </div>
         
         <div className="lg:mt-0">
-          {loading && (
-             <div className="text-center text-primary/80 italic p-4">
-                <p className="mb-4">Initializing Quantum Matrix...</p>
-                <Skeleton className="h-64 w-full" />
-             </div>
-          )}
+          {loading && <SignalCardSkeleton />}
           
           {signalData && (
               <SignalCard 
