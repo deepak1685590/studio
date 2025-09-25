@@ -33,9 +33,9 @@ const KeyLevels: React.FC<{ data: SignalData, livePrice: number | null }> = ({ d
   const isCrypto = !data.symbol.includes('/');
 
   return (
-    <div>
+    <div className="p-4 bg-black/30 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.3)]">
       <SectionHeader icon={<Layers />} title="Key Technical Levels" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
         
         <LevelGroup title="Resistance Levels" className="text-red-400">
             <LevelRow 

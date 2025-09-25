@@ -22,6 +22,8 @@ import LiquidityTargetAlert from './LiquidityTargetAlert';
 import ConfidenceBreakdown from './ConfidenceBreakdown';
 import QuantumTrendChannel from './QuantumTrendChannel';
 import QuantumRangeDetector from './QuantumRangeDetector';
+import MultiTimeframeAnalysis from './MultiTimeframeAnalysis';
+import KeyLevels from './KeyLevels';
 
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
@@ -228,7 +230,17 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
                     <div className="flex justify-between text-base pt-2 px-2"><span className="text-foreground/70">Risk/Reward:</span><span className="font-mono font-bold">1 : {data.riskReward.toFixed(1)}</span></div>
                 </div>
             </div>
-            
+            <div className={blockStyle}>
+              <SectionHeader icon={<CheckCircle2 />} title="Trader's Checklist" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {checklistItems.map((item, index) => (
+                  <div key={index} className="flex items-center gap-2 text-sm p-2 bg-black/30 rounded-md">
+                    {item.passed ? <CheckCircle2 className="text-green-400 size-5 flex-shrink-0" /> : <CheckCircle2 className="text-foreground/30 size-5 flex-shrink-0" />}
+                    <span className={cn(item.passed ? "text-green-400/90" : "text-foreground/50")}>{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
         </div>
         <div className="space-y-4">
              <div className={blockStyle}>
@@ -242,18 +254,7 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
              {data.liquidityPrediction && <LiquidityTargetAlert prediction={data.liquidityPrediction} />}
         </div>
       </div>
-       <div className={blockStyle}>
-          <SectionHeader icon={<CheckCircle2 />} title="Trader's Checklist" />
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {checklistItems.map((item, index) => (
-              <div key={index} className="flex items-center gap-2 text-sm p-2 bg-black/30 rounded-md">
-                {item.passed ? <CheckCircle2 className="text-green-400 size-5 flex-shrink-0" /> : <CheckCircle2 className="text-foreground/30 size-5 flex-shrink-0" />}
-                <span className={cn(item.passed ? "text-green-400/90" : "text-foreground/50")}>{item.label}</span>
-              </div>
-            ))}
-          </div>
-      </div>
-      
+       
       {renderModeSpecificContent()}
       
       {data.superTrendAnalysis && <QuantumSuperTrendMatrix analysis={data.superTrendAnalysis} />}
@@ -265,10 +266,11 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
         <ConfidenceBreakdown data={data} livePrice={realtimePrice} />
       </div>
 
-      <div className={blockStyle}>
-        <SectionHeader icon={<Magnet />} title="Smart Money Concepts" />
-        <SmartMoneyConcepts data={data} livePrice={realtimePrice}/>
-      </div>
+      <MultiTimeframeAnalysis data={data.multiTimeframeAnalysis} />
+      
+      <SmartMoneyConcepts data={data} livePrice={realtimePrice}/>
+
+      <KeyLevels data={data} livePrice={realtimePrice} />
 
       <IndicatorChecklist data={data.indicatorChecklist} />
 

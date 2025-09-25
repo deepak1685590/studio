@@ -6,10 +6,16 @@ import { MultiTimeframeAnalysis as MultiTimeframeAnalysisType, TimeframeData } f
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Progress } from '../ui/progress';
+import { Layers } from 'lucide-react';
 
 interface MultiTimeframeAnalysisProps {
   data: MultiTimeframeAnalysisType;
 }
+
+const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
+  <h4 className="font-headline text-lg text-primary mb-2 flex items-center gap-2">{icon}{title}</h4>
+);
+
 
 const TimeframeCell: React.FC<{ timeframe: string; data: TimeframeData }> = ({ timeframe, data }) => {
   const { trend, strength } = data;
@@ -41,10 +47,13 @@ const MultiTimeframeAnalysis: React.FC<MultiTimeframeAnalysisProps> = ({ data })
   const availableTimeframes = timeframes.filter(tf => data[tf]);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 bg-black/30 rounded-lg border border-primary/20">
-      {availableTimeframes.map(tf => (
-        <TimeframeCell key={tf} timeframe={tf.toUpperCase()} data={data[tf]!} />
-      ))}
+    <div className="p-4 bg-black/30 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.3)]">
+      <SectionHeader icon={<Layers />} title="Multi-Timeframe Analysis" />
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
+        {availableTimeframes.map(tf => (
+          <TimeframeCell key={tf} timeframe={tf.toUpperCase()} data={data[tf]!} />
+        ))}
+      </div>
     </div>
   );
 };
