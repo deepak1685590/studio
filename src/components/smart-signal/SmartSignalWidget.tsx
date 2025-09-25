@@ -22,6 +22,8 @@ import TrendRibbon from './TrendRibbon';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import SubspaceLiquidityMatrix from '../tools/SubspaceLiquidityMatrix';
+import { getKlines as fetchKlinesFromServer } from '@/app/actions/getKlines';
+
 
 interface SmartSignalWidgetProps {
   initialSymbol?: string;
@@ -66,7 +68,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   const ws = useRef<WebSocket | null>(null);
   const previousPriceRef = useRef<number | null>(null);
   const currentSymbolRef = useRef(symbol);
-  const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -78,37 +79,21 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     setSymbol(initialSymbol);
   }, [initialSymbol]);
   
-  const re_calculateSignal = useCallback(async (newPrice: number) => {
-    if (!signalData) return;
-     // Throttle re-calculations to avoid performance issues
-    if (throttleTimeoutRef.current) return;
-
-    throttleTimeoutRef.current = setTimeout(async () => {
-      try {
-        const updatedData = await getSignalData(signalData.symbol, signalData.mode, signalData.timeframe, false, newPrice);
-        onSignalDataChange(updatedData);
-      } catch (e) {
-        console.warn("Live re-calculation failed:", e);
-      }
-      throttleTimeoutRef.current = null;
-    }, 2000); // Re-calculate every 2 seconds
-
-  }, [signalData, onSignalDataChange]);
-
   const updatePrice = useCallback((newPrice: number) => {
-    setRealtimePrice(newPrice);
-    let direction: 'up' | 'down' | 'neutral' = 'neutral';
-    if (previousPriceRef.current !== null) {
-      if (newPrice > previousPriceRef.current) {
-        direction = 'up';
-      } else if (newPrice < previousPriceRef.current) {
-        direction = 'down';
-      }
+    if (newPrice !== previousPriceRef.current) {
+        setRealtimePrice(newPrice);
+        let direction: 'up' | 'down' | 'neutral' = 'neutral';
+        if (previousPriceRef.current !== null) {
+        if (newPrice > previousPriceRef.current) {
+            direction = 'up';
+        } else if (newPrice < previousPriceRef.current) {
+            direction = 'down';
+        }
+        }
+        setPriceDirection(direction);
+        previousPriceRef.current = newPrice;
     }
-    setPriceDirection(direction);
-    previousPriceRef.current = newPrice;
-    re_calculateSignal(newPrice);
-  }, [re_calculateSignal, setRealtimePrice]);
+  }, [setRealtimePrice]);
 
   const handleGenerateSignal = useCallback(async (currentSymbol: string) => {
     onSignalDataChange(null);
@@ -224,17 +209,20 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     }
 
     if (!loading && !isSupportedCrypto && needsPolling) {
-        pollingIntervalRef.current = setInterval(async () => {
+        const fetchLatestPrice = async () => {
             try {
-                // Fetch fresh data to get the latest close price for non-websocket assets
-                const data = await getSignalData(symbol.toUpperCase(), mode, timeframe, false);
-                if(data?.price){
-                  updatePrice(data.price);
+                const symbolWithUSDT = symbol.toUpperCase().replace('/', '') + (isCrypto(symbol) ? "USDT" : "");
+                const klines = await fetchKlinesFromServer(symbolWithUSDT, '15m'); // Fetch minimal data
+                if (klines && klines.length > 0) {
+                    const latestPrice = parseFloat(klines[klines.length - 1][4]);
+                    updatePrice(latestPrice);
                 }
             } catch (error) {
                 console.warn(`Polling for ${symbol} failed:`, error);
             }
-        }, 500); // Poll every 500ms for faster updates
+        };
+        
+        pollingIntervalRef.current = setInterval(fetchLatestPrice, 500);
     }
 
     return () => {
@@ -255,9 +243,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     return () => {
       if (ws.current) {
         ws.current.close();
-      }
-      if(throttleTimeoutRef.current) {
-        clearTimeout(throttleTimeoutRef.current);
       }
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
