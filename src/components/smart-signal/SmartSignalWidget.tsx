@@ -65,17 +65,9 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 
   const { toast } = useToast();
 
-  const ws = useRef<WebSocket | null>(null);
   const previousPriceRef = useRef<number | null>(null);
-  const currentSymbolRef = useRef(symbol);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
+  
   useEffect(() => {
-    currentSymbolRef.current = symbol;
-  }, [symbol]);
-
-  useEffect(() => {
-    // Sync internal state if the initialSymbol prop changes (e.g., from scanner)
     setSymbol(initialSymbol);
   }, [initialSymbol]);
   
@@ -103,16 +95,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     setPriceDirection('neutral');
     previousPriceRef.current = null;
     
-    if (ws.current) {
-      ws.current.close();
-      ws.current = null;
-    }
-
-    if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-    }
-
     setLoading(true);
     onLoadingChange(true);
 
@@ -122,71 +104,11 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       onLoadingChange(false);
       return;
     }
-    
-    const isSupportedCrypto = cryptoAssetsForWebsocket.includes(currentSymbol.toUpperCase());
-
-    if (isSupportedCrypto && typeof window !== 'undefined') {
-      try {
-        const wsSymbol = currentSymbol.toLowerCase() + 'usdt';
-        const streams = `${wsSymbol}@trade/${wsSymbol}@bookTicker`;
-        const socket = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
-        ws.current = socket;
-
-        socket.onopen = () => console.log(`WebSocket connected for ${streams}`);
-        socket.onmessage = (event) => {
-          const message = JSON.parse(event.data);
-          const stream = message.stream;
-          const messageData = message.data;
-          
-          if (stream.endsWith('@trade')) {
-              if (messageData.s.toLowerCase() !== (currentSymbolRef.current.toLowerCase() + 'usdt')) {
-                  return; 
-              }
-              const newPrice = parseFloat(messageData.p);
-              updatePrice(newPrice);
-              
-              setLiveTradeData({
-                  volume: parseFloat(messageData.q),
-                  side: priceDirection === 'up' ? 'Buy' : priceDirection === 'down' ? 'Sell' : 'Neutral'
-              });
-          } else if (stream.endsWith('@bookTicker')) {
-              if (messageData.s.toLowerCase() !== (currentSymbolRef.current.toLowerCase() + 'usdt')) {
-                  return;
-              }
-              setBookTicker({
-                  bidPrice: parseFloat(messageData.b),
-                  askPrice: parseFloat(messageData.a)
-              });
-          }
-        };
-        socket.onerror = (errorEvent) => {
-          console.warn('WebSocket connection failed silently for', currentSymbol, errorEvent);
-          if (ws.current) {
-            ws.current.close();
-            ws.current = null;
-          }
-        };
-        socket.onclose = () => {
-          console.log(`WebSocket disconnected for ${streams}`);
-          if (ws.current === socket) {
-            ws.current = null;
-          }
-        };
-      } catch (e) {
-        console.warn("WebSocket initialization failed:", e);
-        if (ws.current) {
-          ws.current.close();
-          ws.current = null;
-        }
-      }
-    }
 
     try {
       const data = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe);
       onSignalDataChange(data);
-       if (!isSupportedCrypto) {
-         updatePrice(data.price);
-       }
+      updatePrice(data.price);
     } catch (error) {
       console.error("Error generating signal:", error);
       const mockData = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, true);
@@ -197,59 +119,80 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       setLoading(false);
       onLoadingChange(false);
     }
-  }, [mode, timeframe, toast, onSignalDataChange, onLoadingChange, updatePrice, priceDirection, setRealtimePrice]);
+  }, [mode, timeframe, toast, onSignalDataChange, onLoadingChange, updatePrice, setRealtimePrice]);
 
-  // Polling for non-websocket assets
   useEffect(() => {
-    const isSupportedCrypto = cryptoAssetsForWebsocket.includes(symbol.toUpperCase());
-    const needsPolling = assetsForPolling.includes(symbol.toUpperCase());
-    
-    if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
+    if (loading || !symbol) {
+      return;
     }
 
-    if (!loading && !isSupportedCrypto && needsPolling) {
-        const fetchLatestPrice = async () => {
-            try {
-                const symbolWithUSDT = symbol.toUpperCase().replace('/', '') + (isCrypto(symbol) ? "USDT" : "");
-                const klines = await fetchKlinesFromServer(symbolWithUSDT, '15m'); // Fetch minimal data
-                if (klines && klines.length > 0) {
-                    const latestPrice = parseFloat(klines[klines.length - 1][4]);
-                    updatePrice(latestPrice);
-                }
-            } catch (error) {
-                console.warn(`Polling for ${symbol} failed:`, error);
-            }
-        };
+    let ws: WebSocket | null = null;
+    let pollingInterval: NodeJS.Timeout | null = null;
+    const currentSymbol = symbol.toUpperCase();
+    const isSupportedCrypto = cryptoAssetsForWebsocket.includes(currentSymbol);
+    const needsPolling = assetsForPolling.includes(currentSymbol);
+
+    if (isSupportedCrypto) {
+      const wsSymbol = currentSymbol.toLowerCase() + 'usdt';
+      const streams = `${wsSymbol}@trade/${wsSymbol}@bookTicker`;
+      ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+
+      ws.onopen = () => console.log(`WebSocket connected for ${streams}`);
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        const messageData = message.data;
         
-        pollingIntervalRef.current = setInterval(fetchLatestPrice, 500);
+        if (message.stream.endsWith('@trade')) {
+            const newPrice = parseFloat(messageData.p);
+            updatePrice(newPrice);
+            setLiveTradeData({
+                volume: parseFloat(messageData.q),
+                side: newPrice > (previousPriceRef.current || newPrice) ? 'Buy' : 'Sell'
+            });
+        } else if (message.stream.endsWith('@bookTicker')) {
+            setBookTicker({
+                bidPrice: parseFloat(messageData.b),
+                askPrice: parseFloat(messageData.a)
+            });
+        }
+      };
+      ws.onerror = (errorEvent) => {
+        console.warn('WebSocket connection failed silently for', currentSymbol, errorEvent);
+      };
+
+    } else if (needsPolling) {
+      const fetchLatestPrice = async () => {
+        try {
+          const symbolWithUSDT = currentSymbol.replace('/', '') + (isCrypto(currentSymbol) ? "USDT" : "");
+          const klines = await fetchKlinesFromServer(symbolWithUSDT, '5m');
+          if (klines && klines.length > 0) {
+            const latestPrice = parseFloat(klines[klines.length - 1][4]);
+            updatePrice(latestPrice);
+          }
+        } catch (error) {
+          console.warn(`Polling for ${currentSymbol} failed:`, error);
+        }
+      };
+      pollingInterval = setInterval(fetchLatestPrice, 2000);
     }
 
+    // Cleanup function
     return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
+      if (ws) {
+        ws.close();
+        console.log(`WebSocket disconnected for ${currentSymbol}`);
+      }
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
       }
     };
-  }, [symbol, loading, mode, timeframe, updatePrice]);
 
-  
-  // This useEffect will be triggered by the `MainApp` component when the symbol changes there
+  }, [symbol, loading, updatePrice]);
+
   useEffect(() => {
     handleGenerateSignal(symbol);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol]);
+  }, [symbol, mode, timeframe]); // Re-fetch signal when mode or timeframe changes
 
-  useEffect(() => {
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, []);
-  
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -334,12 +277,11 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   };
 
   const handleSymbolInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSymbol(e.target.value);
+    setSelectedSymbol(e.target.value);
   }
   
   const handleEngageAnalysis = () => {
-    setSelectedSymbol(symbol);
-    // The parent MainApp component will detect the symbol change and trigger the re-render and data fetch.
+    handleGenerateSignal(symbol);
   }
 
   const isBullish = signalData?.isBullish;
@@ -531,3 +473,5 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 };
 
 export default SmartSignalWidget;
+
+    
