@@ -246,6 +246,14 @@ export interface LinearRegressionChannel {
     lower: number;
 }
 
+export interface RangeDetectorData {
+    status: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+    rangeTop: number;
+    rangeBottom: number;
+    centerLine: number;
+    isConfirmed: boolean;
+}
+
 export interface SignalData {
   symbol: string;
   price: number;
@@ -307,4 +315,5 @@ export interface SignalData {
   indicatorChecklist: IndicatorChecklist;
   historicalLevels?: HistoricalLevels;
   linearRegressionChannel: LinearRegressionChannel;
+  rangeDetector?: RangeDetectorData;
 }

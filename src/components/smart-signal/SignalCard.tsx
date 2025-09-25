@@ -21,6 +21,7 @@ import QuantumPivotsMatrix from './QuantumPivotsMatrix';
 import LiquidityTargetAlert from './LiquidityTargetAlert';
 import ConfidenceBreakdown from './ConfidenceBreakdown';
 import QuantumTrendChannel from './QuantumTrendChannel';
+import QuantumRangeDetector from './QuantumRangeDetector';
 
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
@@ -195,6 +196,8 @@ const SignalCard: React.FC<SignalCardProps> = ({ data, onDownloadPng, onDownload
       
       {isNearEntry && !hitTargets.entry && <EntryProximityAlert livePrice={displayPrice} entryPrice={entryPriceNum} isBullish={data.isBullish} />}
 
+      {data.rangeDetector && <QuantumRangeDetector livePrice={displayPrice} data={data.rangeDetector} />}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
         <div className="space-y-4">
             <div className={blockStyle}>

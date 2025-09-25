@@ -1,6 +1,6 @@
 
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock, IndicatorChecklist, IndicatorData, IndicatorSignal, SupermodeAnalysis, HistoricalLevels, LinearRegressionChannel } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock, IndicatorChecklist, IndicatorData, IndicatorSignal, SupermodeAnalysis, HistoricalLevels, LinearRegressionChannel, RangeDetectorData } from '@/types';
 import { getKlines as fetchKlinesFromServer } from '@/app/actions/getKlines';
 
 // --- START: Real Technical Analysis Functions ---
@@ -13,6 +13,13 @@ const calculateEMA = (data: number[], period: number): number => {
         emaArray.push((data[i] * k) + (emaArray[i - 1] * (1 - k)));
     }
     return emaArray[emaArray.length - 1];
+};
+
+const calculateSMA = (data: number[], period: number): number => {
+    if (data.length < period) return 0;
+    const slice = data.slice(-period);
+    const sum = slice.reduce((acc, val) => acc + val, 0);
+    return sum / period;
 };
 
 const calculateRSI = (closes: number[], period = 14): number => {
@@ -151,7 +158,7 @@ const calculateStochRSI = (closes: number[], rsiPeriod = 14, stochPeriod = 14, k
         stochRsiValues.push(stochRsi);
     }
     
-    const calculateSMA = (data: number[], period: number) => {
+    const calculateSMAsimple = (data: number[], period: number) => {
         const sma = [];
         for (let i = period - 1; i < data.length; i++) {
             const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
@@ -160,8 +167,8 @@ const calculateStochRSI = (closes: number[], rsiPeriod = 14, stochPeriod = 14, k
         return sma;
     };
     
-    const kValues = calculateSMA(stochRsiValues, kPeriod);
-    const dValues = calculateSMA(kValues, dPeriod);
+    const kValues = calculateSMAsimple(stochRsiValues, kPeriod);
+    const dValues = calculateSMAsimple(kValues, dPeriod);
     
     return { k: kValues.pop() || 50, d: dValues.pop() || 50 };
 };
@@ -183,33 +190,21 @@ const getMockKlines = (price: number, interval: Timeframe) => {
   };
   const intervalMinutes = intervalMap[interval] || 15;
 
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 500; i++) { // Increased for long ATR period
     const open = currentPrice;
     const high = open * (1 + (pseudoRandom(i.toString()) - 0.45) * 0.02);
     const low = open * (1 + (pseudoRandom(i.toString() + 'low') - 0.55) * 0.02);
     const close = (high + low) / 2 * (1 + (pseudoRandom(i.toString()+'close') - 0.5) * 0.01);
     const volume = pseudoRandom(i.toString()+'vol') * 1000;
     
-    // Inject volume spikes
-    if (i % 30 === 0 && i > 0) { // create a spike every 30 candles or so
-        klines.push([
-          Date.now() - (200 - i) * intervalMinutes * 60 * 1000,
-          open.toFixed(4),
-          (high * 1.01).toFixed(4), // higher high on spike
-          (low * 0.99).toFixed(4), // lower low on spike
-          close.toFixed(4),
-          (volume * 5).toFixed(4), // 5x volume spike
-        ]);
-    } else {
-        klines.push([
-          Date.now() - (200 - i) * intervalMinutes * 60 * 1000,
-          open.toFixed(4),
-          high.toFixed(4),
-          low.toFixed(4),
-          close.toFixed(4),
-          volume.toFixed(4),
-        ]);
-    }
+    klines.push([
+      Date.now() - (500 - i) * intervalMinutes * 60 * 1000,
+      open.toFixed(4),
+      high.toFixed(4),
+      low.toFixed(4),
+      close.toFixed(4),
+      volume.toFixed(4),
+    ]);
     currentPrice = close;
   }
   return klines;
@@ -232,6 +227,50 @@ const pseudoRandom = (seedStr: string): number => {
     h4 = Math.imul(h2 ^ (h4 >>> 19), 2869860233);
     return ((h1^h2^h3^h4)>>>0) / 4294967296;
 }
+
+const calculateRangeDetector = (klines: any[], price: number): RangeDetectorData => {
+    const minLength = 20;
+    const atrMultiplier = 1.0;
+    const atrLength = 500; // As requested, a very long period for a stable volatility measure.
+    const smaLength = 20; // A standard period for the center line.
+
+    if (klines.length < Math.max(minLength, atrLength, smaLength)) {
+        return { status: 'NEUTRAL', rangeTop: 0, rangeBottom: 0, centerLine: 0, isConfirmed: false };
+    }
+
+    const closes = klines.map(k => parseFloat(k[4]));
+    const centerLine = calculateSMA(closes, smaLength);
+    const atr = calculateATR(klines.slice(0, -1), atrLength); // Use historical data for ATR
+
+    const rangeTop = centerLine + (atr * atrMultiplier);
+    const rangeBottom = centerLine - (atr * atrMultiplier);
+
+    let outsideCount = 0;
+    const checkBars = closes.slice(-minLength);
+    for (const close of checkBars) {
+        if (close > rangeTop || close < rangeBottom) {
+            outsideCount++;
+        }
+    }
+
+    const isConfirmed = outsideCount === 0;
+    let status: 'BULLISH' | 'BEARISH' | 'NEUTRAL' = 'NEUTRAL';
+    if (isConfirmed) {
+        if (price > rangeTop) {
+            status = 'BULLISH';
+        } else if (price < rangeBottom) {
+            status = 'BEARISH';
+        }
+    }
+
+    return {
+        status,
+        rangeTop,
+        rangeBottom,
+        centerLine,
+        isConfirmed
+    };
+};
 
 const generateIndicatorChecklist = (isBullish: boolean, momentum: Momentum, seed: string): IndicatorChecklist => {
     const indicators: IndicatorData[] = [];
@@ -815,6 +854,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const multiTimeframeSR = generateMultiTimeframeSR(price, klines, isBullish, analysisSeed);
     const liquidityMatrix = generateLiquidityMatrixData(price, swingHigh, swingLow, isBullish, analysisSeed);
     const linearRegressionChannel = calculateLinearRegressionChannel(klines);
+    const rangeDetector = calculateRangeDetector(klines, price);
     
     const rsiValue = calculateRSI(closes, 14);
     let momentum: Momentum;
@@ -946,6 +986,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             advancedStrengthDashboard,
             indicatorChecklist,
             linearRegressionChannel,
+            rangeDetector,
         };
     }
 
@@ -1161,5 +1202,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         supermodeAnalysis: mode === '5' ? (klines as any).supermodeAnalysis : undefined,
         indicatorChecklist,
         linearRegressionChannel,
+        rangeDetector,
     };
 };
