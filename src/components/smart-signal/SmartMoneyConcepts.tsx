@@ -9,7 +9,7 @@ import QuantumOrderBlockMatrix from './QuantumOrderBlockMatrix';
 import QuantumEntryMatrix from './QuantumEntryMatrix';
 
 const SMC_Item = ({ icon, title, level, description, isCrypto, className }: { icon: React.ReactNode, title: string, level?: string, description: string, isCrypto: boolean, className?: string }) => (
-    <div className={cn("flex items-start gap-3", className)}>
+    <div className={cn("flex items-start gap-3 p-3 rounded-lg bg-black/30 border border-primary/20", className)}>
       <div className="p-2 bg-black rounded-full border border-primary/50 mt-1">
         {icon}
       </div>
@@ -38,11 +38,11 @@ interface SmartMoneyConceptsProps {
 const SmartMoneyConcepts: React.FC<SmartMoneyConceptsProps> = ({ data, livePrice }) => {
   const { liquidity, smartMoneyConcepts, isBullish, goldenPullbackZone, goldenReverseZone, orderBlock } = data;
   const isCrypto = !data.symbol.includes('/');
-  const blockStyle = "p-4 bg-black/30 rounded-lg border border-accent/50 shadow-[0_0_15px_hsl(var(--accent)_/_0.3)]";
+  const blockStyle = "p-4 bg-black/30 rounded-lg border-2 border-accent/50 shadow-[0_0_25px_hsl(var(--accent)_/_0.5)]";
 
 
   return (
-    <div className="space-y-4">
+    <div className={cn(blockStyle, "space-y-4")}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-4">
                  <QuantumEntryMatrix data={data} livePrice={livePrice} />
