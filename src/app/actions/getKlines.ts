@@ -39,5 +39,3 @@ export const getKlines = async (symbol: string, timeframe: Timeframe): Promise<a
     throw error;
   }
 };
-
-    

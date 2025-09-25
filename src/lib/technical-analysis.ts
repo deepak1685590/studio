@@ -177,39 +177,6 @@ const calculateStochRSI = (closes: number[], rsiPeriod = 14, stochPeriod = 14, k
 // --- END: Real Technical Analysis Functions ---
 
 
-const getMockKlines = (price: number, interval: Timeframe) => {
-  const klines = [];
-  let currentPrice = price;
-  
-  const intervalMap: {[key in Timeframe]: number} = {
-    '5m': 5,
-    '15m': 15,
-    '1h': 60,
-    '4h': 240,
-    '1d': 1440,
-  };
-  const intervalMinutes = intervalMap[interval] || 15;
-
-  for (let i = 0; i < 500; i++) { // Increased for long ATR period
-    const open = currentPrice;
-    const high = open * (1 + (pseudoRandom(i.toString()) - 0.45) * 0.02);
-    const low = open * (1 + (pseudoRandom(i.toString() + 'low') - 0.55) * 0.02);
-    const close = (high + low) / 2 * (1 + (pseudoRandom(i.toString()+'close') - 0.5) * 0.01);
-    const volume = pseudoRandom(i.toString()+'vol') * 1000;
-    
-    klines.push([
-      Date.now() - (500 - i) * intervalMinutes * 60 * 1000,
-      open.toFixed(4),
-      high.toFixed(4),
-      low.toFixed(4),
-      close.toFixed(4),
-      volume.toFixed(4),
-    ]);
-    currentPrice = close;
-  }
-  return klines;
-};
-
 // Deterministic pseudo-random number generator based on a seed string (e.g., the symbol)
 const pseudoRandom = (seedStr: string): number => {
     let h1 = 1779033703, h2 = 3144134277,
@@ -752,31 +719,19 @@ const isCrypto = (symbol: string): boolean => {
     return true; // Assume crypto
 }
 
-export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, forceMock = false, livePrice?: number): Promise<SignalData> => {
+export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, livePrice?: number): Promise<SignalData> => {
     let price, klines: any[], symbolWithUSDT = symbol.toUpperCase().replace('/', '') + (isCrypto(symbol) ? "USDT" : "");
     const analysisSeed = `${symbol}-${timeframe}`;
     
-    const useMockData = forceMock || !isCrypto(symbol);
-
-    if (useMockData) {
-        let basePrice = 70000; // Default for crypto like BTC
-        if (symbol.toUpperCase().includes('NIFTY')) basePrice = 23000;
-        if (symbol.toUpperCase().includes('BANKNIFTY')) basePrice = 50000;
-        if (symbol.toUpperCase().includes('/')) basePrice = 1.1; // Forex
-        
-        price = parseFloat((pseudoRandom(analysisSeed + 'price') * basePrice * 0.2 + basePrice * 0.9).toFixed(4));
-        klines = getMockKlines(price, timeframe);
-    } else {
-        try {
-            klines = await fetchKlinesFromServer(symbolWithUSDT, timeframe);
-            if (!klines || klines.length < 50) { // Need enough data for calculations
-                throw new Error('Server action returned insufficient klines');
-            }
-            price = parseFloat(klines[klines.length - 1][4]);
-        } catch (err) {
-            console.warn(`Server action for ${symbolWithUSDT} failed, using mock data.`, err);
-            return getSignalData(symbol, mode, timeframe, true);
+    try {
+        klines = await fetchKlinesFromServer(symbolWithUSDT, timeframe);
+        if (!klines || klines.length < 50) {
+            throw new Error('Server action returned insufficient klines');
         }
+        price = parseFloat(klines[klines.length - 1][4]);
+    } catch (err) {
+        console.error(`Failed to fetch live data for ${symbolWithUSDT}.`, err);
+        throw new Error(`Could not fetch live data for ${symbol.toUpperCase()}. Please check the asset pair or try again later.`);
     }
 
     if (livePrice) {

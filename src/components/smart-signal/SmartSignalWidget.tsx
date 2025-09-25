@@ -23,6 +23,8 @@ import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import SubspaceLiquidityMatrix from '../tools/SubspaceLiquidityMatrix';
 import { getKlines as fetchKlinesFromServer } from '@/app/actions/getKlines';
+import SignalCardSkeleton from './SignalCardSkeleton';
+import TradingSimulator from './TradingSimulator';
 
 
 interface SmartSignalWidgetProps {
@@ -111,10 +113,9 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       updatePrice(data.price);
     } catch (error) {
       console.error("Error generating signal:", error);
-      const mockData = await getSignalData(currentSymbol.toUpperCase(), mode, timeframe, true);
-      onSignalDataChange(mockData);
-      updatePrice(mockData.price);
-      toast({ title: "API Error", description: "Failed to fetch market data. Displaying simulated data.", variant: "destructive" });
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+      toast({ title: "Live Data API Error", description: `Could not fetch signal for ${currentSymbol.toUpperCase()}. The API may be unavailable or the asset pair is not supported. Error: ${errorMessage}`, variant: "destructive", duration: 8000 });
+      onSignalDataChange(null);
     } finally {
       setLoading(false);
       onLoadingChange(false);
@@ -131,6 +132,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     const currentSymbol = symbol.toUpperCase();
     const isSupportedCrypto = cryptoAssetsForWebsocket.includes(currentSymbol);
     const needsPolling = assetsForPolling.includes(currentSymbol);
+    const isCrypto = (sym: string) => !sym.includes('/') && !['NIFTY', 'BANKNIFTY', 'GIFTNIFTY'].includes(sym);
 
     if (isSupportedCrypto) {
       const wsSymbol = currentSymbol.toLowerCase() + 'usdt';
@@ -288,19 +290,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
   const borderColor = isBullish === true ? 'border-green-400/80 shadow-green-400/30' : isBullish === false ? 'border-red-500/80 shadow-red-500/30' : 'border-primary shadow-primary/30';
   const buttonColor = isBullish === true ? 'border-green-400/80 bg-green-500/20 hover:bg-green-400 hover:text-background' : isBullish === false ? 'border-red-500/80 bg-red-500/20 hover:bg-red-500 hover:text-white' : 'border-primary bg-primary/20 hover:bg-primary hover:text-background';
   const inputColor = isBullish === true ? 'border-green-400/50 focus:shadow-[0_0_15px_rgba(74,222,128,0.5)]' : isBullish === false ? 'border-red-500/50 focus:shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]';
-
-  const SignalCardSkeleton = () => (
-    <div className="p-5 bg-black/70 border-2 rounded-xl border-primary/50 shadow-lg space-y-4">
-      <Skeleton className="h-16 w-full" />
-      <Skeleton className="h-10 w-3/4" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-48 w-full" />
-      </div>
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-32 w-full" />
-    </div>
-  );
   
   const LoadingSkeleton = () => (
     <div className="space-y-6">
@@ -473,5 +462,3 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 };
 
 export default SmartSignalWidget;
-
-    
