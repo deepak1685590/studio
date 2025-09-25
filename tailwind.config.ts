@@ -146,6 +146,18 @@ export default {
             '0%, 100%': { opacity: '0.7', transform: 'scale(1)' },
             '50%': { opacity: '1', transform: 'scale(1.02)' },
         },
+        'neon-glow-green': {
+            '0%, 100%': { textShadow: '0 0 5px theme("colors.green.500"), 0 0 10px theme("colors.green.400")' },
+            '50%': { textShadow: '0 0 10px theme("colors.green.400"), 0 0 20px theme("colors.green.300")' },
+        },
+        'neon-glow-red': {
+            '0%, 100%': { textShadow: '0 0 5px theme("colors.red.500"), 0 0 10px theme("colors.red.400")' },
+            '50%': { textShadow: '0 0 10px theme("colors.red.400"), 0 0 20px theme("colors.red.300")' },
+        },
+        'bar-pulse-green': {
+            '0%, 100%': { opacity: '0.8', filter: 'saturate(1)' },
+            '50%': { opacity: '1', filter: 'saturate(1.5)' },
+        },
         'float-slow': {
             '0%, 100%': { transform: 'translateY(0px)' },
             '50%': { transform: 'translateY(-15px)' },
@@ -162,6 +174,9 @@ export default {
         'neon-color-cycle': 'neon-color-cycle 5s linear infinite',
         marquee: 'marquee 40s linear infinite',
         'neon-glow': 'neon-glow 4s ease-in-out infinite alternate',
+        'neon-glow-green': 'neon-glow-green 3s ease-in-out infinite alternate',
+        'neon-glow-red': 'neon-glow-red 3s ease-in-out infinite alternate',
+        'bar-pulse-green': 'bar-pulse-green 2s ease-in-out infinite',
         'float-slow': 'float-slow 6s ease-in-out infinite',
       },
       textShadow: {
