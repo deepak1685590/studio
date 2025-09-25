@@ -106,7 +106,8 @@ const MainApp: React.FC<MainAppProps> = ({ initialSymbol = "BTC" }) => {
               onSignalDataChange={setSignalData}
               onLoadingChange={setIsLoading}
               signalData={signalData}
-              onLivePriceChange={setLivePrice}
+              realtimePrice={livePrice}
+              setRealtimePrice={setLivePrice}
             />
           </TabsContent>
           

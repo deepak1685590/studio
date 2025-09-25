@@ -30,7 +30,8 @@ interface SmartSignalWidgetProps {
   onSignalDataChange: (data: SignalData | null) => void;
   onLoadingChange: (loading: boolean) => void;
   signalData: SignalData | null;
-  onLivePriceChange: (price: number | null) => void;
+  realtimePrice: number | null;
+  setRealtimePrice: (price: number | null) => void;
 }
 
 // Define the list of symbols that are supported by the WebSocket connection.
@@ -44,13 +45,13 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     onSignalDataChange,
     onLoadingChange,
     signalData,
-    onLivePriceChange
+    realtimePrice,
+    setRealtimePrice
  }) => {
   const [symbol, setSymbol] = useState(initialSymbol);
   const [mode, setMode] = useState('3');
   const [timeframe, setTimeframe] = useState<Timeframe>('15m');
   const [loading, setLoading] = useState(true);
-  const [realtimePrice, setRealtimePrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
   const [liveTradeData, setLiveTradeData] = useState<LiveTradeData | null>(null);
   const [bookTicker, setBookTicker] = useState<BookTicker | null>(null);
@@ -97,7 +98,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
 
   const updatePrice = useCallback((newPrice: number) => {
     setRealtimePrice(newPrice);
-    onLivePriceChange(newPrice);
     let direction: 'up' | 'down' | 'neutral' = 'neutral';
     if (previousPriceRef.current !== null) {
       if (newPrice > previousPriceRef.current) {
@@ -109,12 +109,11 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
     setPriceDirection(direction);
     previousPriceRef.current = newPrice;
     re_calculateSignal(newPrice);
-  }, [re_calculateSignal, onLivePriceChange]);
+  }, [re_calculateSignal, setRealtimePrice]);
 
   const handleGenerateSignal = useCallback(async (currentSymbol: string) => {
     onSignalDataChange(null);
     setRealtimePrice(null);
-    onLivePriceChange(null);
     setLiveTradeData(null);
     setBookTicker(null);
     setPriceDirection('neutral');
@@ -156,7 +155,6 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
           const messageData = message.data;
           
           if (stream.endsWith('@trade')) {
-              // DEFINITIVE FIX: Ensure symbol comparison is correct by comparing the app's current symbol ref
               if (messageData.s.toLowerCase() !== (currentSymbolRef.current.toLowerCase() + 'usdt')) {
                   return; 
               }
@@ -215,7 +213,7 @@ const SmartSignalWidget: React.FC<SmartSignalWidgetProps> = ({
       setLoading(false);
       onLoadingChange(false);
     }
-  }, [mode, timeframe, toast, onSignalDataChange, onLoadingChange, updatePrice, priceDirection]);
+  }, [mode, timeframe, toast, onSignalDataChange, onLoadingChange, updatePrice, priceDirection, setRealtimePrice]);
 
   // Polling for non-websocket assets
   useEffect(() => {
