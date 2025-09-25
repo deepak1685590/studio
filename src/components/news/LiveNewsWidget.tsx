@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Rss, X, Newspaper } from 'lucide-react';
+import { Rss, X, Newspaper, Briefcase, Bitcoin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { getNews, NewsItem } from '@/app/actions/getNews';
@@ -21,7 +21,7 @@ const LiveNewsWidget = () => {
       setNews(headlines);
     } catch (error) {
       console.error("Failed to fetch news:", error);
-      setNews([{ headline: "Could not fetch latest news. Please try again later.", impact: 'Low' }]);
+      setNews([{ headline: "Could not fetch latest news. Please try again later.", impact: 'Low', category: 'Business' }]);
     } finally {
       setLoading(false);
     }
@@ -37,6 +37,15 @@ const LiveNewsWidget = () => {
         return <Badge variant="outline" className="text-foreground/70 shrink-0">Low Impact</Badge>;
     }
   };
+  
+  const getCategoryIcon = (category: 'Business' | 'Crypto') => {
+      switch(category) {
+          case 'Business':
+              return <Briefcase size={14} className="text-primary/80" />;
+          case 'Crypto':
+              return <Bitcoin size={14} className="text-amber-400" />;
+      }
+  }
 
   return (
     <Sheet onOpenChange={(open) => open && fetchNews()}>
@@ -68,7 +77,11 @@ const LiveNewsWidget = () => {
             news.map((item, index) => (
               <div key={index} className="p-4 bg-primary/5 border border-primary/20 rounded-lg flex flex-col gap-3">
                 <p className="text-base text-foreground/90">{item.headline}</p>
-                <div className="flex justify-end">
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-1 text-xs font-bold">
+                        {getCategoryIcon(item.category)}
+                        <span className={item.category === 'Crypto' ? 'text-amber-400' : 'text-primary/80'}>{item.category}</span>
+                    </div>
                     {getImpactBadge(item.impact)}
                 </div>
               </div>
