@@ -35,6 +35,7 @@ const writeUsersData = (data: { users: User[] }) => {
     fs.writeFileSync(usersFilePath, JSON.stringify(data, null, 2), 'utf-8');
   } catch (error) {
     console.error('Error writing users file:', error);
+    throw new Error('Failed to write user data.');
   }
 };
 
