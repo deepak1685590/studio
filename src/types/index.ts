@@ -1,5 +1,10 @@
 
 
+export type { GenerateAiInsightInput, GenerateAiInsightOutput } from "@/ai/flows/generate-ai-insight";
+export type { OracleInsightInput } from "@/ai/flows/oracle-insight";
+export type { LiquidityMatrixData, LiquidityPrediction } from '@/types/liquidity';
+export type { AdvancedStrengthDashboardData } from '@/types/dashboard';
+
 export interface User {
   username: string;
   password?: string;
@@ -41,14 +46,19 @@ export interface Trade {
   pnl: number;
 }
 
+export interface TimeframeData {
+  trend: Trend;
+  strength: number; // 0-100 strength of the trend
+}
+
 export interface MultiTimeframeAnalysis {
-  '5m'?: Trend;
-  '15m'?: Trend;
-  '1H'?: Trend;
-  '4H'?: Trend;
-  'Daily'?: Trend;
-  'Weekly'?: Trend;
-  [key: string]: Trend | undefined;
+  '5m'?: TimeframeData;
+  '15m'?: TimeframeData;
+  '1H'?: TimeframeData;
+  '4H'?: TimeframeData;
+  'Daily'?: TimeframeData;
+  'Weekly'?: TimeframeData;
+  [key: string]: TimeframeData | undefined;
 }
 
 export interface ChartPattern {
@@ -79,6 +89,17 @@ export interface GoldenPullbackZone {
 export interface SniperZone {
     min: string;
     max: string;
+}
+
+export interface OrderBlock {
+    type: 'BULLISH' | 'BEARISH';
+    status: 'FRESH' | 'MITIGATED' | 'BROKEN';
+    top: string;
+    bottom: string;
+    meanThreshold: string;
+    volume: number; // Volume in millions USD
+    age: string; // e.g., "5 candles ago"
+    context: string; // e.g., "Created after liquidity sweep"
 }
 
 export interface ConfidenceBreakdown {
@@ -121,7 +142,6 @@ export interface LiquidityInfo {
 }
 
 export interface SmartMoneyConcepts {
-    entry: string;
     bos: string;
     choch: string;
     confirmedEntry: string;
@@ -157,13 +177,9 @@ export interface VolumeAnalysis {
 }
 
 export interface SupportResistanceLevel {
-    S1: number;
-    S2: number;
-    S3: number;
-    R1: number;
-    R2: number;
-    R3: number;
-    probableTarget: 'S1' | 'S2' | 'S3' | 'R1' | 'R2' | 'R3';
+    S: number[];
+    R: number[];
+    probableTarget: number;
 }
 
 export interface MultiTimeframeSR {
@@ -172,43 +188,71 @@ export interface MultiTimeframeSR {
     '1H': SupportResistanceLevel;
 }
 
-export interface AdvancedStrengthDashboardData {
-    marketPhase: 'BREAKOUT' | 'BREAKDOWN' | 'CONSOLIDATION' | 'BULLISH TREND' | 'BEARISH TREND' | 'NEUTRAL';
-    price: string;
-    priceChangePercent: number;
-    marketSentiment: {
-        score: number;
-        label: string;
-    };
-    momentum: {
-        rsi: number;
-        trend: 'UP' | 'DOWN' | 'NEUTRAL';
-    };
-    longPower: number;
-    shortPower: number;
-    overallStrength: number;
-    trendAnalysis: {
-        strength: number;
-        momentum: 'ACCELERATING' | 'DECELERATING' | 'STABLE';
-    };
-    volatility: {
-        percent: number;
-        label: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW';
-    };
-    volumeStatus: {
-        status: 'SPIKE' | 'DRY' | 'HIGH' | 'NORMAL' | 'LOW';
-        changePercent: number;
-    };
-    volumeValue: number;
-    rsiStatus: 'OVERBOUGHT' | 'OVERSOLD' | 'NEUTRAL';
-    divergence: 'BULLISH' | 'BEARISH' | 'NONE';
-    stochRsi: {
-        k: number;
-        d: number;
-        signal: 'BULL_CROSS' | 'BEAR_CROSS' | 'NONE';
-    };
+export interface SuperTrendAnalysis {
+    status: 'Uptrend Developing' | 'Uptrend Mature' | 'Downtrend Developing' | 'Downtrend Mature' | 'Trend Exhaustion' | 'Consolidation';
+    superTrendLine: number;
+    momentumDecay: number; // 0-100, higher means trend is weakening
+    trendStrength: number; // 0-100, overall strength of the current trend phase
+    entrySignal: number;
+    exitSignal: number;
 }
 
+export interface HistoricalLevels {
+    tdh: number; // Today's Day High
+    tdl: number; // Today's Day Low
+    pdh: number; // Previous Day High
+    pdl: number; // Previous Day Low
+    pwh: number; // Previous Week High
+    pwl: number; // Previous Week Low
+}
+
+export interface SupermodeTimeframeData {
+    entry: string;
+    sl: string;
+    tp1: string;
+    supplyZone: [string, string];
+    demandZone: [string, string];
+    confidence: number;
+}
+
+export interface SupermodeAnalysis {
+    isBullish: boolean;
+    setups: {
+        '5m': SupermodeTimeframeData;
+        '15m': SupermodeTimeframeData;
+        '1h': SupermodeTimeframeData;
+    }
+}
+
+export type IndicatorSignal = 'Strong Buy' | 'Buy' | 'Sell' | 'Neutral' | 'Overbought' | 'Oversold' | 'Strong Sell';
+export interface IndicatorData {
+    name: string;
+    value: string;
+    signal: IndicatorSignal;
+    notes: string;
+}
+export interface IndicatorChecklist {
+    summary: {
+        buy: number;
+        sell: number;
+        neutral: number;
+    };
+    indicators: IndicatorData[];
+}
+
+export interface LinearRegressionChannel {
+    upper: number;
+    middle: number;
+    lower: number;
+}
+
+export interface RangeDetectorData {
+    status: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+    rangeTop: number;
+    rangeBottom: number;
+    centerLine: number;
+    isConfirmed: boolean;
+}
 
 export interface SignalData {
   symbol: string;
@@ -228,8 +272,15 @@ export interface SignalData {
   swingHigh: string;
   swingLow: string;
   pivot: string;
+  poc: string;
+  vah: string;
+  val: string;
   s1: string;
+  s2: string;
+  s3: string;
   r1: string;
+  r2: string;
+  r3: string;
   buyVolume: string;
   sellVolume: string;
   volumeImbalance: string;
@@ -248,6 +299,7 @@ export interface SignalData {
   goldenPullbackZone?: GoldenPullbackZone;
   goldenReverseZone?: GoldenPullbackZone;
   sniperZone?: SniperZone;
+  orderBlock?: OrderBlock;
   confidenceBreakdown: ConfidenceBreakdown;
   movingAverageAnalysis: MovingAverageAnalysis;
   trendStrength: TrendStrength;
@@ -255,5 +307,13 @@ export interface SignalData {
   sidewaysMarket?: SidewaysMarket;
   volumeAnalysis: VolumeAnalysis;
   multiTimeframeSR: MultiTimeframeSR;
-  advancedStrengthDashboard?: AdvancedStrengthDashboardData;
+  superTrendAnalysis: SuperTrendAnalysis;
+  liquidityMatrix: LiquidityMatrixData;
+  liquidityPrediction: LiquidityPrediction;
+  advancedStrengthDashboard: AdvancedStrengthDashboardData;
+  supermodeAnalysis?: SupermodeAnalysis;
+  indicatorChecklist: IndicatorChecklist;
+  historicalLevels?: HistoricalLevels;
+  linearRegressionChannel: LinearRegressionChannel;
+  rangeDetector?: RangeDetectorData;
 }

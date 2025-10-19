@@ -121,6 +121,16 @@ export default {
             color: '#fae8ff',
           },
         },
+        'neon-red': {
+          '0%, 100%': {
+            'text-shadow': '0 0 5px #fda4af, 0 0 10px #fda4af, 0 0 20px #fda4af, 0 0 40px #f43f5e, 0 0 80px #f43f5e',
+            color: '#fff1f2',
+          },
+          '50%': {
+            'text-shadow': '0 0 10px #fda4af, 0 0 20px #fda4af, 0 0 40px #f43f5e, 0 0 80px #f43f5e, 0 0 100px #f43f5e',
+            color: '#fff1f2',
+          },
+        },
         'neon-color-cycle': {
             '0%': { color: 'hsl(180, 100%, 50%)', textShadow: '0 0 5px hsl(180, 100%, 50%), 0 0 10px hsl(180, 100%, 50%)' },
             '25%': { color: 'hsl(270, 100%, 60%)', textShadow: '0 0 5px hsl(270, 100%, 60%), 0 0 10px hsl(270, 100%, 60%)' },
@@ -136,6 +146,18 @@ export default {
             '0%, 100%': { opacity: '0.7', transform: 'scale(1)' },
             '50%': { opacity: '1', transform: 'scale(1.02)' },
         },
+        'neon-glow-green': {
+            '0%, 100%': { textShadow: '0 0 5px theme("colors.green.500"), 0 0 10px theme("colors.green.400")' },
+            '50%': { textShadow: '0 0 10px theme("colors.green.400"), 0 0 20px theme("colors.green.300")' },
+        },
+        'neon-glow-red': {
+            '0%, 100%': { textShadow: '0 0 5px theme("colors.red.500"), 0 0 10px theme("colors.red.400")' },
+            '50%': { textShadow: '0 0 10px theme("colors.red.400"), 0 0 20px theme("colors.red.300")' },
+        },
+        'bar-pulse-green': {
+            '0%, 100%': { opacity: '0.8', filter: 'saturate(1)' },
+            '50%': { opacity: '1', filter: 'saturate(1.5)' },
+        },
         'float-slow': {
             '0%, 100%': { transform: 'translateY(0px)' },
             '50%': { transform: 'translateY(-15px)' },
@@ -148,9 +170,13 @@ export default {
         'pulse-glow': 'pulse-glow 2.5s infinite alternate',
         'neon-blue': 'neon-blue 2s ease-in-out infinite alternate',
         'neon-purple': 'neon-purple 2.5s ease-in-out infinite alternate',
+        'neon-red': 'neon-red 2.2s ease-in-out infinite alternate',
         'neon-color-cycle': 'neon-color-cycle 5s linear infinite',
         marquee: 'marquee 40s linear infinite',
         'neon-glow': 'neon-glow 4s ease-in-out infinite alternate',
+        'neon-glow-green': 'neon-glow-green 3s ease-in-out infinite alternate',
+        'neon-glow-red': 'neon-glow-red 3s ease-in-out infinite alternate',
+        'bar-pulse-green': 'bar-pulse-green 2s ease-in-out infinite',
         'float-slow': 'float-slow 6s ease-in-out infinite',
       },
       textShadow: {

@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -9,6 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const AnalyzeCodeInputSchema = z.object({
@@ -34,7 +36,7 @@ const analyzeCodeFlow = ai.defineFlow(
   },
   async ({ codeOrError }) => {
     const { output } = await ai.generate({
-      model: 'openai/grok-beta',
+      model: googleAI.model('gemini-1.5-flash-latest'),
       output: {
         format: 'json',
         schema: AnalyzeCodeOutputSchema,
@@ -43,7 +45,7 @@ const analyzeCodeFlow = ai.defineFlow(
 
       **Input to Analyze:**
       \`\`\`
-      ${codeOrError}
+      {{{codeOrError}}}
       \`\`\`
 
       **Your Task:**
@@ -52,6 +54,7 @@ const analyzeCodeFlow = ai.defineFlow(
       3.  **Provide a Suggested Fix:** Write the corrected code. This should be the final, complete code snippet that the user can copy and paste to resolve the problem. Do not include comments like "// your other code here" unless it's essential for context. Provide the full, corrected block.
 
       Provide your complete analysis in the required JSON format.`,
+      input: { codeOrError },
     });
     return output!;
   }

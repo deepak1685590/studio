@@ -10,7 +10,7 @@ import RevokeModal from './RevokeModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Loader2 } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { users, createUser, approveUser, rejectUser, revokeUser, restoreUser } = useAuth();
@@ -18,6 +18,7 @@ const AdminDashboard = () => {
 
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
   const [userToRevoke, setUserToRevoke] = useState<User | null>(null);
 
   // Filter out the admin user from the lists that are managed.
@@ -27,12 +28,13 @@ const AdminDashboard = () => {
   const approvedUsers = manageableUsers.filter(u => u.status === 'approved');
   const revokedUsers = manageableUsers.filter(u => u.status === 'revoked');
 
-  const handleCreateUser = () => {
+  const handleCreateUser = async () => {
     if (!newUsername || !newPassword) {
       toast({ title: "Error", description: "Please enter both username and password.", variant: "destructive" });
       return;
     }
-    const result = createUser(newUsername, newPassword);
+    setIsCreating(true);
+    const result = await createUser(newUsername, newPassword);
     if (result.success) {
       toast({ title: "Success", description: `User "${newUsername}" created successfully!` });
       setNewUsername('');
@@ -40,11 +42,12 @@ const AdminDashboard = () => {
     } else {
       toast({ title: "Error", description: result.message, variant: "destructive" });
     }
+    setIsCreating(false);
   };
 
-  const handleRevoke = (reason: string) => {
+  const handleRevoke = async (reason: string) => {
     if (userToRevoke) {
-      const result = revokeUser(userToRevoke.username, reason);
+      const result = await revokeUser(userToRevoke.username, reason);
       if(result.success) {
          toast({ title: "Success", description: `Access revoked for ${userToRevoke.username}!` });
       } else {
@@ -68,7 +71,10 @@ const AdminDashboard = () => {
         <div className="space-y-4">
           <Input type="text" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} placeholder="Username" className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]" />
           <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Password" className="bg-input text-foreground border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,255,0.5)]" />
-          <Button onClick={handleCreateUser} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300 scanner-glow">Create User</Button>
+          <Button onClick={handleCreateUser} disabled={isCreating} className="w-full font-headline uppercase bg-primary/20 border-2 border-primary hover:bg-primary hover:text-background transition-all duration-300 scanner-glow">
+            {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isCreating ? 'Provisioning...' : 'Create User'}
+          </Button>
         </div>
       </div>
 

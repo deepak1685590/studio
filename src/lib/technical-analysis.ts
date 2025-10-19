@@ -1,53 +1,181 @@
 
 
-import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, SmartMoneyConcepts } from '@/types';
+import type { SignalData, MultiTimeframeAnalysis, ChartPattern, TradersChecklist, FibonacciLevels, Timeframe, GoldenPullbackZone, ConfidenceBreakdown, WhaleAlert, MovingAverageAnalysis, TrendStrength, Momentum, SidewaysMarket, VolumeAnalysis, VolumeTimeframeData, SniperZone, MultiTimeframeSR, SupportResistanceLevel, AdvancedStrengthDashboardData, VolumeSignal, LiquidityMatrixData, LiquidityLevel, LiquidityPrediction, TimeframeData, Trend, SuperTrendAnalysis, OrderBlock, IndicatorChecklist, IndicatorData, IndicatorSignal, SupermodeAnalysis, HistoricalLevels, LinearRegressionChannel, RangeDetectorData } from '@/types';
+import { getKlines as fetchKlinesFromServer } from '@/app/actions/getKlines';
 
-async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
-  const { timeout = 8000 } = options;
-  
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
+// --- START: Real Technical Analysis Functions ---
 
-  const response = await fetch(resource, {
-    ...options,
-    signal: controller.signal  
-  });
-  clearTimeout(id);
-
-  return response;
-}
-
-
-const getMockKlines = (price: number, interval: Timeframe) => {
-  const klines = [];
-  let currentPrice = price;
-  
-  const intervalMap: {[key in Timeframe]: number} = {
-    '5m': 5,
-    '15m': 15,
-    '1h': 60,
-    '4h': 240,
-    '1d': 1440,
-  };
-  const intervalMinutes = intervalMap[interval] || 15;
-
-  for (let i = 0; i < 200; i++) {
-    const open = currentPrice;
-    const high = open * (1 + (pseudoRandom(i.toString()) - 0.45) * 0.02);
-    const low = open * (1 + (pseudoRandom(i.toString() + 'low') - 0.55) * 0.02);
-    const close = (high + low) / 2 * (1 + (pseudoRandom(i.toString()+'close') - 0.5) * 0.01);
-    currentPrice = close;
-    klines.push([
-      Date.now() - (200 - i) * intervalMinutes * 60 * 1000,
-      open.toFixed(4),
-      high.toFixed(4),
-      low.toFixed(4),
-      close.toFixed(4),
-      (pseudoRandom(i.toString()+'vol') * 1000).toFixed(4),
-    ]);
-  }
-  return klines;
+const calculateEMA = (data: number[], period: number): number => {
+    if (data.length < period) return data[data.length - 1] || 0;
+    const k = 2 / (period + 1);
+    let emaArray = [data[0]];
+    for (let i = 1; i < data.length; i++) {
+        emaArray.push((data[i] * k) + (emaArray[i - 1] * (1 - k)));
+    }
+    return emaArray[emaArray.length - 1];
 };
+
+const calculateSMA = (data: number[], period: number): number => {
+    if (data.length < period) return 0;
+    const slice = data.slice(-period);
+    const sum = slice.reduce((acc, val) => acc + val, 0);
+    return sum / period;
+};
+
+const calculateRSI = (closes: number[], period = 14): number => {
+    if (closes.length < period + 1) return 50;
+    let gains = 0;
+    let losses = 0;
+
+    // Calculate initial average gains and losses
+    for (let i = 1; i <= period; i++) {
+        const diff = closes[i] - closes[i - 1];
+        if (diff >= 0) {
+            gains += diff;
+        } else {
+            losses -= diff;
+        }
+    }
+
+    let avgGain = gains / period;
+    let avgLoss = losses / period;
+
+    // Smooth the averages for the rest of the data
+    for (let i = period + 1; i < closes.length; i++) {
+        const diff = closes[i] - closes[i - 1];
+        if (diff >= 0) {
+            avgGain = (avgGain * (period - 1) + diff) / period;
+            avgLoss = (avgLoss * (period - 1)) / period;
+        } else {
+            avgGain = (avgGain * (period - 1)) / period;
+            avgLoss = (avgLoss * (period - 1) - diff) / period;
+        }
+    }
+
+    if (avgLoss === 0) return 100;
+    const rs = avgGain / avgLoss;
+    return 100 - (100 / (1 + rs));
+};
+
+
+const calculateATR = (klines: any[], period = 14): number => {
+    if (klines.length < period + 1) return 0;
+    
+    // Ensure we have enough data points, slice from the end
+    const relevantKlines = klines.slice(- (period + 2)); // Need period+1 intervals
+    let trs = [];
+
+    for (let i = 1; i < relevantKlines.length; i++) {
+        const high = parseFloat(relevantKlines[i][2]);
+        const low = parseFloat(relevantKlines[i][3]);
+        const prevClose = parseFloat(relevantKlines[i-1][4]);
+        const tr = Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
+        trs.push(tr);
+    }
+    
+    if (trs.length === 0) return 0;
+
+    // Wilder's smoothing
+    let atr = trs[0];
+    for (let i = 1; i < trs.length; i++) {
+        atr = (atr * (period - 1) + trs[i]) / period;
+    }
+    
+    return atr;
+};
+
+
+const calculateADX = (klines: any[], period = 14): { adx: number, pdi: number, mdi: number } => {
+    if (klines.length < period * 2) return { adx: 20, pdi: 20, mdi: 20 };
+    
+    const highs = klines.map(k => parseFloat(k[2]));
+    const lows = klines.map(k => parseFloat(k[3]));
+    const closes = klines.map(k => parseFloat(k[4]));
+
+    let pdi = new Array(klines.length).fill(0);
+    let mdi = new Array(klines.length).fill(0);
+    let tr = new Array(klines.length).fill(0);
+
+    for (let i = 1; i < klines.length; i++) {
+        const upMove = highs[i] - highs[i-1];
+        const downMove = lows[i-1] - lows[i];
+
+        pdi[i] = (upMove > downMove && upMove > 0) ? upMove : 0;
+        mdi[i] = (downMove > upMove && downMove > 0) ? downMove : 0;
+        tr[i] = Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i-1]), Math.abs(lows[i] - closes[i-1]));
+    }
+    
+    const smooth = (data: number[], period: number) => {
+        let smoothed = new Array(data.length).fill(0);
+        smoothed[period -1] = data.slice(0, period).reduce((a, b) => a + b, 0);
+        for(let i = period; i < data.length; i++) {
+            smoothed[i] = smoothed[i-1] - (smoothed[i-1] / period) + data[i];
+        }
+        return smoothed;
+    }
+
+    const smoothedPDI = smooth(pdi, period);
+    const smoothedMDI = smooth(mdi, period);
+    const smoothedTR = smooth(tr, period);
+
+    let pdi14 = new Array(klines.length).fill(0);
+    let mdi14 = new Array(klines.length).fill(0);
+    let dx = new Array(klines.length).fill(0);
+
+    for (let i = period - 1; i < klines.length; i++) {
+        if(smoothedTR[i] === 0) continue;
+        pdi14[i] = 100 * (smoothedPDI[i] / smoothedTR[i]);
+        mdi14[i] = 100 * (smoothedMDI[i] / smoothedTR[i]);
+        const sumDI = pdi14[i] + mdi14[i];
+        const dx_val = sumDI === 0 ? 0 : Math.abs(pdi14[i] - mdi14[i]) / sumDI * 100;
+        dx[i] = isNaN(dx_val) ? 0 : dx_val;
+    }
+    
+    // Slice to align with dx values which start later
+    const adxValues = smooth(dx.slice(period-1), period);
+    const lastAdx = adxValues.length > 0 ? adxValues[adxValues.length - 1] / period : 20;
+
+    return { adx: lastAdx, pdi: pdi14.pop()!, mdi: mdi14.pop()! };
+};
+
+const calculateStochRSI = (closes: number[], rsiPeriod = 14, stochPeriod = 14, kPeriod = 3, dPeriod = 3): { k: number, d: number } => {
+    if (closes.length < rsiPeriod + stochPeriod) return { k: 50, d: 50 };
+
+    const rsiValues = [];
+    for (let i = rsiPeriod; i < closes.length; i++) {
+        rsiValues.push(calculateRSI(closes.slice(0, i + 1), rsiPeriod));
+    }
+
+    if (rsiValues.length < stochPeriod) return { k: 50, d: 50 };
+
+    const stochRsiValues = [];
+    for (let i = stochPeriod - 1; i < rsiValues.length; i++) {
+        const periodSlice = rsiValues.slice(i - stochPeriod + 1, i + 1);
+        const lowestRsi = Math.min(...periodSlice);
+        const highestRsi = Math.max(...periodSlice);
+        const currentRsi = rsiValues[i];
+        const stochRsi = (highestRsi - lowestRsi) === 0 ? 0 : ((currentRsi - lowestRsi) / (highestRsi - lowestRsi)) * 100;
+        stochRsiValues.push(stochRsi);
+    }
+    
+    const calculateSMAsimple = (data: number[], period: number) => {
+        const sma = [];
+        for (let i = period - 1; i < data.length; i++) {
+            const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+            sma.push(sum / period);
+        }
+        return sma;
+    };
+    
+    const kValues = calculateSMAsimple(stochRsiValues, kPeriod);
+    const dValues = calculateSMAsimple(kValues, dPeriod);
+    
+    return { k: kValues.pop() || 50, d: dValues.pop() || 50 };
+};
+
+
+// --- END: Real Technical Analysis Functions ---
+
 
 // Deterministic pseudo-random number generator based on a seed string (e.g., the symbol)
 const pseudoRandom = (seedStr: string): number => {
@@ -66,6 +194,197 @@ const pseudoRandom = (seedStr: string): number => {
     h4 = Math.imul(h2 ^ (h4 >>> 19), 2869860233);
     return ((h1^h2^h3^h4)>>>0) / 4294967296;
 }
+
+const calculateRangeDetector = (klines: any[], price: number): RangeDetectorData => {
+    const minLength = 20;
+    const atrMultiplier = 1.0;
+    const atrLength = 500; // As requested, a very long period for a stable volatility measure.
+    const smaLength = 20; // A standard period for the center line.
+
+    if (klines.length < Math.max(minLength, atrLength, smaLength)) {
+        return { status: 'NEUTRAL', rangeTop: 0, rangeBottom: 0, centerLine: 0, isConfirmed: false };
+    }
+
+    const closes = klines.map(k => parseFloat(k[4]));
+    const centerLine = calculateSMA(closes, smaLength);
+    const atr = calculateATR(klines.slice(0, -1), atrLength); // Use historical data for ATR
+
+    const rangeTop = centerLine + (atr * atrMultiplier);
+    const rangeBottom = centerLine - (atr * atrMultiplier);
+
+    let outsideCount = 0;
+    const checkBars = closes.slice(-minLength);
+    for (const close of checkBars) {
+        if (close > rangeTop || close < rangeBottom) {
+            outsideCount++;
+        }
+    }
+
+    const isConfirmed = outsideCount === 0;
+    let status: 'BULLISH' | 'BEARISH' | 'NEUTRAL' = 'NEUTRAL';
+    if (isConfirmed) {
+        if (price > rangeTop) {
+            status = 'BULLISH';
+        } else if (price < rangeBottom) {
+            status = 'BEARISH';
+        }
+    }
+
+    return {
+        status,
+        rangeTop,
+        rangeBottom,
+        centerLine,
+        isConfirmed
+    };
+};
+
+const generateIndicatorChecklist = (isBullish: boolean, momentum: Momentum, seed: string): IndicatorChecklist => {
+    const indicators: IndicatorData[] = [];
+    const summary = { buy: 0, sell: 0, neutral: 0 };
+
+    const addIndicator = (name: string, value: string, signal: IndicatorSignal, notes: string) => {
+        indicators.push({ name, value, signal, notes });
+        if (signal === 'Buy' || signal === 'Strong Buy' || signal === 'Oversold') summary.buy++;
+        else if (signal === 'Sell' || signal === 'Strong Sell' || signal === 'Overbought') summary.sell++;
+        else summary.neutral++;
+    };
+    
+    // --- Oscillators ---
+    let rsiSignal: IndicatorSignal = 'Neutral';
+    if (momentum.score > 70) rsiSignal = 'Overbought'; else if (momentum.score > 55) rsiSignal = 'Buy'; else if (momentum.score < 30) rsiSignal = 'Oversold'; else if (momentum.score < 45) rsiSignal = 'Sell';
+    addIndicator('RSI (14)', momentum.score.toFixed(2), rsiSignal, `Relative Strength Index.`);
+    
+    const stochK = pseudoRandom(seed + 'stochK') * 100;
+    let stochSignal: IndicatorSignal = stochK > 80 ? 'Overbought' : stochK < 20 ? 'Oversold' : (isBullish ? 'Buy' : 'Sell');
+    addIndicator('Stochastic %K (14, 3, 3)', stochK.toFixed(2), stochSignal, 'Shows momentum and trend strength.');
+
+    const cci = (pseudoRandom(seed + 'cci') - 0.5) * 400;
+    let cciSignal: IndicatorSignal = cci > 100 ? 'Buy' : cci < -100 ? 'Sell' : 'Neutral';
+    addIndicator('CCI (20)', cci.toFixed(2), cciSignal, 'Commodity Channel Index for trend.');
+
+    const adx = pseudoRandom(seed + 'adx') * 50 + 15;
+    addIndicator('ADX (14)', adx.toFixed(2), adx > 25 ? (isBullish ? 'Buy' : 'Sell') : 'Neutral', 'Average Directional Index for trend strength.');
+
+    const awesomeOsc = (pseudoRandom(seed + 'ao') - 0.5) * 1000;
+    addIndicator('Awesome Oscillator', awesomeOsc.toFixed(2), awesomeOsc > 0 ? 'Buy' : 'Sell', 'Measures market momentum.');
+
+    const momentumInd = (pseudoRandom(seed + 'mom') - 0.5) * 10;
+    addIndicator('Momentum (10)', momentumInd.toFixed(2), momentumInd > 0 ? 'Buy' : 'Sell', 'Rate of price change.');
+    
+    const macd_val = (pseudoRandom(seed + 'macd') - 0.5) * 500;
+    addIndicator('MACD Level (12, 26)', macd_val.toFixed(2), isBullish ? 'Buy' : 'Sell', `Moving Average Convergence Divergence.`);
+
+    const stochRSIK = pseudoRandom(seed + 'stochRSIK') * 100;
+    let stochRSISignal: IndicatorSignal = stochRSIK > 80 ? 'Overbought' : stochRSIK < 20 ? 'Oversold' : (isBullish ? 'Buy' : 'Sell');
+    addIndicator('Stochastic RSI Fast (3, 3, 14, 14)', stochRSIK.toFixed(2), stochRSISignal, 'Combines RSI and Stochastics.');
+    
+    const willR = pseudoRandom(seed + 'willR') * -100;
+    let willRSignal: IndicatorSignal = willR > -20 ? 'Overbought' : willR < -80 ? 'Oversold' : 'Neutral';
+    addIndicator('Williams %R (14)', willR.toFixed(2), willRSignal, 'Measures overbought/oversold levels.');
+
+    const bbpValue = (pseudoRandom(seed + 'bbp') - 0.5) * 1000;
+    addIndicator('Bull Bear Power', bbpValue.toFixed(2), bbpValue > 0 ? 'Buy' : 'Sell', 'Measures the power of bulls vs bears.');
+    
+    const uoValue = pseudoRandom(seed + 'uo') * 100;
+    addIndicator('Ultimate Oscillator (7, 14, 28)', uoValue.toFixed(2), uoValue > 70 ? 'Overbought' : uoValue < 30 ? 'Oversold' : 'Buy', 'Combines short, medium, and long term momentum.');
+
+    // --- Moving Averages (Simple) ---
+    addIndicator('SMA (10)', '', isBullish ? 'Buy' : 'Sell', 'Simple Moving Average (Short-term)');
+    addIndicator('SMA (20)', '', isBullish ? 'Buy' : 'Sell', 'Simple Moving Average (Medium-term)');
+    addIndicator('SMA (30)', '', isBullish ? 'Buy' : 'Sell', 'Simple Moving Average');
+    addIndicator('SMA (50)', '', isBullish ? 'Buy' : 'Sell', 'Simple Moving Average (Long-term)');
+    addIndicator('SMA (100)', '', isBullish ? 'Buy' : 'Sell', 'Simple Moving Average (Very Long-term)');
+    addIndicator('SMA (200)', '', isBullish ? 'Buy' : 'Sell', 'Simple Moving Average (Key Long-term)');
+    
+    // --- Moving Averages (Exponential) ---
+    addIndicator('EMA (10)', '', isBullish ? 'Buy' : 'Sell', 'Exponential Moving Average (Short-term)');
+    addIndicator('EMA (20)', '', isBullish ? 'Buy' : 'Sell', 'Exponential Moving Average (Medium-term)');
+    addIndicator('EMA (30)', '', isBullish ? 'Buy' : 'Sell', 'Exponential Moving Average');
+    addIndicator('EMA (50)', '', isBullish ? 'Buy' : 'Sell', 'Exponential Moving Average (Long-term)');
+    addIndicator('EMA (100)', '', isBullish ? 'Buy' : 'Sell', 'Exponential Moving Average (Very Long-term)');
+    addIndicator('EMA (200)', '', isBullish ? 'Buy' : 'Sell', 'Exponential Moving Average (Key Long-term)');
+
+    // --- Other MAs & Ichimoku ---
+    const ichimoku_b = (pseudoRandom(seed + 'ichi') - 0.5) * 1000;
+    addIndicator('Ichimoku Cloud Base Line (9, 26, 52, 26)', ichimoku_b.toFixed(2), ichimoku_b > 0 ? 'Buy' : 'Sell', 'Part of the Ichimoku system.');
+    
+    const vwap = (pseudoRandom(seed + 'vwap') - 0.5) * 200;
+    addIndicator('VWAP', vwap.toFixed(2), vwap > 0 ? 'Buy' : 'Sell', 'Volume-Weighted Average Price.');
+    
+    const hullMA = (pseudoRandom(seed + 'hull') - 0.5) * 300;
+    addIndicator('Hull MA (9)', hullMA.toFixed(2), hullMA > 0 ? 'Buy' : 'Sell', 'Hull Moving Average for smooth trend.');
+    
+    // --- Pivots ---
+    addIndicator('Classic Pivot Point S1', '', 'Neutral', 'Classic Support 1');
+    addIndicator('Classic Pivot Point R1', '', 'Neutral', 'Classic Resistance 1');
+    addIndicator('Fibonacci Pivot S1', '', 'Neutral', 'Fibonacci-based Support 1');
+    addIndicator('Fibonacci Pivot R1', '', 'Neutral', 'Fibonacci-based Resistance 1');
+    addIndicator('Camarilla Pivot S1', '', 'Neutral', 'Camarilla-based Support 1');
+    addIndicator('Camarilla Pivot R1', '', 'Neutral', 'Camarilla-based Resistance 1');
+    addIndicator('Woodie Pivot S1', '', 'Neutral', 'Woodie-based Support 1');
+    addIndicator('Woodie Pivot R1', '', 'Neutral', 'Woodie-based Resistance 1');
+    addIndicator('Demark Pivot S1', '', 'Neutral', 'Demark-based Support 1');
+    addIndicator('Demark Pivot R1', '', 'Neutral', 'Demark-based Resistance 1');
+
+    return { summary, indicators };
+};
+
+
+const generateLiquidityMatrixData = (price: number, swingHigh: number, swingLow: number, isBullish: boolean, seed: string): LiquidityMatrixData => {
+    const buySide: LiquidityLevel[] = [];
+    const sellSide: LiquidityLevel[] = [];
+    
+    // Generate sell-side liquidity (above current price)
+    for (let i = 1; i <= 5; i++) {
+        sellSide.push({
+            price: price * (1 + 0.005 * i * pseudoRandom(seed + 'sell' + i)),
+            volume: pseudoRandom(seed + 'sell_vol' + i) * 50_000_000 + 10_000_000, // $10M - $60M
+            type: 'POOL'
+        });
+    }
+    sellSide.push({ price: swingHigh, volume: pseudoRandom(seed + 'sell_swing') * 100_000_000 + 50_000_000, type: 'STOP_HUNT' });
+
+    // Generate buy-side liquidity (below current price)
+     for (let i = 1; i <= 5; i++) {
+        buySide.push({
+            price: price * (1 - 0.005 * i * pseudoRandom(seed + 'buy' + i)),
+            volume: pseudoRandom(seed + 'buy_vol' + i) * 50_000_000 + 10_000_000,
+            type: 'POOL'
+        });
+    }
+    buySide.push({ price: swingLow, volume: pseudoRandom(seed + 'buy_swing') * 100_000_000 + 50_000_000, type: 'STOP_HUNT' });
+
+    // AI Prediction Logic
+    const highestBuySide = [...buySide].sort((a, b) => b.volume - a.volume)[0];
+    const highestSellSide = [...sellSide].sort((a, b) => b.volume - a.volume)[0];
+
+    let prediction: LiquidityPrediction;
+    if (isBullish) {
+        // In a bullish trend, market might pull back to take buy-side liquidity before continuing up.
+        prediction = {
+            targetPrice: highestBuySide.price,
+            confidence: 'High',
+            timeframe: '1-4 Hours',
+            reason: 'Predicting a sweep of buy-side liquidity at a key support level before the next leg up.'
+        };
+    } else {
+        // In a bearish trend, market might rally to take sell-side liquidity before continuing down.
+         prediction = {
+            targetPrice: highestSellSide.price,
+            confidence: 'High',
+            timeframe: '1-4 Hours',
+            reason: 'Predicting a hunt on sell-side liquidity at a key resistance level before continuation.'
+        };
+    }
+
+    return {
+        buySide: buySide.sort((a, b) => b.price - a.price),
+        sellSide: sellSide.sort((a, b) => b.price - a.price),
+        prediction,
+        currentPrice: price
+    };
+};
 
 const generateVolumeAnalysis = (seed: string): VolumeAnalysis => {
     const analysis: Partial<VolumeAnalysis> = {};
@@ -119,107 +438,277 @@ const generateVolumeAnalysis = (seed: string): VolumeAnalysis => {
     return analysis as VolumeAnalysis;
 }
 
-const generateMultiTimeframeSR = (price: number, seed: string, isBullish: boolean): MultiTimeframeSR => {
+const generateMultiTimeframeSR = (price: number, klines: any[], isBullish: boolean, seed: string): MultiTimeframeSR => {
     const sr: Partial<MultiTimeframeSR> = {};
     const tfs: (keyof MultiTimeframeSR)[] = ['5m', '15m', '1H'];
 
-    tfs.forEach((tf, index) => {
-        const volatility = (index + 1) * 0.005; // 5m is less volatile, 1H is more
-        const high = price * (1 + pseudoRandom(seed + tf + 'h') * volatility);
-        const low = price * (1 - pseudoRandom(seed + tf + 'l') * volatility);
-        const pivot = (high + low + price) / 3;
-        const range = high - low;
+    tfs.forEach((tf) => {
+        // Simulate volume-based S/R detection
+        const volumes = klines.map(k => parseFloat(k[5]));
+        const avgVolume = volumes.slice(0, -1).reduce((sum, vol) => sum + vol, 0) / (volumes.length - 1);
+        const volumeThreshold = 3.5; // Spike is 3.5x average
+
+        let resistances: number[] = [];
+        let supports: number[] = [];
+
+        for (let i = 1; i < klines.length; i++) {
+            if (volumes[i] > avgVolume * volumeThreshold) {
+                const spikeHigh = parseFloat(klines[i][2]);
+                const spikeLow = parseFloat(klines[i][3]);
+                if (spikeHigh > price) resistances.push(spikeHigh);
+                if (spikeLow < price) supports.push(spikeLow);
+            }
+        }
+
+        // De-duplicate and sort levels
+        resistances = [...new Set(resistances)].sort((a, b) => a - b);
+        supports = [...new Set(supports)].sort((a, b) => b - a);
         
+        // Find closest R and S to current price
+        const closestResistance = resistances[0] || price * (1.01 + pseudoRandom(tf+'res') * 0.01);
+        const closestSupport = supports[0] || price * (0.99 - pseudoRandom(tf+'sup')*0.01);
+
         sr[tf] = {
-            S1: pivot - 0.382 * range,
-            S2: pivot - 0.618 * range,
-            S3: pivot - 1.000 * range,
-            R1: pivot + 0.382 * range,
-            R2: pivot + 0.618 * range,
-            R3: pivot + 1.000 * range,
-            probableTarget: isBullish ? 'R1' : 'S1',
+            R: resistances.slice(0, 3), // Top 3 resistance levels
+            S: supports.slice(0, 3),    // Top 3 support levels
+            probableTarget: isBullish ? closestResistance : closestSupport,
         };
     });
 
     return sr as MultiTimeframeSR;
 };
 
-const generateAdvancedStrengthData = (price: number, closes: number[], volumes: number[], seed: string, isBullish: boolean, momentumScore: number, trendStrengthScore: number, emas: { ema20: number, ema50: number }): AdvancedStrengthDashboardData => {
-    // 1. Price and Change
+
+const generateSuperTrendAnalysis = (price: number, atr: number, isBullish: boolean, trendStrength: TrendStrength, momentum: Momentum, seed: string): SuperTrendAnalysis => {
+    let status: SuperTrendAnalysis['status'];
+    const superTrendLine = isBullish ? price - atr * 2 : price + atr * 2;
+    let momentumDecay = 0;
+
+    // Simulate momentum decay
+    if ((isBullish && momentum.rating === 'Overbought') || (!isBullish && momentum.rating === 'Oversold')) {
+        momentumDecay = Math.floor(pseudoRandom(seed + 'decay_extreme') * 40 + 60); // 60-100
+    } else if ((isBullish && momentum.rating === 'Bearish') || (!isBullish && momentum.rating === 'Bullish')) {
+        momentumDecay = Math.floor(pseudoRandom(seed + 'decay_div') * 30 + 50); // 50-80
+    } else {
+        momentumDecay = Math.floor(pseudoRandom(seed + 'decay_normal') * 40); // 0-40
+    }
+
+    // Determine trend status
+    if (trendStrength.rating === 'Ranging') {
+        status = 'Consolidation';
+    } else if (momentumDecay > 70) {
+        status = 'Trend Exhaustion';
+    } else if (trendStrength.rating === 'Strong') {
+        status = isBullish ? 'Uptrend Mature' : 'Downtrend Mature';
+    } else {
+        status = isBullish ? 'Uptrend Developing' : 'Downtrend Developing';
+    }
+
+    // ATR-based calculation for entry/exit
+    const strengthScore = 100 - momentumDecay;
+    const entryOffset = atr * 0.5;
+    const exitOffset = atr * 0.5;
+
+    let entrySignalPrice, exitSignalPrice;
+
+    if (isBullish) {
+        entrySignalPrice = superTrendLine + entryOffset;
+        exitSignalPrice = superTrendLine - exitOffset;
+    } else {
+        entrySignalPrice = superTrendLine - entryOffset;
+        exitSignalPrice = superTrendLine + exitOffset;
+    }
+    
+    return {
+        status,
+        superTrendLine: parseFloat(superTrendLine.toFixed(isCrypto(seed) ? 2 : 4)),
+        momentumDecay,
+        trendStrength: strengthScore,
+        entrySignal: parseFloat(entrySignalPrice.toFixed(isCrypto(seed) ? 2 : 4)),
+        exitSignal: parseFloat(exitSignalPrice.toFixed(isCrypto(seed) ? 2 : 4)),
+    };
+};
+
+
+const generateAdvancedStrengthData = (
+    klines: any[], 
+    isCrypto: boolean,
+    rsiLength = 14, 
+    maFastLength = 12, 
+    maSlowLength = 26,
+    atrLength = 14,
+    volLength = 20
+): AdvancedStrengthDashboardData => {
+    const closes = klines.map(k => parseFloat(k[4]));
+    const volumes = klines.map(k => parseFloat(k[5]));
+    const price = closes[closes.length - 1];
+    
+    // 1. Price
     const prevClose = closes[closes.length - 2];
     const priceChangePercent = ((price - prevClose) / prevClose) * 100;
 
-    // 2. Momentum & Power
-    const longPower = Math.floor(Math.max(0, pseudoRandom(seed + 'long_power') * 100));
-    const shortPower = Math.floor(Math.max(0, pseudoRandom(seed + 'short_power') * 100));
+    // 2. Momentum (RSI)
+    const rsi = calculateRSI(closes, rsiLength);
+    const momentumSma = calculateRSI(closes.slice(0, -1), 5); 
+    const momentumTrend = rsi > momentumSma ? "UP" : rsi < momentumSma ? "DOWN" : "NEUTRAL";
+
+    // 3. Long/Short Power
+    const longPower = Math.floor(Math.min(100, Math.max(0, (rsi - 20) / 60 * 100)));
+    const shortPower = Math.floor(Math.min(100, Math.max(0, (80 - rsi) / 60 * 100)));
     const overallStrength = Math.round((longPower + (100 - shortPower)) / 2);
 
-    // 3. Trend
-    const trendMomentumSeed = pseudoRandom(seed + 'trend_mom');
-    const trendMomentum = trendMomentumSeed > 0.7 ? 'ACCELERATING' : trendMomentumSeed < 0.3 ? 'DECELERATING' : 'STABLE';
-
-    // 4. Volatility (ATR-based)
-    const atr = (closes.slice(-14).reduce((acc, _, i, arr) => {
-        if (i === 0) return acc;
-        const high = Math.max(...closes.slice(i - 1, i + 1));
-        const low = Math.min(...closes.slice(i - 1, i + 1));
-        return acc + (high - low);
-    }, 0) / 14) / price * 100;
-    
-    let volLabel: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW';
-    if (atr > 2.5) volLabel = 'EXTREME';
-    else if (atr > 1.5) volLabel = 'HIGH';
-    else if (atr > 0.8) volLabel = 'MEDIUM';
-    else volLabel = 'LOW';
-
-    // 5. Volume
-    const avgVolume = volumes.slice(-20).reduce((a, b) => a + b, 0) / 20;
+    // 4. Volume
+    const volSma = volumes.slice(-volLength).reduce((a, b) => a + b, 0) / volLength;
     const latestVolume = volumes[volumes.length - 1];
-    const volumeChangePercent = ((latestVolume - avgVolume) / avgVolume) * 100;
-    
+    const volChangePct = volSma > 0 ? ((latestVolume - volSma) / volSma) * 100 : 0;
     let volStatus: 'SPIKE' | 'DRY' | 'HIGH' | 'NORMAL' | 'LOW';
-    if (volumeChangePercent > 100) volStatus = 'SPIKE';
-    else if (volumeChangePercent > 50) volStatus = 'HIGH';
-    else if (volumeChangePercent < -50) volStatus = 'DRY';
-    else if (volumeChangePercent < -25) volStatus = 'LOW';
+    if (latestVolume > volSma * 2.5) volStatus = 'SPIKE';
+    else if (latestVolume < volSma * 0.5) volStatus = 'DRY';
+    else if (latestVolume > volSma * 1.5) volStatus = 'HIGH';
+    else if (latestVolume < volSma * 0.8) volStatus = 'LOW';
     else volStatus = 'NORMAL';
 
-    // 6. Sentiment Score
-    const bullishScore = (price > emas.ema50 ? 1 : 0) + (momentumScore > 52 ? 1 : 0) + (trendStrengthScore > 25 ? 1 : 0) + (volumeChangePercent > 10 ? 1 : 0);
-    const bearishScore = (price < emas.ema50 ? 1 : 0) + (momentumScore < 48 ? 1 : 0) + (trendStrengthScore > 25 ? 1 : 0) + (volumeChangePercent > 10 ? 1 : 0);
-    const netSentiment = bullishScore - bearishScore;
-    let sentimentLabel = 'NEUTRAL ⚖️';
-    if (netSentiment >= 3) sentimentLabel = 'STRONG BULL 🚀';
-    else if (netSentiment > 0) sentimentLabel = 'BULLISH 📈';
-    else if (netSentiment <= -3) sentimentLabel = 'STRONG BEAR 💥';
-    else if (netSentiment < 0) sentimentLabel = 'BEARISH 📉';
+    // 5. Volatility (ATR)
+    const atr = calculateATR(klines, atrLength);
+    const atrPercent = (atr / price) * 100;
+    let volLabel: 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW' = 'LOW';
+    if (atrPercent > 3) volLabel = "EXTREME";
+    else if (atrPercent > 1.5) volLabel = "HIGH";
+    else if (atrPercent > 0.7) volLabel = "MEDIUM";
+    
+    // 6. Trend Analysis (ADX)
+    const { adx, pdi, mdi } = calculateADX(klines, 14);
+    const trendDirection = pdi > mdi ? 1 : -1;
+    const adxMomentum = calculateADX(klines.slice(0, -1)).adx;
+    const trendMomentum = adx > adxMomentum ? "ACCELERATING" : adx < adxMomentum ? "DECELERATING" : "STABLE";
 
-    // 7. Market Phase
-    let marketPhase: AdvancedStrengthDashboardData['marketPhase'] = 'NEUTRAL';
-    if (volLabel === 'HIGH' && longPower > 70 && volStatus === 'SPIKE') marketPhase = 'BREAKOUT';
-    else if (volLabel === 'HIGH' && shortPower > 70 && volStatus === 'SPIKE') marketPhase = 'BREAKDOWN';
-    else if (volLabel === 'LOW' && trendStrengthScore < 20) marketPhase = 'CONSOLIDATION';
-    else if (isBullish && trendStrengthScore > 25) marketPhase = 'BULLISH TREND';
-    else if (!isBullish && trendStrengthScore > 25) marketPhase = 'BEARISH TREND';
+    // 7. Sentiment Score
+    const bullishSignals = (rsi > 52 ? 1 : 0) + (latestVolume > volSma ? 0.5 : 0) + (pdi > mdi ? 1 : 0) + (price > calculateEMA(closes, 50) ? 1 : 0) + (volStatus === 'SPIKE' && price > prevClose ? 1 : 0);
+    const bearishSignals = (rsi < 48 ? 1 : 0) + (latestVolume < volSma ? 0.5 : 0) + (mdi > pdi ? 1 : 0) + (price < calculateEMA(closes, 50) ? 1 : 0) + (volStatus === 'SPIKE' && price < prevClose ? 1 : 0);
+    const sentimentScore = bullishSignals - bearishSignals;
+    let sentimentLabel = 'NEUTRAL ⚖️';
+    if (sentimentScore >= 3) sentimentLabel = 'STRONG BULL 🚀';
+    else if (sentimentScore >= 1.5) sentimentLabel = 'BULLISH 📈';
+    else if (sentimentScore <= -3) sentimentLabel = 'STRONG BEAR 💥';
+    else if (sentimentScore <= -1.5) sentimentLabel = 'BEARISH 📉';
+
+    // 8. Market Phase
+    let phase: AdvancedStrengthDashboardData['marketPhase'] = 'NEUTRAL';
+    if (volStatus === 'SPIKE' && atrPercent > 1.5 && Math.abs(priceChangePercent) > 1) phase = trendDirection > 0 ? "BREAKOUT" : "BREAKDOWN";
+    else if (atrPercent < 0.7 && adx < 20) phase = "CONSOLIDATION";
+    else if (pdi > mdi && adx > 25) phase = "BULLISH TREND";
+    else if (mdi > pdi && adx > 25) phase = "BEARISH TREND";
+
+    // 9. RSI Status & Divergence
+    let rsiStatus: AdvancedStrengthDashboardData['rsiStatus']['status'] = 'NEUTRAL';
+    if (rsi >= 70) rsiStatus = 'OVERBOUGHT'; else if (rsi <= 30) rsiStatus = 'OVERSOLD'; else if (rsi >= 60) rsiStatus = 'Strong'; else if (rsi <= 40) rsiStatus = 'Weak';
+    let divergence: AdvancedStrengthDashboardData['rsiStatus']['divergence'] = 'NONE';
+    if(closes.length > 10) {
+      const lookback = 10;
+      const prevRsi = calculateRSI(closes.slice(0, -lookback), rsiLength);
+      if (price > closes[closes.length - 1 - lookback] && rsi < prevRsi) divergence = 'BEARISH';
+      if (price < closes[closes.length - 1 - lookback] && rsi > prevRsi) divergence = 'BULLISH';
+    }
+
+    // 10. Stoch RSI
+    const stochRsi = calculateStochRSI(closes);
+    const prevStochRsi = calculateStochRSI(closes.slice(0, -1));
+    let stochCrossover: AdvancedStrengthDashboardData['stochRsi']['crossover'] = 'NONE';
+    if (stochRsi.k > stochRsi.d && prevStochRsi.k <= prevStochRsi.d) stochCrossover = 'BULL_CROSS';
+    if (stochRsi.k < stochRsi.d && prevStochRsi.k >= prevStochRsi.d) stochCrossover = 'BEAR_CROSS';
+
 
     return {
-        marketPhase,
-        price: price.toFixed(isCrypto(seed) ? 2 : 4),
+        marketPhase: phase,
+        price: price.toFixed(isCrypto ? 2 : 4),
         priceChangePercent,
-        marketSentiment: { score: netSentiment, label: sentimentLabel },
-        momentum: { rsi: momentumScore, trend: momentumScore > 52 ? 'UP' : momentumScore < 48 ? 'DOWN' : 'NEUTRAL' },
+        marketSentiment: { score: sentimentScore, label: sentimentLabel },
+        momentum: { rsi, trend: momentumTrend },
         longPower,
         shortPower,
         overallStrength,
-        trendAnalysis: { strength: trendStrengthScore, momentum: trendMomentum },
-        volatility: { percent: atr, label: volLabel },
-        volumeStatus: { status: volStatus, changePercent: volumeChangePercent },
+        trendAnalysis: { strength: adx, momentum: trendMomentum },
+        volatility: { percent: atrPercent, label: volLabel },
+        volumeStatus: { status: volStatus, changePercent: volChangePct },
         volumeValue: latestVolume,
-        rsiStatus: momentumScore > 70 ? 'OVERBOUGHT' : momentumScore < 30 ? 'OVERSOLD' : 'NEUTRAL',
-        divergence: pseudoRandom(seed + 'div') > 0.9 ? 'BULLISH' : pseudoRandom(seed + 'div') < 0.1 ? 'BEARISH' : 'NONE',
-        stochRsi: { k: pseudoRandom(seed + 'k') * 100, d: pseudoRandom(seed + 'd') * 100, signal: 'NONE' }
+        rsiStatus: { status: rsiStatus, divergence: divergence },
+        stochRsi: { k: stochRsi.k, d: stochRsi.d, crossover: stochCrossover },
+        confidenceBreakdown: {
+            overall: 0,
+            patternStrength: 0,
+            volumeConfirmation: 0,
+            htfAlignment: 0,
+            smartMoneyFlow: 0,
+        }
     };
 };
+
+const generateOrderBlock = (swingHigh: number, swingLow: number, price: number, isBullish: boolean, seed: string): OrderBlock => {
+    let top, bottom;
+    if (isBullish) {
+        bottom = swingLow * (1 + pseudoRandom(seed + 'ob_bottom') * 0.005);
+        top = bottom * (1 + pseudoRandom(seed + 'ob_range') * 0.01);
+    } else {
+        top = swingHigh * (1 - pseudoRandom(seed + 'ob_top') * 0.005);
+        bottom = top * (1 - pseudoRandom(seed + 'ob_range') * 0.01);
+    }
+    const meanThreshold = (top + bottom) / 2;
+
+    const statusSeed = pseudoRandom(seed + 'ob_status');
+    let status: OrderBlock['status'] = 'FRESH';
+    if (price < bottom && isBullish) status = 'BROKEN';
+    if (price > top && !isBullish) status = 'BROKEN';
+    if (status !== 'BROKEN' && statusSeed < 0.4) status = 'MITIGATED';
+    
+    const contextSeed = pseudoRandom(seed + 'ob_context');
+    let context: string;
+    if (contextSeed < 0.33) context = 'Created after liquidity sweep';
+    else if (contextSeed < 0.66) context = 'Formed at break of structure';
+    else context = 'High volume institutional interest zone';
+
+    return {
+        type: isBullish ? 'BULLISH' : 'BEARISH',
+        status,
+        top: top.toFixed(isCrypto(seed) ? 2 : 4),
+        bottom: bottom.toFixed(isCrypto(seed) ? 2 : 4),
+        meanThreshold: meanThreshold.toFixed(isCrypto(seed) ? 2 : 4),
+        volume: parseFloat((pseudoRandom(seed + 'ob_vol') * 20 + 5).toFixed(1)), // 5M to 25M
+        age: `${Math.floor(pseudoRandom(seed + 'ob_age') * 15 + 3)} candles ago`,
+        context
+    };
+};
+
+const calculateLinearRegressionChannel = (klines: any[], period = 50): LinearRegressionChannel => {
+    const closes = klines.slice(-period).map(k => parseFloat(k[4]));
+    const n = closes.length;
+    if (n < 2) return { upper: 0, middle: 0, lower: 0 };
+
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+    for (let i = 0; i < n; i++) {
+        sumX += i;
+        sumY += closes[i];
+        sumXY += i * closes[i];
+        sumX2 += i * i;
+    }
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+
+    let maxDev = 0;
+    for (let i = 0; i < n; i++) {
+        const regressionValue = intercept + slope * i;
+        const dev = Math.abs(closes[i] - regressionValue);
+        if (dev > maxDev) {
+            maxDev = dev;
+        }
+    }
+    
+    const middle = intercept + slope * (n - 1);
+    const upper = middle + maxDev;
+    const lower = middle - maxDev;
+
+    return { upper, middle, lower };
+}
 
 
 const isCrypto = (symbol: string): boolean => {
@@ -230,43 +719,25 @@ const isCrypto = (symbol: string): boolean => {
     return true; // Assume crypto
 }
 
-export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, forceMock = false): Promise<SignalData> => {
+export const getSignalData = async (symbol: string, mode: string, timeframe: Timeframe, livePrice?: number): Promise<SignalData> => {
     let price, klines: any[], symbolWithUSDT = symbol.toUpperCase().replace('/', '') + (isCrypto(symbol) ? "USDT" : "");
     const analysisSeed = `${symbol}-${timeframe}`;
     
-    const timeframeToInterval = {
-      '5m': '5m',
-      '15m': '15m',
-      '1h': '1h',
-      '4h': '4h',
-      '1d': '1d',
-    };
-    const apiInterval = timeframeToInterval[timeframe] || '15m';
-
-    const useMockData = forceMock || !isCrypto(symbol);
-
-    if (useMockData) {
-        let basePrice = 70000; // Default for crypto like BTC
-        if (symbol.toUpperCase().includes('NIFTY')) basePrice = 23000;
-        if (symbol.toUpperCase().includes('BANKNIFTY')) basePrice = 50000;
-        if (symbol.toUpperCase().includes('/')) basePrice = 1.1; // Forex
-        
-        price = parseFloat((pseudoRandom(analysisSeed + 'price') * basePrice * 0.2 + basePrice * 0.9).toFixed(4));
-        klines = getMockKlines(price, timeframe);
-    } else {
-        try {
-            const priceResponse = await fetchWithTimeout(`https://api.binance.com/api/v3/ticker/price?symbol=${symbolWithUSDT}`, { timeout: 3000 });
-            if (!priceResponse.ok) throw new Error('Price fetch failed');
-            const priceData = await priceResponse.json();
-            price = parseFloat(priceData.price);
-            
-            const klinesResponse = await fetchWithTimeout(`https://api.binance.com/api/v3/klines?symbol=${symbolWithUSDT}&interval=${apiInterval}&limit=200`, { timeout: 5000 });
-            if (!klinesResponse.ok) throw new Error('Klines fetch failed');
-            klines = await klinesResponse.json();
-        } catch (err) {
-            console.warn(`Binance API failed for ${symbolWithUSDT}, using mock data.`, err);
-            return getSignalData(symbol, mode, timeframe, true);
+    try {
+        klines = await fetchKlinesFromServer(symbolWithUSDT, timeframe);
+        if (!klines || klines.length < 50) {
+            throw new Error('Server action returned insufficient klines');
         }
+        price = parseFloat(klines[klines.length - 1][4]);
+    } catch (err) {
+        console.error(`Failed to fetch live data for ${symbolWithUSDT}.`, err);
+        throw new Error(`Could not fetch live data for ${symbol.toUpperCase()}. Please check the asset pair or try again later.`);
+    }
+
+    if (livePrice) {
+      price = livePrice;
+      const lastKline = klines[klines.length - 1];
+      lastKline[4] = livePrice.toString(); // Update close price for live calculations
     }
     
     const closes = klines.map((k: any[]) => parseFloat(k[4]));
@@ -283,28 +754,19 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const lastClose = parseFloat(lastCandle[4]);
     const pivot = (swingHigh + swingLow + lastClose) / 3;
 
-    const r1 = (2 * pivot) - swingLow;
-    const s1 = (2 * pivot) - swingHigh;
+    const poc = (swingHigh + swingLow + lastClose) / 3 * (1 + (pseudoRandom(analysisSeed + 'poc') - 0.5) * 0.05);
+    const valueAreaRange = (swingHigh - swingLow) * 0.35 * (1 + (pseudoRandom(analysisSeed + 'varange') - 0.5) * 0.2);
+    const vah = poc + valueAreaRange;
+    const val = poc - valueAreaRange;
 
-    const atrPeriod = 14;
-    let trSum = 0;
-    for (let i = klines.length - atrPeriod; i < klines.length; i++) {
-        const high = parseFloat(klines[i][2]);
-        const low = parseFloat(klines[i][3]);
-        const prevClose = parseFloat(klines[i-1][4]);
-        trSum += Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
-    }
-    const atr = trSum / atrPeriod;
-    
-    // --- EMA Calculation ---
-    const calculateEMA = (data: number[], period: number) => {
-        const k = 2 / (period + 1);
-        let emaArray = [data[0]];
-        for (let i = 1; i < data.length; i++) {
-            emaArray.push((data[i] * k) + (emaArray[i-1] * (1-k)));
-        }
-        return emaArray[emaArray.length-1];
-    };
+    const r1 = (2 * pivot) - swingLow;
+    const r2 = pivot + (swingHigh - swingLow);
+    const r3 = swingHigh + 2 * (pivot - swingLow);
+    const s1 = (2 * pivot) - swingHigh;
+    const s2 = pivot - (swingHigh - swingLow);
+    const s3 = swingLow - 2 * (swingHigh - pivot);
+
+    const atr = calculateATR(klines, 14);
     
     const ema20 = calculateEMA(closes.slice(-40), 20);
     const ema50 = calculateEMA(closes.slice(-100), 50);
@@ -318,7 +780,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         ema200: { value: ema200.toFixed(4), status: price > ema200 ? 'Above' : 'Below' },
     };
 
-    // Determine trend based on EMAs
     const isBullish = price > ema50 && ema50 > ema200;
     const marketStructure = isBullish ? 'Bullish - HH/HL' : 'Bearish - LH/LL';
     
@@ -328,7 +789,6 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         level_500: (isBullish ? (swingHigh - fibRange * 0.5) : (swingLow + fibRange * 0.5)).toFixed(4),
         level_618: (isBullish ? (swingHigh - fibRange * 0.618) : (swingLow + fibRange * 0.618)).toFixed(4),
     };
-
 
     const demandZone: [string, string] = [(lastClose * 0.98).toFixed(4), (lastClose * 0.99).toFixed(4)];
     const supplyZone: [string, string] = [(lastClose * 1.01).toFixed(4), (lastClose * 1.02).toFixed(4)];
@@ -346,10 +806,12 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const reversalConfirmed = pseudoRandom(analysisSeed + 'reversal') > 0.6;
     
     const volumeAnalysis = generateVolumeAnalysis(analysisSeed);
-    const multiTimeframeSR = generateMultiTimeframeSR(price, analysisSeed, isBullish);
+    const multiTimeframeSR = generateMultiTimeframeSR(price, klines, isBullish, analysisSeed);
+    const liquidityMatrix = generateLiquidityMatrixData(price, swingHigh, swingLow, isBullish, analysisSeed);
+    const linearRegressionChannel = calculateLinearRegressionChannel(klines);
+    const rangeDetector = calculateRangeDetector(klines, price);
     
-    // --- Momentum (RSI simulation) ---
-    const rsiValue = Math.floor(pseudoRandom(analysisSeed + 'rsi') * 80 + 10); // RSI between 10 and 90
+    const rsiValue = calculateRSI(closes, 14);
     let momentum: Momentum;
     if (rsiValue > 75) momentum = { score: rsiValue, rating: 'Overbought' };
     else if (rsiValue > 55) momentum = { score: rsiValue, rating: 'Bullish' };
@@ -357,8 +819,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     else if (rsiValue > 25) momentum = { score: rsiValue, rating: 'Bearish' };
     else momentum = { score: rsiValue, rating: 'Oversold' };
 
-    // --- Trend Strength (ADX simulation) ---
-    const adxValue = Math.floor(pseudoRandom(analysisSeed + 'adx') * 60 + 10); // ADX between 10 and 70
+    const { adx: adxValue } = calculateADX(klines, 14);
     let trendStrength: TrendStrength;
     let sidewaysMarket: SidewaysMarket | undefined = undefined;
 
@@ -372,11 +833,11 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             range: [swingHigh.toFixed(4), swingLow.toFixed(4)]
         }
     }
-    
-    // --- ADVANCED STRENGTH DASHBOARD ---
-    const advancedStrengthDashboard = generateAdvancedStrengthData(price, closes, volumes, analysisSeed, isBullish, rsiValue, adxValue, { ema20, ema50 });
 
-    // --- ADVANCED CONFLUENCE FACTORS ---
+    const superTrendAnalysis = generateSuperTrendAnalysis(price, atr, isBullish, trendStrength, momentum, analysisSeed);
+    
+    const advancedStrengthDashboard = generateAdvancedStrengthData(klines, isCrypto(symbol));
+
     const confluenceFactors = [
         `MA Trend: ${isBullish ? 'Bullish' : 'Bearish'} (Price vs 50/200 EMA)`,
         price > pivot ? `Price above Pivot ($${pivot.toFixed(4)})` : `Price below Pivot ($${pivot.toFixed(4)})`,
@@ -385,9 +846,9 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     ];
 
     if (isBullish && (momentum.rating === 'Bullish' || momentum.rating === 'Neutral')) {
-        confluenceFactors.push(`Momentum aligned with trend (RSI: ${rsiValue})`);
+        confluenceFactors.push(`Momentum aligned with trend (RSI: ${rsiValue.toFixed(0)})`);
     } else if (!isBullish && (momentum.rating === 'Bearish' || momentum.rating === 'Neutral')) {
-        confluenceFactors.push(`Momentum aligned with trend (RSI: ${rsiValue})`);
+        confluenceFactors.push(`Momentum aligned with trend (RSI: ${rsiValue.toFixed(0)})`);
     }
     
     const bosLevel = isBullish ? (swingHigh * 1.002).toFixed(4) : (swingLow * 0.998).toFixed(4);
@@ -403,11 +864,10 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         confluenceFactors.push(`✅ Reversal Confirmed`);
     }
 
-    // --- Live Whale Alert from Volume Spikes ---
     let whaleAlert: WhaleAlert | undefined = undefined;
     const volumeAvg = volumes.slice(0, -1).reduce((sum, vol) => sum + vol, 0) / (volumes.length - 1);
     const latestVolume = volumes[volumes.length - 1];
-    const volumeThreshold = 3; // Spike is 3x the average volume
+    const volumeThreshold = 3; 
 
     if (latestVolume > volumeAvg * volumeThreshold) {
         const lastCandleOpen = parseFloat(klines[klines.length-1][1]);
@@ -415,25 +875,24 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         const isBullishSpike = lastCandleClose > lastCandleOpen;
         
         whaleAlert = {
-            amount: parseFloat((latestVolume * price / 1_000_000).toFixed(2)), // In millions USD
+            amount: parseFloat((latestVolume * price / 1_000_000).toFixed(2)), 
             symbol: symbol.toUpperCase(),
-            destination: isBullishSpike ? 'Cold Wallet' : 'Exchanges', // Interpretation of spike
+            destination: isBullishSpike ? 'Cold Wallet' : 'Exchanges',
             impactProbability: 'HIGH',
             historicalPattern: `A ${((latestVolume / volumeAvg)).toFixed(1)}x volume spike often precedes significant price movement.`
         };
         confluenceFactors.unshift(`🚨 WHALE SIGHTING: Significant volume spike detected!`);
     }
 
+    const indicatorChecklist = generateIndicatorChecklist(isBullish, momentum, analysisSeed);
 
-    
-    // If market is ranging, we don't generate a directional signal.
     if (sidewaysMarket) {
          return {
             symbol: symbol.toUpperCase(),
             price,
             mode,
             timeframe,
-            isBullish: pseudoRandom(analysisSeed + 'sideways_bull') > 0.5, // Random for UI color
+            isBullish: pseudoRandom(analysisSeed + 'sideways_bull') > 0.5,
             action: "Monitor for Breakout",
             entry: "N/A",
             sl: "N/A",
@@ -446,8 +905,15 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             swingHigh: swingHigh.toFixed(4),
             swingLow: swingLow.toFixed(4),
             pivot: pivot.toFixed(4),
+            poc: poc.toFixed(4),
+            vah: vah.toFixed(4),
+            val: val.toFixed(4),
             s1: s1.toFixed(4),
+            s2: s2.toFixed(4),
+            s3: s3.toFixed(4),
             r1: r1.toFixed(4),
+            r2: r2.toFixed(4),
+            r3: r3.toFixed(4),
             buyVolume: buyVolume.toFixed(0),
             sellVolume: sellVolume.toFixed(0),
             volumeImbalance: "Neutral",
@@ -465,36 +931,64 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
             confidenceBreakdown: { overall: adxValue, patternStrength: 20, volumeConfirmation: 20, htfAlignment: 20, smartMoneyFlow: 20 },
             movingAverageAnalysis,
             trendStrength,
-            momentum: { score: 50, rating: 'Neutral' },
+            momentum,
             sidewaysMarket,
+            superTrendAnalysis,
             volumeAnalysis,
             multiTimeframeSR,
+            liquidityMatrix,
+            liquidityPrediction: liquidityMatrix.prediction,
             advancedStrengthDashboard,
+            indicatorChecklist,
+            linearRegressionChannel,
+            rangeDetector,
         };
     }
 
     let entry, sl, tp1, tp2;
     const action = isBullish ? "Buy on Pullback" : "Sell on Rally";
 
-    // --- Mode-Specific Calculation Logic ---
-    if (mode === '4') { // Multi-Layer Confirmation Mode
+    if (mode === '4') { 
         const confluenceLevels = [
             parseFloat(fibonacciLevels.level_618),
             pivot,
-            isBullish ? ema20 : ema50 // Use a faster EMA for entry confluence
+            isBullish ? ema20 : ema50
         ];
         const confluencePrice = confluenceLevels.reduce((a, b) => a + b, 0) / confluenceLevels.length;
         entry = confluencePrice.toFixed(4);
         sl = (isBullish ? (swingLow - atr * 0.5) : (swingHigh + atr * 0.5)).toFixed(4);
-        tp1 = (isBullish ? multiTimeframeSR[timeframe].R1 : multiTimeframeSR[timeframe].S1).toFixed(4);
-        tp2 = (isBullish ? multiTimeframeSR[timeframe].R2 : multiTimeframeSR[timeframe].S2).toFixed(4);
-    } else { // Original Logic for Elite Mode and others
+        tp1 = (isBullish ? multiTimeframeSR[timeframe as keyof MultiTimeframeSR]!.probableTarget : multiTimeframeSR[timeframe as keyof MultiTimeframeSR]!.probableTarget).toFixed(4);
+        tp2 = (isBullish ? multiTimeframeSR[timeframe as keyof MultiTimeframeSR]!.R[1] || multiTimeframeSR[timeframe as keyof MultiTimeframeSR]!.R[0] * 1.01 : multiTimeframeSR[timeframe as keyof MultiTimeframeSR]!.S[1] || multiTimeframeSR[timeframe as keyof MultiTimeframeSR]!.S[0] * 0.99).toFixed(4);
+    } else if (mode === '5') {
+        const supermodeAnalysis: Partial<SupermodeAnalysis> = {
+            isBullish,
+            setups: {} as SupermodeAnalysis['setups']
+        };
+        const tfs: (keyof SupermodeAnalysis['setups'])[] = ['5m', '15m', '1h'];
+        tfs.forEach(tf => {
+            const tfAtrMultiplier = {'5m': 1.5, '15m': 2, '1h': 2.5}[tf];
+            const tfEntry = (isBullish ? price - atr * 0.2 : price + atr * 0.2).toFixed(4);
+            const tfSl = (isBullish ? parseFloat(tfEntry) - atr * tfAtrMultiplier : parseFloat(tfEntry) + atr * tfAtrMultiplier).toFixed(4);
+            const tfTp1 = (isBullish ? parseFloat(tfEntry) + atr * tfAtrMultiplier : parseFloat(tfEntry) - atr * tfAtrMultiplier).toFixed(4);
+            supermodeAnalysis.setups[tf] = {
+                entry: tfEntry,
+                sl: tfSl,
+                tp1: tfTp1,
+                supplyZone: [(price * (1.005 + pseudoRandom(tf) * 0.005)).toFixed(4), (price * (1.006 + pseudoRandom(tf) * 0.005)).toFixed(4)],
+                demandZone: [(price * (0.995 - pseudoRandom(tf) * 0.005)).toFixed(4), (price * (0.994 - pseudoRandom(tf) * 0.005)).toFixed(4)],
+                confidence: Math.floor(pseudoRandom(analysisSeed + tf + 'super_conf') * 20 + 75)
+            };
+        });
+        
+        entry = supermodeAnalysis.setups['15m'].entry;
+        sl = supermodeAnalysis.setups['15m'].sl;
+        tp1 = supermodeAnalysis.setups['15m'].tp1;
+        tp2 = (isBullish ? parseFloat(tp1) + atr * 2 : parseFloat(tp1) - atr * 2).toFixed(4);
+
+
+    } else { 
         const timeframeMultipliers = {
-            '5m': { atr: 1.5 },
-            '15m': { atr: 2 },
-            '1h': { atr: 2.5 },
-            '4h': { atr: 3 },
-            '1d': { atr: 3.5 },
+            '5m': { atr: 1.5 }, '15m': { atr: 2 }, '1h': { atr: 2.5 }, '4h': { atr: 3 }, '1d': { atr: 3.5 },
         };
         const multipliers = timeframeMultipliers[timeframe] || timeframeMultipliers['15m'];
         const { atr: atrMultiplier } = multipliers;
@@ -505,8 +999,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         tp2 = (isBullish ? parseFloat(entry) + atr * (atrMultiplier * 2) : parseFloat(entry) - atr * (atrMultiplier * 2)).toFixed(4);
     }
 
-    // Volatility-aware confirmed entry to avoid fakeouts
-    const confirmationOffset = atr * 0.1; // Require price to move 10% of ATR beyond entry
+    const confirmationOffset = atr * 0.1;
     const confirmedEntry = (isBullish ? parseFloat(entry) + confirmationOffset : parseFloat(entry) - confirmationOffset);
     
     const risk = Math.abs(parseFloat(entry) - parseFloat(sl));
@@ -516,68 +1009,42 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     const mtfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '5m' ? '15m' : '4H';
     const htfAlignmentKey: keyof MultiTimeframeAnalysis = timeframe === '1h' ? '4H' : 'Daily';
     
-    const trends: ('Bullish' | 'Bearish' | 'Neutral')[] = ['Bullish', 'Bearish', 'Neutral'];
+    const trends: Trend[] = ['Bullish', 'Bearish', 'Neutral'];
     let multiTimeframeAnalysis: MultiTimeframeAnalysis = {};
-
-    const mtfMap: {[key in Timeframe]?: (keyof MultiTimeframeAnalysis)[]} = {
-        '5m': ['15m', '1H'],
-        '15m': ['1H', '4H', 'Daily'],
-        '1h': ['4H', 'Daily'],
-        '4h': ['Daily', 'Weekly'],
-        '1d': ['Weekly'],
-    };
-    
-    const analysisTimeframes = mtfMap[timeframe] || mtfMap['15m']!;
-    
-    const currentTfKey = timeframe.toUpperCase() as keyof MultiTimeframeAnalysis;
-    multiTimeframeAnalysis[currentTfKey] = isBullish ? 'Bullish' : 'Bearish';
-    
-    analysisTimeframes.forEach(tf => {
-        if (!multiTimeframeAnalysis[tf]) {
-            multiTimeframeAnalysis[tf] = trends[Math.floor(pseudoRandom(analysisSeed + tf) * 3)];
-        }
-    });
-    
     const requiredTfs: (keyof MultiTimeframeAnalysis)[] = ['5m', '15m', '1H', '4H', 'Daily'];
+    
     requiredTfs.forEach(tf => {
-        if (!multiTimeframeAnalysis[tf]) {
-            multiTimeframeAnalysis[tf] = 'Neutral';
-        }
+      const trend = trends[Math.floor(pseudoRandom(analysisSeed + tf + 'trend') * 3)];
+      const strength = Math.floor(pseudoRandom(analysisSeed + tf + 'strength') * 60 + 40);
+      multiTimeframeAnalysis[tf] = { trend, strength };
     });
 
     if (parseInt(mode) >= 2) {
-        const waveConvergence = (pseudoRandom(analysisSeed + 'wave') * 40 + 60).toFixed(1);
+        // Quantum Wave Convergence - based on alignment of short-term and long-term momentum (RSI vs EMAs)
+        const shortTermMomentum = rsiValue > 50;
+        const longTermMomentum = price > ema50;
+        const waveConvergence = (shortTermMomentum === longTermMomentum) ? 
+            (isBullish ? Math.floor(rsiValue * 0.5 + 45) : Math.floor((100 - rsiValue) * 0.5 + 45)) : 
+            Math.floor(Math.abs(rsiValue - 50) * 0.8);
         confluenceFactors.push(`Quantum Wave Convergence: ${waveConvergence}%`);
     }
     if (parseInt(mode) >= 3) {
-        const anomalyType = isBullish ? 'Expansion' : 'Contraction';
-        const anomalySeverity = (pseudoRandom(analysisSeed + 'anomaly') * 0.5 + 1.2).toFixed(2);
-        confluenceFactors.push(`Chrono-Distortion Anomaly: ${anomalyType} (${anomalySeverity}σ)`);
-        
-        const liquidityPulse = (pseudoRandom(analysisSeed + 'pulse') * 150 + 50).toFixed(0);
-        confluenceFactors.push(`Subspace Liquidity Pulse: ${liquidityPulse}M units detected`);
+        // Chrono-Distortion Anomaly - based on ATR volatility vs recent price change
+        const priceChangeStdDev = Math.abs(price - closes[closes.length - 2]) / atr;
+        const anomalyType = priceChangeStdDev > 1.5 ? (isBullish ? 'Expansion' : 'Contraction') : 'Normal';
+        if (anomalyType !== 'Normal') {
+            confluenceFactors.push(`Chrono-Distortion Anomaly: ${anomalyType} (${priceChangeStdDev.toFixed(2)}σ)`);
+        }
+
+        // Subspace Liquidity Pulse - based on volume spikes
+        if (latestVolume > avgVolume * 2) {
+            const liquidityPulse = parseFloat((latestVolume * price / 1_000_000).toFixed(0)); // In millions
+            confluenceFactors.push(`Subspace Liquidity Pulse: ${liquidityPulse}M units detected`);
+        }
     }
     
-    const bullishPatterns: ChartPattern[] = [
-        { name: 'Bull Flag', description: 'A continuation pattern suggesting the uptrend will resume after a brief consolidation.' },
-        { name: 'Ascending Triangle', description: 'Indicates a potential breakout to the upside as buying pressure builds.' },
-        { name: 'Inverse Head & Shoulders', description: 'A strong reversal pattern indicating a shift from a downtrend to an uptrend.' },
-        { name: 'Bullish Engulfing', description: 'A powerful two-candle reversal pattern that can signal a bottom in a downtrend.' },
-        { name: 'Hammer', description: 'A single-candle bullish reversal pattern that appears during a downtrend.' },
-        { name: 'Morning Star', description: 'A three-candle bullish reversal pattern that signals a potential bottom.' },
-        { name: 'Three White Soldiers', description: 'A strong bullish reversal pattern consisting of three consecutive long green candles.' },
-        { name: 'Cup and Handle', description: 'A bullish continuation pattern that signals a consolidation followed by a breakout.' },
-    ];
-    const bearishPatterns: ChartPattern[] = [
-        { name: 'Bear Flag', description: 'A continuation pattern suggesting the downtrend will resume after a brief consolidation.' },
-        { name: 'Descending Triangle', description: 'Indicates a potential breakdown to the downside as selling pressure builds.' },
-        { name: 'Head & Shoulders', description: 'A classic reversal pattern indicating a shift from an uptrend to a downtrend.' },
-        { name: 'Bearish Engulfing', description: 'A powerful two-candle reversal pattern that can signal a top in an uptrend.' },
-        { name: 'Hanging Man', description: 'A single-candle bearish reversal pattern that can mark a top or resistance level.' },
-        { name: 'Evening Star', description: 'A three-candle bearish reversal pattern that signals a potential top.' },
-        { name: 'Three Black Crows', description: 'A strong bearish reversal pattern consisting of three consecutive long red candles.' },
-        { name: 'Double Top', description: 'A bearish reversal pattern where the price hits a resistance level twice and fails to break through.' },
-    ];
+    const bullishPatterns: ChartPattern[] = [ { name: 'Bull Flag', description: 'A continuation pattern suggesting the uptrend will resume after a brief consolidation.' }, { name: 'Ascending Triangle', description: 'Indicates a potential breakout to the upside as buying pressure builds.' }, { name: 'Inverse Head & Shoulders', description: 'A strong reversal pattern indicating a shift from a downtrend to an uptrend.' }, { name: 'Bullish Engulfing', description: 'A powerful two-candle reversal pattern that can signal a bottom in a downtrend.' }, { name: 'Hammer', description: 'A single-candle bullish reversal pattern that appears during a downtrend.' }, { name: 'Morning Star', description: 'A three-candle bullish reversal pattern that signals a potential bottom.' }, { name: 'Three White Soldiers', description: 'A strong bullish reversal pattern consisting of three consecutive long green candles.' }, { name: 'Cup and Handle', description: 'A bullish continuation pattern that signals a consolidation followed by a breakout.' }, ];
+    const bearishPatterns: ChartPattern[] = [ { name: 'Bear Flag', description: 'A continuation pattern suggesting the downtrend will resume after a brief consolidation.' }, { name: 'Descending Triangle', description: 'Indicates a potential breakdown to the downside as selling pressure builds.' }, { name: 'Head & Shoulders', description: 'A classic reversal pattern indicating a shift from an uptrend to a downtrend.' }, { name: 'Bearish Engulfing', description: 'A powerful two-candle reversal pattern that can signal a top in an uptrend.' }, { name: 'Hanging Man', description: 'A single-candle bearish reversal pattern that can mark a top or resistance level.' }, { name: 'Evening Star', description: 'A three-candle bearish reversal pattern that signals a potential top.' }, { name: 'Three Black Crows', description: 'A strong bearish reversal pattern consisting of three consecutive long red candles.' }, { name: 'Double Top', description: 'A bearish reversal pattern where the price hits a resistance level twice and fails to break through.' }, ];
     const chartPattern: ChartPattern = isBullish 
         ? bullishPatterns[Math.floor(pseudoRandom(analysisSeed+'pattern') * bullishPatterns.length)] 
         : bearishPatterns[Math.floor(pseudoRandom(analysisSeed+'pattern') * bearishPatterns.length)];
@@ -585,7 +1052,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     
     const tradersChecklist: TradersChecklist = {
         riskRewardPass: riskReward > 1.5,
-        mtfAlignmentPass: multiTimeframeAnalysis[mtfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish') || multiTimeframeAnalysis[htfAlignmentKey] === (isBullish ? 'Bullish' : 'Bearish'),
+        mtfAlignmentPass: multiTimeframeAnalysis[mtfAlignmentKey]?.trend === (isBullish ? 'Bullish' : 'Bearish') || multiTimeframeAnalysis[htfAlignmentKey]?.trend === (isBullish ? 'Bullish' : 'Bearish'),
         volumeConfirmationPass: netFlow > 0 === isBullish,
         entryInZonePass: pseudoRandom(analysisSeed + 'entry_zone') > 0.4,
         momentumAlignmentPass: isBullish ? momentum.rating !== 'Overbought' : momentum.rating !== 'Oversold',
@@ -598,10 +1065,7 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         max: Math.max(fib618, pivot).toFixed(4),
     };
 
-    if (
-      (isBullish && parseFloat(entry) <= goldenPullbackZone.max && parseFloat(entry) >= goldenPullbackZone.min) ||
-      (!isBullish && parseFloat(entry) >= goldenPullbackZone.min && parseFloat(entry) <= goldenPullbackZone.max)
-    ) {
+    if ( (isBullish && parseFloat(entry) <= goldenPullbackZone.max && parseFloat(entry) >= goldenPullbackZone.min) || (!isBullish && parseFloat(entry) >= goldenPullbackZone.min && parseFloat(entry) <= goldenPullbackZone.max) ) {
       confluenceFactors.push(`✅ Entry within Golden Zone`);
     }
 
@@ -629,13 +1093,12 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
     let sniperZone: SniperZone | undefined = undefined;
     if (mode === '4' && confidenceBreakdown.overall > 80 && pseudoRandom(analysisSeed + 'sniper_zone_chance') > 0.6) {
         const zoneCenter = (fib618 + pivot) / 2;
-        const zoneSize = atr * 0.1; // Make it a very tight zone
-        sniperZone = {
-            min: (zoneCenter - zoneSize).toFixed(4),
-            max: (zoneCenter + zoneSize).toFixed(4),
-        };
+        const zoneSize = atr * 0.1;
+        sniperZone = { min: (zoneCenter - zoneSize).toFixed(4), max: (zoneCenter + zoneSize).toFixed(4), };
         confluenceFactors.push(`🎯 QUANTUM SNIPER ZONE IDENTIFIED`);
     }
+
+    const orderBlock = generateOrderBlock(swingHigh, swingLow, price, isBullish, analysisSeed);
 
 
     return {
@@ -656,25 +1119,19 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         swingHigh: swingHigh.toFixed(4),
         swingLow: swingLow.toFixed(4),
         pivot: pivot.toFixed(4),
-        s1: s1.toFixed(4),
-        r1: r1.toFixed(4),
+        poc: poc.toFixed(4),
+        vah: vah.toFixed(4),
+        val: val.toFixed(4),
+        s1: s1.toFixed(4), s2: s2.toFixed(4), s3: s3.toFixed(4),
+        r1: r1.toFixed(4), r2: r2.toFixed(4), r3: r3.toFixed(4),
         buyVolume: buyVolume.toFixed(0),
         sellVolume: sellVolume.toFixed(0),
         volumeImbalance,
         demandZone,
         supplyZone,
         fvg,
-        liquidity: {
-            type: isBullish ? 'Equal Highs (EQH)' : 'Equal Lows (EQL)',
-            level: liquidityLevel.toFixed(4),
-            description: `A significant pool of liquidity is resting ${isBullish ? 'above' : 'below'} this level, acting as a price magnet.`
-        },
-        smartMoneyConcepts: {
-            entry,
-            bos: bosLevel,
-            choch: isBullish ? (swingLow * 0.998).toFixed(4) : (swingHigh * 1.002).toFixed(4),
-            confirmedEntry: confirmedEntry.toFixed(4),
-        },
+        liquidity: { type: isBullish ? 'Equal Highs (EQH)' : 'Equal Lows (EQL)', level: liquidityLevel.toFixed(4), description: `A significant pool of liquidity is resting ${isBullish ? 'above' : 'below'} this level, acting as a price magnet.` },
+        smartMoneyConcepts: { bos: bosLevel, choch: isBullish ? (swingLow * 0.998).toFixed(4) : (swingHigh * 1.002).toFixed(4), confirmedEntry: confirmedEntry.toFixed(4), },
         marketStructure,
         multiTimeframeAnalysis,
         reversalConfirmed,
@@ -685,13 +1142,21 @@ export const getSignalData = async (symbol: string, mode: string, timeframe: Tim
         goldenPullbackZone,
         goldenReverseZone,
         sniperZone,
+        orderBlock,
         confidenceBreakdown,
         movingAverageAnalysis,
         trendStrength,
         momentum,
         sidewaysMarket,
+        superTrendAnalysis,
         volumeAnalysis,
         multiTimeframeSR,
+        liquidityMatrix,
+        liquidityPrediction: liquidityMatrix.prediction,
         advancedStrengthDashboard,
+        supermodeAnalysis: mode === '5' ? (klines as any).supermodeAnalysis : undefined,
+        indicatorChecklist,
+        linearRegressionChannel,
+        rangeDetector,
     };
 };

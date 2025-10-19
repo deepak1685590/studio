@@ -125,7 +125,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ initialStatus, revocationReas
       </div>
 
       <div className="fixed bottom-4 right-4 text-xs text-primary font-code p-2 rounded">
-        <p>CREATOR & TRADER : <span className="animate-neon-purple">DG143</span></p>
+        <p>CREATOR & TRADER : <span className="animate-neon-purple">DG143</span> <span className="animate-neon-red">🌹❤️</span></p>
       </div>
     </div>
   );
