@@ -21,8 +21,8 @@ export const getKlines = async (symbol: string, timeframe: Timeframe): Promise<a
   const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${apiInterval}&limit=500`;
 
   try {
-    // Removed caching to ensure real-time data
-    const response = await fetch(url, { cache: 'no-store' });
+    // Re-introduce caching to prevent API rate-limiting errors, revalidating every 60 seconds.
+    const response = await fetch(url, { next: { revalidate: 60 } });
 
     if (!response.ok) {
       const errorData = await response.json();
